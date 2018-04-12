@@ -5,6 +5,7 @@ extern crate regex;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
+extern crate zip;
 
 use std::fs::File;
 use std::collections::{HashMap, HashSet};
@@ -185,6 +186,22 @@ impl Gtfs {
         })
     }
 
+    pub fn from_zip(file: &str) -> Result<Gtfs, Error> {
+        let now = Utc::now();
+        let reader = File::open(file)?;
+        let mut archive = zip::ZipArchive::new(reader)?;
+
+        Ok(Gtfs {
+            calendar: Gtfs::read_calendars(archive.by_name("calendar.txt")?)?,
+            stops: Gtfs::read_stops(archive.by_name("stops.txt")?)?,
+            calendar_dates: Gtfs::read_calendar_dates(archive.by_name("calendar_dates.txt")?)?,
+            routes: Gtfs::read_routes(archive.by_name("routes.txt")?)?,
+            trips: Gtfs::read_trips(archive.by_name("trips.txt")?)?,
+            stop_times: Gtfs::read_stop_times(archive.by_name("stop_times.txt")?)?,
+            read_duration: Utc::now().signed_duration_since(now).num_milliseconds(),
+        })
+    }
+
     fn read_calendars<T: std::io::Read>(reader: T) -> Result<HashMap<String, Calendar>, Error> {
         let mut reader = csv::Reader::from_reader(reader);
         Ok(reader
@@ -344,5 +361,16 @@ mod tests {
 
         let days2 = gtfs.trip_days(&"service2".to_owned(), NaiveDate::from_ymd(2017, 1, 1));
         assert_eq!(vec![0], days2);
+    }
+
+    #[test]
+    fn read_from_gtfs() {
+        let gtfs = Gtfs::from_zip("fixtures/gtfs.zip").unwrap();
+        assert_eq!(1, gtfs.calendar.len());
+        assert_eq!(2, gtfs.calendar_dates.len());
+        assert_eq!(5, gtfs.stops.len());
+        assert_eq!(1, gtfs.routes.len());
+        assert_eq!(1, gtfs.trips.len());
+        assert_eq!(2, gtfs.stop_times.len());
     }
 }

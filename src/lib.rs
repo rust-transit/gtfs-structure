@@ -2,11 +2,13 @@ extern crate chrono;
 extern crate csv;
 extern crate failure;
 extern crate regex;
+extern crate reqwest;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 extern crate zip;
 
+use std::io::Read;
 use std::fs::File;
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
@@ -189,6 +191,14 @@ impl Gtfs {
     pub fn from_zip(file: &str) -> Result<Gtfs, Error> {
         let reader = File::open(file)?;
         Gtfs::from_reader(reader)
+    }
+
+    pub fn from_url(url: &str) -> Result<Gtfs, Error> {
+        let mut res = reqwest::get(url)?;
+        let mut body = Vec::new();
+        res.read_to_end(&mut body)?;
+        let cursor = std::io::Cursor::new(body);
+        Gtfs::from_reader(cursor)
     }
 
     pub fn from_reader<T: std::io::Read + std::io::Seek>(reader: T) -> Result<Gtfs, Error> {

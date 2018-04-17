@@ -187,8 +187,12 @@ impl Gtfs {
     }
 
     pub fn from_zip(file: &str) -> Result<Gtfs, Error> {
-        let now = Utc::now();
         let reader = File::open(file)?;
+        Gtfs::from_reader(reader)
+    }
+
+    pub fn from_reader<T: std::io::Read + std::io::Seek>(reader: T) -> Result<Gtfs, Error> {
+        let now = Utc::now();
         let mut archive = zip::ZipArchive::new(reader)?;
 
         Ok(Gtfs {

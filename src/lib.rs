@@ -1,5 +1,7 @@
 extern crate chrono;
 extern crate csv;
+#[macro_use]
+extern crate derivative;
 extern crate failure;
 extern crate regex;
 extern crate reqwest;
@@ -22,6 +24,28 @@ pub enum LocationType {
     StopPoint = 0,
     StopArea = 1,
     StationEntrance = 2,
+}
+#[derive(Derivative)]
+#[derivative(Default(bound = ""))]
+#[derive(Debug, Deserialize, Copy, Clone, PartialEq)]
+pub enum RouteType {
+    #[serde(rename = "0")]
+    Tramway,
+    #[serde(rename = "1")]
+    Subway,
+    #[serde(rename = "2")]
+    Rail,
+    #[derivative(Default)]
+    #[serde(rename = "3")]
+    Bus,
+    #[serde(rename = "4")]
+    Ferry,
+    #[serde(rename = "5")]
+    CableCar,
+    #[serde(rename = "6")]
+    Gondola,
+    #[serde(rename = "7")]
+    Funicular,
 }
 
 #[derive(Debug, Deserialize)]
@@ -101,9 +125,11 @@ pub struct StopTime {
 pub struct Route {
     #[serde(rename = "route_id")]
     id: String,
-    route_short_name: String,
-    route_long_name: String,
-    route_type: u8,
+    #[serde(rename = "route_short_name")]
+    short_name: String,
+    #[serde(rename = "route_long_name")]
+    long_name: String,
+    route_type: RouteType,
 }
 
 #[derive(Debug, Deserialize)]
@@ -382,6 +408,7 @@ mod tests {
     fn read_routes() {
         let routes = Gtfs::read_routes(File::open("fixtures/routes.txt").unwrap()).unwrap();
         assert_eq!(1, routes.len());
+        assert_eq!(RouteType::Bus, routes.get("1").unwrap().route_type);
     }
 
     #[test]

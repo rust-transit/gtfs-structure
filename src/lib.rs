@@ -167,6 +167,18 @@ impl Gtfs {
         println!("  Stop Times: {}", self.stop_times.len());
     }
 
+    fn empty() -> Gtfs {
+        Gtfs {
+            read_duration: 0,
+            calendar: HashMap::new(),
+            calendar_dates: HashMap::new(),
+            stops: Vec::new(),
+            routes: HashMap::new(),
+            trips: HashMap::new(),
+            stop_times: Vec::new()
+        }
+    }
+
     pub fn new(path: &str) -> Result<Gtfs, Error> {
         let now = Utc::now();
         let p = Path::new(path);
@@ -204,16 +216,26 @@ impl Gtfs {
     pub fn from_reader<T: std::io::Read + std::io::Seek>(reader: T) -> Result<Gtfs, Error> {
         let now = Utc::now();
         let mut archive = zip::ZipArchive::new(reader)?;
+        let mut result = Gtfs::empty();
+        for i in 0..archive.len() {
+            let file = archive.by_index(i)?;
+            if file.name().ends_with("calendar.txt") {
+                result.calendar = Gtfs::read_calendars(file)?;
+            } else if file.name().ends_with("stops.txt") {
+                result.stops = Gtfs::read_stops(file)?;
+            } else if file.name().ends_with("calendar_dates.txt") {
+                result.calendar_dates = Gtfs::read_calendar_dates(file)?;
+            } else if file.name().ends_with("routes.txt") {
+                result.routes = Gtfs::read_routes(file)?;
+            }  else if file.name().ends_with("trips.txt") {
+                result.trips = Gtfs::read_trips(file)?;
+            }  else if file.name().ends_with("stop_times.txt") {
+                result.stop_times = Gtfs::read_stop_times(file)?;
+            }
+        }
 
-        Ok(Gtfs {
-            calendar: Gtfs::read_calendars(archive.by_name("calendar.txt")?)?,
-            stops: Gtfs::read_stops(archive.by_name("stops.txt")?)?,
-            calendar_dates: Gtfs::read_calendar_dates(archive.by_name("calendar_dates.txt")?)?,
-            routes: Gtfs::read_routes(archive.by_name("routes.txt")?)?,
-            trips: Gtfs::read_trips(archive.by_name("trips.txt")?)?,
-            stop_times: Gtfs::read_stop_times(archive.by_name("stop_times.txt")?)?,
-            read_duration: Utc::now().signed_duration_since(now).num_milliseconds(),
-        })
+        result.read_duration = Utc::now().signed_duration_since(now).num_milliseconds();
+        Ok(result)
     }
 
     fn read_calendars<T: std::io::Read>(reader: T) -> Result<HashMap<String, Calendar>, Error> {
@@ -380,6 +402,17 @@ mod tests {
     #[test]
     fn read_from_gtfs() {
         let gtfs = Gtfs::from_zip("fixtures/gtfs.zip").unwrap();
+        assert_eq!(1, gtfs.calendar.len());
+        assert_eq!(2, gtfs.calendar_dates.len());
+        assert_eq!(5, gtfs.stops.len());
+        assert_eq!(1, gtfs.routes.len());
+        assert_eq!(1, gtfs.trips.len());
+        assert_eq!(2, gtfs.stop_times.len());
+    }
+
+    #[test]
+    fn read_from_subdirectory() {
+        let gtfs = Gtfs::from_zip("fixtures/subdirectory.zip").unwrap();
         assert_eq!(1, gtfs.calendar.len());
         assert_eq!(2, gtfs.calendar_dates.len());
         assert_eq!(5, gtfs.stops.len());

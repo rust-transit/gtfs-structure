@@ -151,7 +151,7 @@ pub struct Gtfs {
     pub read_duration: i64,
     pub calendar: HashMap<String, Calendar>,
     pub calendar_dates: HashMap<String, Vec<CalendarDate>>,
-    pub stops: Vec<Stop>,
+    pub stops: HashMap<String, Stop>,
     pub routes: HashMap<String, Route>,
     pub trips: HashMap<String, Trip>,
     pub stop_times: Vec<StopTime>,
@@ -172,7 +172,7 @@ impl Gtfs {
             read_duration: 0,
             calendar: HashMap::new(),
             calendar_dates: HashMap::new(),
-            stops: Vec::new(),
+            stops: HashMap::new(),
             routes: HashMap::new(),
             trips: HashMap::new(),
             stop_times: Vec::new()
@@ -259,9 +259,12 @@ impl Gtfs {
         Ok(calendar_dates)
     }
 
-    fn read_stops<T: std::io::Read>(reader: T) -> Result<Vec<Stop>, Error> {
+    fn read_stops<T: std::io::Read>(reader: T) -> Result<HashMap<String, Stop>, Error> {
         let mut reader = csv::Reader::from_reader(reader);
-        Ok(reader.deserialize().collect::<Result<_, _>>()?)
+        Ok(reader
+            .deserialize()
+            .map(|res| res.map(|e: Stop| (e.id.to_owned(), e)))
+            .collect::<Result<_, _>>()?)
     }
 
     fn read_routes<T: std::io::Read>(reader: T) -> Result<HashMap<String, Route>, Error> {
@@ -366,9 +369,9 @@ mod tests {
     fn read_stop() {
         let stops = Gtfs::read_stops(File::open("fixtures/stops.txt").unwrap()).unwrap();
         assert_eq!(5, stops.len());
-        assert_eq!(LocationType::StopArea, stops[0].location_type);
-        assert_eq!(LocationType::StopPoint, stops[1].location_type);
-        assert_eq!(Some("1".to_owned()), stops[2].parent_station)
+        assert_eq!(LocationType::StopArea, stops.get("stop1").unwrap().location_type);
+        assert_eq!(LocationType::StopPoint, stops.get("stop2").unwrap().location_type);
+        assert_eq!(Some("1".to_owned()), stops.get("stop3").unwrap().parent_station);
     }
 
     #[test]

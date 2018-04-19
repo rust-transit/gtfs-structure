@@ -78,6 +78,10 @@ pub struct Stop {
     #[serde(deserialize_with = "deserialize_location_type", default = "default_location_type")]
     pub location_type: LocationType,
     pub parent_station: Option<String>,
+    #[serde(rename = "stop_lon")]
+    pub longitude: f32,
+    #[serde(rename = "stop_lat")]
+    pub latitude: f32,
 }
 
 #[derive(Debug, Deserialize)]

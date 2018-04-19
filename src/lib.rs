@@ -51,21 +51,21 @@ pub enum RouteType {
 #[derive(Debug, Deserialize)]
 pub struct Calendar {
     #[serde(rename = "service_id")]
-    id: String,
+    pub id: String,
     #[serde(deserialize_with = "deserialize_bool")]
-    monday: bool,
+    pub monday: bool,
     #[serde(deserialize_with = "deserialize_bool")]
-    tuesday: bool,
+    pub tuesday: bool,
     #[serde(deserialize_with = "deserialize_bool")]
-    wednesday: bool,
+    pub wednesday: bool,
     #[serde(deserialize_with = "deserialize_bool")]
-    thursday: bool,
+    pub thursday: bool,
     #[serde(deserialize_with = "deserialize_bool")]
-    friday: bool,
+    pub friday: bool,
     #[serde(deserialize_with = "deserialize_bool")]
-    saturday: bool,
+    pub saturday: bool,
     #[serde(deserialize_with = "deserialize_bool")]
-    sunday: bool,
+    pub sunday: bool,
     #[serde(deserialize_with = "deserialize_date")]
     pub start_date: NaiveDate,
     #[serde(deserialize_with = "deserialize_date")]
@@ -88,10 +88,10 @@ impl Calendar {
 
 #[derive(Debug, Deserialize)]
 pub struct CalendarDate {
-    service_id: String,
+    pub service_id: String,
     #[serde(deserialize_with = "deserialize_date")]
-    date: NaiveDate,
-    exception_type: u8,
+    pub date: NaiveDate,
+    pub exception_type: u8,
 }
 
 #[derive(Debug, Deserialize)]
@@ -116,20 +116,20 @@ pub struct StopTime {
     #[serde(deserialize_with = "deserialize_time")]
     pub departure_time: u16,
     pub stop_id: String,
-    stop_sequence: u32,
-    pickup_type: Option<u8>,
-    drop_off_type: Option<u8>,
+    pub stop_sequence: u32,
+    pub pickup_type: Option<u8>,
+    pub drop_off_type: Option<u8>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct Route {
     #[serde(rename = "route_id")]
-    id: String,
+    pub id: String,
     #[serde(rename = "route_short_name")]
-    short_name: String,
+    pub short_name: String,
     #[serde(rename = "route_long_name")]
-    long_name: String,
-    route_type: RouteType,
+    pub long_name: String,
+    pub route_type: RouteType,
 }
 
 #[derive(Debug, Deserialize)]

@@ -120,7 +120,7 @@ where
 
 pub fn parse_time(s: String) -> Result<u16, Error> {
     let v: Vec<&str> = s.split(':').collect();
-    Ok(&v[0].parse()? * 60u16 + &v[1].parse()?)
+    Ok(&v[0].parse()? * 3600u16 + &v[1].parse()? * 60u16 + &v[2].parse()?)
 }
 
 fn deserialize_time<'de, D>(deserializer: D) -> Result<u16, D::Error>

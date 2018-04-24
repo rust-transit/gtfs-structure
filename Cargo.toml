@@ -1,7 +1,7 @@
 [package]
 description = "Read GTFS (public transit timetables) files"
 name = "gtfs-structures"
-version = "0.3.3"
+version = "0.3.4"
 authors = ["Tristram Gräbener <tristramg@gmail.com>"]
 repository = "https://github.com/Tristramg/gtfs-structure"
 license = "MIT"
@@ -15,5 +15,6 @@ chrono = "0.4"
 regex = "0.2"
 itertools = "0.7.2"
 failure = "0.1.1"
+failure_derive = "0.1.1"
 zip = "0.3.1"
 reqwest = "0.8.5"

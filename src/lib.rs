@@ -3,6 +3,8 @@ extern crate csv;
 #[macro_use]
 extern crate derivative;
 extern crate failure;
+#[macro_use]
+extern crate failure_derive;
 extern crate regex;
 extern crate reqwest;
 extern crate serde;
@@ -18,6 +20,13 @@ use chrono::prelude::*;
 use serde::de::{self, Deserialize, Deserializer};
 use chrono::Duration;
 use failure::Error;
+
+
+#[derive(Fail, Debug)]
+#[fail(display = "The id {} is not known", id)]
+pub struct ReferenceError {
+    pub id: String,
+}
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum LocationType {
@@ -364,6 +373,41 @@ impl Gtfs {
 
         result
     }
+
+    pub fn get_stop<'a>(&'a self, id: &str) -> Result<&'a Stop, ReferenceError> {
+        match self.stops.get(id) {
+            Some(stop) => Ok(stop),
+            None => Err(ReferenceError{id: id.to_owned()})
+        }
+    }
+
+    pub fn get_trip<'a>(&'a self, id: &str) -> Result<&'a Trip, ReferenceError> {
+        match self.trips.get(id) {
+            Some(trip) => Ok(trip),
+            None => Err(ReferenceError{id: id.to_owned()})
+        }
+    }
+
+    pub fn get_route<'a>(&'a self, id: &str) -> Result<&'a Route, ReferenceError> {
+        match self.routes.get(id) {
+            Some(route) => Ok(route),
+            None => Err(ReferenceError{id: id.to_owned()})
+        }
+    }
+
+    pub fn get_calendar<'a>(&'a self, id: &str) -> Result<&'a Calendar, ReferenceError> {
+        match self.calendar.get(id) {
+            Some(calendar) => Ok(calendar),
+            None => Err(ReferenceError{id: id.to_owned()})
+        }
+    }
+
+    pub fn get_calendar_date<'a>(&'a self, id: &str) -> Result<&'a Vec<CalendarDate>, ReferenceError> {
+        match self.calendar_dates.get(id) {
+            Some(calendar_dates) => Ok(calendar_dates),
+            None => Err(ReferenceError{id: id.to_owned()})
+        }
+    }
 }
 
 fn deserialize_bool<'de, D>(deserializer: D) -> Result<bool, D::Error>
@@ -442,6 +486,14 @@ mod tests {
         assert_eq!(1, gtfs.routes.len());
         assert_eq!(1, gtfs.trips.len());
         assert_eq!(2, gtfs.stop_times.len());
+
+        assert!(gtfs.get_calendar("service1").is_ok());
+        assert!(gtfs.get_calendar_date("service1").is_ok());
+        assert!(gtfs.get_stop("stop1").is_ok());
+        assert!(gtfs.get_route("1").is_ok());
+        assert!(gtfs.get_trip("trip1").is_ok());
+
+        assert_eq!("Utopia", gtfs.get_stop("Utopia").unwrap_err().id);
     }
 
     #[test]

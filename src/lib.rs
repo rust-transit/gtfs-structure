@@ -21,7 +21,6 @@ use serde::de::{self, Deserialize, Deserializer};
 use chrono::Duration;
 use failure::Error;
 
-
 #[derive(Fail, Debug)]
 #[fail(display = "The id {} is not known", id)]
 pub struct ReferenceError {
@@ -38,47 +37,30 @@ pub enum LocationType {
 #[derivative(Default(bound = ""))]
 #[derive(Debug, Deserialize, Copy, Clone, PartialEq)]
 pub enum RouteType {
-    #[serde(rename = "0")]
-    Tramway,
-    #[serde(rename = "1")]
-    Subway,
-    #[serde(rename = "2")]
-    Rail,
+    #[serde(rename = "0")] Tramway,
+    #[serde(rename = "1")] Subway,
+    #[serde(rename = "2")] Rail,
     #[derivative(Default)]
     #[serde(rename = "3")]
     Bus,
-    #[serde(rename = "4")]
-    Ferry,
-    #[serde(rename = "5")]
-    CableCar,
-    #[serde(rename = "6")]
-    Gondola,
-    #[serde(rename = "7")]
-    Funicular,
+    #[serde(rename = "4")] Ferry,
+    #[serde(rename = "5")] CableCar,
+    #[serde(rename = "6")] Gondola,
+    #[serde(rename = "7")] Funicular,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct Calendar {
-    #[serde(rename = "service_id")]
-    pub id: String,
-    #[serde(deserialize_with = "deserialize_bool")]
-    pub monday: bool,
-    #[serde(deserialize_with = "deserialize_bool")]
-    pub tuesday: bool,
-    #[serde(deserialize_with = "deserialize_bool")]
-    pub wednesday: bool,
-    #[serde(deserialize_with = "deserialize_bool")]
-    pub thursday: bool,
-    #[serde(deserialize_with = "deserialize_bool")]
-    pub friday: bool,
-    #[serde(deserialize_with = "deserialize_bool")]
-    pub saturday: bool,
-    #[serde(deserialize_with = "deserialize_bool")]
-    pub sunday: bool,
-    #[serde(deserialize_with = "deserialize_date")]
-    pub start_date: NaiveDate,
-    #[serde(deserialize_with = "deserialize_date")]
-    pub end_date: NaiveDate,
+    #[serde(rename = "service_id")] pub id: String,
+    #[serde(deserialize_with = "deserialize_bool")] pub monday: bool,
+    #[serde(deserialize_with = "deserialize_bool")] pub tuesday: bool,
+    #[serde(deserialize_with = "deserialize_bool")] pub wednesday: bool,
+    #[serde(deserialize_with = "deserialize_bool")] pub thursday: bool,
+    #[serde(deserialize_with = "deserialize_bool")] pub friday: bool,
+    #[serde(deserialize_with = "deserialize_bool")] pub saturday: bool,
+    #[serde(deserialize_with = "deserialize_bool")] pub sunday: bool,
+    #[serde(deserialize_with = "deserialize_date")] pub start_date: NaiveDate,
+    #[serde(deserialize_with = "deserialize_date")] pub end_date: NaiveDate,
 }
 
 impl Calendar {
@@ -98,32 +80,26 @@ impl Calendar {
 #[derive(Debug, Deserialize)]
 pub struct CalendarDate {
     pub service_id: String,
-    #[serde(deserialize_with = "deserialize_date")]
-    pub date: NaiveDate,
+    #[serde(deserialize_with = "deserialize_date")] pub date: NaiveDate,
     pub exception_type: u8,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct Stop {
-    #[serde(rename = "stop_id")]
-    pub id: String,
+    #[serde(rename = "stop_id")] pub id: String,
     pub stop_name: String,
     #[serde(deserialize_with = "deserialize_location_type", default = "default_location_type")]
     pub location_type: LocationType,
     pub parent_station: Option<String>,
-    #[serde(rename = "stop_lon")]
-    pub longitude: f32,
-    #[serde(rename = "stop_lat")]
-    pub latitude: f32,
+    #[serde(rename = "stop_lon")] pub longitude: f32,
+    #[serde(rename = "stop_lat")] pub latitude: f32,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct StopTime {
     pub trip_id: String,
-    #[serde(deserialize_with = "deserialize_time")]
-    pub arrival_time: u16,
-    #[serde(deserialize_with = "deserialize_time")]
-    pub departure_time: u16,
+    #[serde(deserialize_with = "deserialize_time")] pub arrival_time: u16,
+    #[serde(deserialize_with = "deserialize_time")] pub departure_time: u16,
     pub stop_id: String,
     pub stop_sequence: u32,
     pub pickup_type: Option<u8>,
@@ -132,19 +108,15 @@ pub struct StopTime {
 
 #[derive(Debug, Deserialize)]
 pub struct Route {
-    #[serde(rename = "route_id")]
-    pub id: String,
-    #[serde(rename = "route_short_name")]
-    pub short_name: String,
-    #[serde(rename = "route_long_name")]
-    pub long_name: String,
+    #[serde(rename = "route_id")] pub id: String,
+    #[serde(rename = "route_short_name")] pub short_name: String,
+    #[serde(rename = "route_long_name")] pub long_name: String,
     pub route_type: RouteType,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct Trip {
-    #[serde(rename = "trip_id")]
-    pub id: String,
+    #[serde(rename = "trip_id")] pub id: String,
     pub service_id: String,
     pub route_id: String,
 }
@@ -214,7 +186,7 @@ impl Gtfs {
             stops: HashMap::new(),
             routes: HashMap::new(),
             trips: HashMap::new(),
-            stop_times: Vec::new()
+            stop_times: Vec::new(),
         }
     }
 
@@ -266,9 +238,9 @@ impl Gtfs {
                 result.calendar_dates = Gtfs::read_calendar_dates(file)?;
             } else if file.name().ends_with("routes.txt") {
                 result.routes = Gtfs::read_routes(file)?;
-            }  else if file.name().ends_with("trips.txt") {
+            } else if file.name().ends_with("trips.txt") {
                 result.trips = Gtfs::read_trips(file)?;
-            }  else if file.name().ends_with("stop_times.txt") {
+            } else if file.name().ends_with("stop_times.txt") {
                 result.stop_times = Gtfs::read_stop_times(file)?;
             }
         }
@@ -285,7 +257,9 @@ impl Gtfs {
             .collect::<Result<_, _>>()?)
     }
 
-    fn read_calendar_dates<T: std::io::Read>(reader: T) -> Result<HashMap<String, Vec<CalendarDate>>, Error> {
+    fn read_calendar_dates<T: std::io::Read>(
+        reader: T,
+    ) -> Result<HashMap<String, Vec<CalendarDate>>, Error> {
         let mut reader = csv::Reader::from_reader(reader);
         let mut calendar_dates = HashMap::new();
         for result in reader.deserialize() {
@@ -377,35 +351,38 @@ impl Gtfs {
     pub fn get_stop<'a>(&'a self, id: &str) -> Result<&'a Stop, ReferenceError> {
         match self.stops.get(id) {
             Some(stop) => Ok(stop),
-            None => Err(ReferenceError{id: id.to_owned()})
+            None => Err(ReferenceError { id: id.to_owned() }),
         }
     }
 
     pub fn get_trip<'a>(&'a self, id: &str) -> Result<&'a Trip, ReferenceError> {
         match self.trips.get(id) {
             Some(trip) => Ok(trip),
-            None => Err(ReferenceError{id: id.to_owned()})
+            None => Err(ReferenceError { id: id.to_owned() }),
         }
     }
 
     pub fn get_route<'a>(&'a self, id: &str) -> Result<&'a Route, ReferenceError> {
         match self.routes.get(id) {
             Some(route) => Ok(route),
-            None => Err(ReferenceError{id: id.to_owned()})
+            None => Err(ReferenceError { id: id.to_owned() }),
         }
     }
 
     pub fn get_calendar<'a>(&'a self, id: &str) -> Result<&'a Calendar, ReferenceError> {
         match self.calendar.get(id) {
             Some(calendar) => Ok(calendar),
-            None => Err(ReferenceError{id: id.to_owned()})
+            None => Err(ReferenceError { id: id.to_owned() }),
         }
     }
 
-    pub fn get_calendar_date<'a>(&'a self, id: &str) -> Result<&'a Vec<CalendarDate>, ReferenceError> {
+    pub fn get_calendar_date<'a>(
+        &'a self,
+        id: &str,
+    ) -> Result<&'a Vec<CalendarDate>, ReferenceError> {
         match self.calendar_dates.get(id) {
             Some(calendar_dates) => Ok(calendar_dates),
-            None => Err(ReferenceError{id: id.to_owned()})
+            None => Err(ReferenceError { id: id.to_owned() }),
         }
     }
 }
@@ -432,7 +409,8 @@ mod tests {
 
     #[test]
     fn read_calendar_dates() {
-        let dates = Gtfs::read_calendar_dates(File::open("fixtures/calendar_dates.txt").unwrap()).unwrap();
+        let dates =
+            Gtfs::read_calendar_dates(File::open("fixtures/calendar_dates.txt").unwrap()).unwrap();
         assert_eq!(2, dates.len());
         assert_eq!(2, dates["service1"].len());
         assert_eq!(2, dates["service1"][0].exception_type);
@@ -443,9 +421,18 @@ mod tests {
     fn read_stop() {
         let stops = Gtfs::read_stops(File::open("fixtures/stops.txt").unwrap()).unwrap();
         assert_eq!(5, stops.len());
-        assert_eq!(LocationType::StopArea, stops.get("stop1").unwrap().location_type);
-        assert_eq!(LocationType::StopPoint, stops.get("stop2").unwrap().location_type);
-        assert_eq!(Some("1".to_owned()), stops.get("stop3").unwrap().parent_station);
+        assert_eq!(
+            LocationType::StopArea,
+            stops.get("stop1").unwrap().location_type
+        );
+        assert_eq!(
+            LocationType::StopPoint,
+            stops.get("stop2").unwrap().location_type
+        );
+        assert_eq!(
+            Some("1".to_owned()),
+            stops.get("stop3").unwrap().parent_station
+        );
     }
 
     #[test]
@@ -463,7 +450,8 @@ mod tests {
 
     #[test]
     fn read_stop_times() {
-        let stop_times = Gtfs::read_stop_times(File::open("fixtures/stop_times.txt").unwrap()).unwrap();
+        let stop_times =
+            Gtfs::read_stop_times(File::open("fixtures/stop_times.txt").unwrap()).unwrap();
         assert_eq!(2, stop_times.len());
     }
 

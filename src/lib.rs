@@ -35,6 +35,7 @@ pub enum LocationType {
     StopArea = 1,
     StationEntrance = 2,
 }
+
 #[derive(Derivative)]
 #[derivative(Default(bound = ""))]
 #[derive(Debug, Deserialize, Copy, Clone, PartialEq)]
@@ -49,6 +50,18 @@ pub enum RouteType {
     #[serde(rename = "5")] CableCar,
     #[serde(rename = "6")] Gondola,
     #[serde(rename = "7")] Funicular,
+}
+
+#[derive(Derivative)]
+#[derivative(Default(bound = ""))]
+#[derive(Debug, Deserialize, Copy, Clone, PartialEq)]
+pub enum PickupDropOffType {
+    #[derivative(Default)]
+    #[serde(rename = "0")]
+    Regular,
+    #[serde(rename = "1")] NotAvailable,
+    #[serde(rename = "2")] ArrangeByPhone,
+    #[serde(rename = "3")] CoordinateWithDriver,
 }
 
 #[derive(Debug, Deserialize)]
@@ -104,8 +117,8 @@ struct StopTimeGtfs {
     #[serde(deserialize_with = "deserialize_time")] pub departure_time: u32,
     stop_id: String,
     stop_sequence: u16,
-    pickup_type: Option<u8>,
-    drop_off_type: Option<u8>,
+    pickup_type: Option<PickupDropOffType>,
+    drop_off_type: Option<PickupDropOffType>,
 }
 
 #[derive(Debug)]
@@ -113,8 +126,8 @@ pub struct StopTime {
     pub arrival_time: u32,
     pub departure_time: u32,
     pub stop: Rc<Stop>,
-    pub pickup_type: Option<u8>,
-    pub drop_off_type: Option<u8>,
+    pub pickup_type: Option<PickupDropOffType>,
+    pub drop_off_type: Option<PickupDropOffType>,
     pub stop_sequence: u16,
 }
 

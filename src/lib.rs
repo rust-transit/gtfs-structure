@@ -2,6 +2,7 @@ extern crate chrono;
 extern crate csv;
 #[macro_use]
 extern crate derivative;
+#[macro_use]
 extern crate failure;
 #[macro_use]
 extern crate failure_derive;
@@ -270,7 +271,8 @@ impl Gtfs {
                 stop_times_index = Some(i);
             }
         }
-        result.read_stop_times(archive.by_index(stop_times_index.unwrap())?)?;
+        let index = stop_times_index.ok_or(format_err!("Missing stop_times.txt"))?;
+        result.read_stop_times(archive.by_index(index)?)?;
 
         result.read_duration = Utc::now().signed_duration_since(now).num_milliseconds();
         Ok(result)

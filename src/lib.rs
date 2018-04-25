@@ -144,8 +144,7 @@ pub struct Trip {
     #[serde(rename = "trip_id")] pub id: String,
     pub service_id: String,
     pub route_id: String,
-    #[serde(skip)]
-    pub stop_times: Vec<StopTime>,
+    #[serde(skip)] pub stop_times: Vec<StopTime>,
 }
 
 fn deserialize_date<'de, D>(deserializer: D) -> Result<NaiveDate, D::Error>
@@ -185,6 +184,7 @@ fn default_location_type() -> LocationType {
     LocationType::StopPoint
 }
 
+#[derive(Default)]
 pub struct Gtfs {
     pub read_duration: i64,
     pub calendar: HashMap<String, Calendar>,
@@ -201,17 +201,6 @@ impl Gtfs {
         println!("  Stops: {}", self.stops.len());
         println!("  Routes: {}", self.routes.len());
         println!("  Trips: {}", self.trips.len());
-    }
-
-    fn empty() -> Gtfs {
-        Gtfs {
-            read_duration: 0,
-            calendar: HashMap::new(),
-            calendar_dates: HashMap::new(),
-            stops: HashMap::new(),
-            routes: HashMap::new(),
-            trips: HashMap::new(),
-        }
     }
 
     pub fn new(path: &str) -> Result<Gtfs, Error> {
@@ -253,7 +242,7 @@ impl Gtfs {
     pub fn from_reader<T: std::io::Read + std::io::Seek>(reader: T) -> Result<Gtfs, Error> {
         let now = Utc::now();
         let mut archive = zip::ZipArchive::new(reader)?;
-        let mut result = Gtfs::empty();
+        let mut result = Gtfs::default();
         let mut stop_times_index = None;
         for i in 0..archive.len() {
             let file = archive.by_index(i)?;
@@ -327,16 +316,21 @@ impl Gtfs {
         Ok(trips)
     }
 
-    fn read_stop_times<T: std::io::Read>(&mut self, reader: T,) -> Result<(), Error> {
+    fn read_stop_times<T: std::io::Read>(&mut self, reader: T) -> Result<(), Error> {
         for stop_time in csv::Reader::from_reader(reader).deserialize() {
             let s: StopTimeGtfs = stop_time?;
-            let ref mut trip = self.trips.get_mut(&s.trip_id).ok_or(ReferenceError{id: s.trip_id.to_string()})?;
-            let stop = self.stops.get_mut(&s.stop_id).ok_or(ReferenceError{id: s.stop_id.to_string()})?;
+            let ref mut trip = self.trips.get_mut(&s.trip_id).ok_or(ReferenceError {
+                id: s.trip_id.to_string(),
+            })?;
+            let stop = self.stops.get_mut(&s.stop_id).ok_or(ReferenceError {
+                id: s.stop_id.to_string(),
+            })?;
             trip.stop_times.push(StopTime::from(s, Rc::clone(&stop)));
         }
 
         for (_, ref mut trip) in &mut self.trips {
-            trip.stop_times.sort_by(|a, b| a.stop_sequence.cmp(&b.stop_sequence))
+            trip.stop_times
+                .sort_by(|a, b| a.stop_sequence.cmp(&b.stop_sequence))
         }
 
         Ok(())
@@ -487,7 +481,8 @@ mod tests {
         let mut gtfs = Gtfs::empty();
         gtfs.trips = Gtfs::read_trips(File::open("fixtures/trips.txt").unwrap()).unwrap();
         gtfs.stops = Gtfs::read_stops(File::open("fixtures/stops.txt").unwrap()).unwrap();
-        gtfs.read_stop_times(File::open("fixtures/stop_times.txt").unwrap()).unwrap();
+        gtfs.read_stop_times(File::open("fixtures/stop_times.txt").unwrap())
+            .unwrap();
         assert_eq!(2, gtfs.trips.get("trip1").unwrap().stop_times.len());
     }
 

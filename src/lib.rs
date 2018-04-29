@@ -508,7 +508,21 @@ mod tests {
             .unwrap();
         gtfs.read_stop_times(File::open("fixtures/stop_times.txt").unwrap())
             .unwrap();
-        assert_eq!(2, gtfs.trips.get("trip1").unwrap().stop_times.len());
+        let stop_times = &gtfs.trips.get("trip1").unwrap().stop_times;
+        assert_eq!(2, stop_times.len());
+        assert_eq!(
+            PickupDropOffType::Regular,
+            stop_times[0].pickup_type.unwrap()
+        );
+        assert_eq!(
+            PickupDropOffType::NotAvailable,
+            stop_times[0].drop_off_type.unwrap()
+        );
+        assert_eq!(
+            PickupDropOffType::ArrangeByPhone,
+            stop_times[1].pickup_type.unwrap()
+        );
+        assert_eq!(None, stop_times[1].drop_off_type);
     }
 
     #[test]

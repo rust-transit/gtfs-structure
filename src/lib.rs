@@ -35,6 +35,7 @@ pub enum LocationType {
     StopArea = 1,
     StationEntrance = 2,
 }
+
 #[derive(Derivative)]
 #[derivative(Default(bound = ""))]
 #[derive(Debug, Deserialize, Copy, Clone, PartialEq)]
@@ -49,6 +50,18 @@ pub enum RouteType {
     #[serde(rename = "5")] CableCar,
     #[serde(rename = "6")] Gondola,
     #[serde(rename = "7")] Funicular,
+}
+
+#[derive(Derivative)]
+#[derivative(Default(bound = ""))]
+#[derive(Debug, Deserialize, Copy, Clone, PartialEq)]
+pub enum PickupDropOffType {
+    #[derivative(Default)]
+    #[serde(rename = "0")]
+    Regular,
+    #[serde(rename = "1")] NotAvailable,
+    #[serde(rename = "2")] ArrangeByPhone,
+    #[serde(rename = "3")] CoordinateWithDriver,
 }
 
 #[derive(Debug, Deserialize)]
@@ -104,8 +117,8 @@ struct StopTimeGtfs {
     #[serde(deserialize_with = "deserialize_time")] pub departure_time: u32,
     stop_id: String,
     stop_sequence: u16,
-    pickup_type: Option<u8>,
-    drop_off_type: Option<u8>,
+    pickup_type: Option<PickupDropOffType>,
+    drop_off_type: Option<PickupDropOffType>,
 }
 
 #[derive(Debug)]
@@ -113,8 +126,8 @@ pub struct StopTime {
     pub arrival_time: u32,
     pub departure_time: u32,
     pub stop: Rc<Stop>,
-    pub pickup_type: Option<u8>,
-    pub drop_off_type: Option<u8>,
+    pub pickup_type: Option<PickupDropOffType>,
+    pub drop_off_type: Option<PickupDropOffType>,
     pub stop_sequence: u16,
 }
 
@@ -144,8 +157,7 @@ pub struct Trip {
     #[serde(rename = "trip_id")] pub id: String,
     pub service_id: String,
     pub route_id: String,
-    #[serde(skip)]
-    pub stop_times: Vec<StopTime>,
+    #[serde(skip)] pub stop_times: Vec<StopTime>,
 }
 
 fn deserialize_date<'de, D>(deserializer: D) -> Result<NaiveDate, D::Error>
@@ -185,6 +197,7 @@ fn default_location_type() -> LocationType {
     LocationType::StopPoint
 }
 
+#[derive(Default)]
 pub struct Gtfs {
     pub read_duration: i64,
     pub calendar: HashMap<String, Calendar>,
@@ -203,17 +216,6 @@ impl Gtfs {
         println!("  Trips: {}", self.trips.len());
     }
 
-    fn empty() -> Gtfs {
-        Gtfs {
-            read_duration: 0,
-            calendar: HashMap::new(),
-            calendar_dates: HashMap::new(),
-            stops: HashMap::new(),
-            routes: HashMap::new(),
-            trips: HashMap::new(),
-        }
-    }
-
     pub fn new(path: &str) -> Result<Gtfs, Error> {
         let now = Utc::now();
         let p = Path::new(path);
@@ -221,19 +223,18 @@ impl Gtfs {
         let stops_file = File::open(p.join("stops.txt"))?;
         let calendar_dates_file = File::open(p.join("calendar_dates.txt"))?;
         let routes_file = File::open(p.join("routes.txt"))?;
-        let trips = Gtfs::read_trips(File::open(p.join("trips.txt"))?)?;
         let stop_times_file = File::open(p.join("stop_times.txt"))?;
 
-        let mut gtfs = Gtfs {
-            calendar: Gtfs::read_calendars(calendar_file)?,
-            stops: Gtfs::read_stops(stops_file)?,
-            calendar_dates: Gtfs::read_calendar_dates(calendar_dates_file)?,
-            routes: Gtfs::read_routes(routes_file)?,
-            trips: trips,
-            read_duration: Utc::now().signed_duration_since(now).num_milliseconds(),
-        };
+        let mut gtfs = Gtfs::default();
+
+        gtfs.read_trips(File::open(p.join("trips.txt"))?)?;
+        gtfs.read_calendars(calendar_file)?;
+        gtfs.read_calendar_dates(calendar_dates_file)?;
+        gtfs.read_stops(stops_file)?;
+        gtfs.read_routes(routes_file)?;
         gtfs.read_stop_times(stop_times_file)?;
 
+        gtfs.read_duration = Utc::now().signed_duration_since(now).num_milliseconds();
         Ok(gtfs)
     }
 
@@ -253,20 +254,20 @@ impl Gtfs {
     pub fn from_reader<T: std::io::Read + std::io::Seek>(reader: T) -> Result<Gtfs, Error> {
         let now = Utc::now();
         let mut archive = zip::ZipArchive::new(reader)?;
-        let mut result = Gtfs::empty();
+        let mut result = Gtfs::default();
         let mut stop_times_index = None;
         for i in 0..archive.len() {
             let file = archive.by_index(i)?;
             if file.name().ends_with("calendar.txt") {
-                result.calendar = Gtfs::read_calendars(file)?;
+                result.read_calendars(file)?;
             } else if file.name().ends_with("stops.txt") {
-                result.stops = Gtfs::read_stops(file)?;
+                result.read_stops(file)?;
             } else if file.name().ends_with("calendar_dates.txt") {
-                result.calendar_dates = Gtfs::read_calendar_dates(file)?;
+                result.read_calendar_dates(file)?;
             } else if file.name().ends_with("routes.txt") {
-                result.routes = Gtfs::read_routes(file)?;
+                result.read_routes(file)?;
             } else if file.name().ends_with("trips.txt") {
-                result.trips = Gtfs::read_trips(file)?;
+                result.read_trips(file)?;
             } else if file.name().ends_with("stop_times.txt") {
                 stop_times_index = Some(i);
             }
@@ -278,65 +279,72 @@ impl Gtfs {
         Ok(result)
     }
 
-    fn read_calendars<T: std::io::Read>(reader: T) -> Result<HashMap<String, Calendar>, Error> {
+    fn read_calendars<T: std::io::Read>(&mut self, reader: T) -> Result<(), Error> {
         let mut reader = csv::Reader::from_reader(reader);
-        Ok(reader
+        self.calendar = reader
             .deserialize()
             .map(|res| res.map(|e: Calendar| (e.id.to_owned(), e)))
-            .collect::<Result<_, _>>()?)
+            .collect::<Result<_, _>>()?;
+
+        Ok(())
     }
 
-    fn read_calendar_dates<T: std::io::Read>(
-        reader: T,
-    ) -> Result<HashMap<String, Vec<CalendarDate>>, Error> {
+    fn read_calendar_dates<T: std::io::Read>(&mut self, reader: T) -> Result<(), Error> {
         let mut reader = csv::Reader::from_reader(reader);
-        let mut calendar_dates = HashMap::new();
         for result in reader.deserialize() {
             let record: CalendarDate = result?;
-            let calendar_date = calendar_dates
+            let calendar_date = self.calendar_dates
                 .entry(record.service_id.to_owned())
                 .or_insert(Vec::new());
             calendar_date.push(record);
         }
-        Ok(calendar_dates)
+        Ok(())
     }
 
-    fn read_stops<T: std::io::Read>(reader: T) -> Result<HashMap<String, Rc<Stop>>, Error> {
+    fn read_stops<T: std::io::Read>(&mut self, reader: T) -> Result<(), Error> {
         let mut reader = csv::Reader::from_reader(reader);
-        Ok(reader
+        self.stops = reader
             .deserialize()
             .map(|res| res.map(|e: Stop| (e.id.to_owned(), Rc::new(e))))
-            .collect::<Result<_, _>>()?)
+            .collect::<Result<_, _>>()?;
+
+        Ok(())
     }
 
-    fn read_routes<T: std::io::Read>(reader: T) -> Result<HashMap<String, Route>, Error> {
+    fn read_routes<T: std::io::Read>(&mut self, reader: T) -> Result<(), Error> {
         let mut reader = csv::Reader::from_reader(reader);
-        Ok(reader
+        self.routes = reader
             .deserialize()
             .map(|res| res.map(|e: Route| (e.id.to_owned(), e)))
-            .collect::<Result<_, _>>()?)
+            .collect::<Result<_, _>>()?;
+        Ok(())
     }
 
-    fn read_trips<T: std::io::Read>(reader: T) -> Result<HashMap<String, Trip>, Error> {
+    fn read_trips<T: std::io::Read>(&mut self, reader: T) -> Result<(), Error> {
         let mut reader = csv::Reader::from_reader(reader);
-        let trips = reader
+        self.trips = reader
             .deserialize()
             .map(|res| res.map(|e: Trip| (e.id.to_owned(), e)))
             .collect::<Result<_, _>>()?;
 
-        Ok(trips)
+        Ok(())
     }
 
-    fn read_stop_times<T: std::io::Read>(&mut self, reader: T,) -> Result<(), Error> {
+    fn read_stop_times<T: std::io::Read>(&mut self, reader: T) -> Result<(), Error> {
         for stop_time in csv::Reader::from_reader(reader).deserialize() {
             let s: StopTimeGtfs = stop_time?;
-            let ref mut trip = self.trips.get_mut(&s.trip_id).ok_or(ReferenceError{id: s.trip_id.to_string()})?;
-            let stop = self.stops.get_mut(&s.stop_id).ok_or(ReferenceError{id: s.stop_id.to_string()})?;
+            let ref mut trip = self.trips.get_mut(&s.trip_id).ok_or(ReferenceError {
+                id: s.trip_id.to_string(),
+            })?;
+            let stop = self.stops.get_mut(&s.stop_id).ok_or(ReferenceError {
+                id: s.stop_id.to_string(),
+            })?;
             trip.stop_times.push(StopTime::from(s, Rc::clone(&stop)));
         }
 
         for (_, ref mut trip) in &mut self.trips {
-            trip.stop_times.sort_by(|a, b| a.stop_sequence.cmp(&b.stop_sequence))
+            trip.stop_times
+                .sort_by(|a, b| a.stop_sequence.cmp(&b.stop_sequence))
         }
 
         Ok(())
@@ -435,60 +443,86 @@ mod tests {
 
     #[test]
     fn read_calendar() {
-        let calendar = Gtfs::read_calendars(File::open("fixtures/calendar.txt").unwrap()).unwrap();
-        assert_eq!(1, calendar.len());
-        assert!(!calendar["service1"].monday);
-        assert!(calendar["service1"].saturday);
+        let mut gtfs = Gtfs::default();
+        gtfs.read_calendars(File::open("fixtures/calendar.txt").unwrap())
+            .unwrap();
+        assert_eq!(1, gtfs.calendar.len());
+        assert!(!gtfs.calendar["service1"].monday);
+        assert!(gtfs.calendar["service1"].saturday);
     }
 
     #[test]
     fn read_calendar_dates() {
-        let dates =
-            Gtfs::read_calendar_dates(File::open("fixtures/calendar_dates.txt").unwrap()).unwrap();
-        assert_eq!(2, dates.len());
-        assert_eq!(2, dates["service1"].len());
-        assert_eq!(2, dates["service1"][0].exception_type);
-        assert_eq!(1, dates["service2"][0].exception_type);
+        let mut gtfs = Gtfs::default();
+        gtfs.read_calendar_dates(File::open("fixtures/calendar_dates.txt").unwrap())
+            .unwrap();
+        assert_eq!(2, gtfs.calendar_dates.len());
+        assert_eq!(2, gtfs.calendar_dates["service1"].len());
+        assert_eq!(2, gtfs.calendar_dates["service1"][0].exception_type);
+        assert_eq!(1, gtfs.calendar_dates["service2"][0].exception_type);
     }
 
     #[test]
     fn read_stop() {
-        let stops = Gtfs::read_stops(File::open("fixtures/stops.txt").unwrap()).unwrap();
-        assert_eq!(5, stops.len());
+        let mut gtfs = Gtfs::default();
+        gtfs.read_stops(File::open("fixtures/stops.txt").unwrap())
+            .unwrap();
+        assert_eq!(5, gtfs.stops.len());
         assert_eq!(
             LocationType::StopArea,
-            stops.get("stop1").unwrap().location_type
+            gtfs.get_stop("stop1").unwrap().location_type
         );
         assert_eq!(
             LocationType::StopPoint,
-            stops.get("stop2").unwrap().location_type
+            gtfs.get_stop("stop2").unwrap().location_type
         );
         assert_eq!(
             Some("1".to_owned()),
-            stops.get("stop3").unwrap().parent_station
+            gtfs.get_stop("stop3").unwrap().parent_station
         );
     }
 
     #[test]
     fn read_routes() {
-        let routes = Gtfs::read_routes(File::open("fixtures/routes.txt").unwrap()).unwrap();
-        assert_eq!(1, routes.len());
-        assert_eq!(RouteType::Bus, routes.get("1").unwrap().route_type);
+        let mut gtfs = Gtfs::default();
+        gtfs.read_routes(File::open("fixtures/routes.txt").unwrap())
+            .unwrap();
+        assert_eq!(1, gtfs.routes.len());
+        assert_eq!(RouteType::Bus, gtfs.get_route("1").unwrap().route_type);
     }
 
     #[test]
     fn read_trips() {
-        let trips = Gtfs::read_trips(File::open("fixtures/trips.txt").unwrap()).unwrap();
-        assert_eq!(1, trips.len());
+        let mut gtfs = Gtfs::default();
+        gtfs.read_trips(File::open("fixtures/trips.txt").unwrap())
+            .unwrap();
+        assert_eq!(1, gtfs.trips.len());
     }
 
     #[test]
     fn read_stop_times() {
-        let mut gtfs = Gtfs::empty();
-        gtfs.trips = Gtfs::read_trips(File::open("fixtures/trips.txt").unwrap()).unwrap();
-        gtfs.stops = Gtfs::read_stops(File::open("fixtures/stops.txt").unwrap()).unwrap();
-        gtfs.read_stop_times(File::open("fixtures/stop_times.txt").unwrap()).unwrap();
-        assert_eq!(2, gtfs.trips.get("trip1").unwrap().stop_times.len());
+        let mut gtfs = Gtfs::default();
+        gtfs.read_trips(File::open("fixtures/trips.txt").unwrap())
+            .unwrap();
+        gtfs.read_stops(File::open("fixtures/stops.txt").unwrap())
+            .unwrap();
+        gtfs.read_stop_times(File::open("fixtures/stop_times.txt").unwrap())
+            .unwrap();
+        let stop_times = &gtfs.trips.get("trip1").unwrap().stop_times;
+        assert_eq!(2, stop_times.len());
+        assert_eq!(
+            PickupDropOffType::Regular,
+            stop_times[0].pickup_type.unwrap()
+        );
+        assert_eq!(
+            PickupDropOffType::NotAvailable,
+            stop_times[0].drop_off_type.unwrap()
+        );
+        assert_eq!(
+            PickupDropOffType::ArrangeByPhone,
+            stop_times[1].pickup_type.unwrap()
+        );
+        assert_eq!(None, stop_times[1].drop_off_type);
     }
 
     #[test]

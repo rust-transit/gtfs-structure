@@ -106,8 +106,12 @@ pub struct Stop {
     #[serde(deserialize_with = "deserialize_location_type", default = "default_location_type")]
     pub location_type: LocationType,
     pub parent_station: Option<String>,
-    #[serde(rename = "stop_lon")] pub longitude: f32,
-    #[serde(rename = "stop_lat")] pub latitude: f32,
+    #[serde(deserialize_with = "de_with_trimed_float")]
+    #[serde(rename = "stop_lon")]
+    pub longitude: f32,
+    #[serde(deserialize_with = "de_with_trimed_float")]
+    #[serde(rename = "stop_lat")]
+    pub latitude: f32,
 }
 
 #[derive(Debug, Deserialize)]
@@ -191,6 +195,13 @@ where
         "2" => LocationType::StationEntrance,
         _ => LocationType::StopPoint,
     })
+}
+
+fn de_with_trimed_float<'de, D>(de: D) -> Result<f32, D::Error>
+where
+    D: ::serde::Deserializer<'de>,
+{
+    String::deserialize(de).and_then(|s| s.trim().parse().map_err(de::Error::custom))
 }
 
 fn default_location_type() -> LocationType {

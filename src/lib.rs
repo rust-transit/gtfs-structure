@@ -99,19 +99,22 @@ pub struct CalendarDate {
     pub exception_type: u8,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Stop {
     #[serde(rename = "stop_id")] pub id: String,
-    pub stop_name: String,
+    #[serde(rename = "stop_code")] pub code: Option<String>,
+    #[serde(rename = "stop_name")] pub name: String,
+    #[serde(default, rename = "stop_desc")]
+    pub description: String,
     #[serde(deserialize_with = "deserialize_location_type", default = "default_location_type")]
     pub location_type: LocationType,
     pub parent_station: Option<String>,
     #[serde(deserialize_with = "de_with_trimed_float")]
-    #[serde(rename = "stop_lon")]
-    pub longitude: f32,
+    #[serde(rename = "stop_lon")] pub longitude: f64,
     #[serde(deserialize_with = "de_with_trimed_float")]
-    #[serde(rename = "stop_lat")]
-    pub latitude: f32,
+    #[serde(rename = "stop_lat")] pub latitude: f64,
+    #[serde(rename = "stop_timezone")] pub timezone: Option<String>,
+    #[serde(default)] pub wheelchair_boarding: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -197,7 +200,7 @@ where
     })
 }
 
-fn de_with_trimed_float<'de, D>(de: D) -> Result<f32, D::Error>
+fn de_with_trimed_float<'de, D>(de: D) -> Result<f64, D::Error>
 where
     D: ::serde::Deserializer<'de>,
 {

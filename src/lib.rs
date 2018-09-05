@@ -13,15 +13,15 @@ extern crate serde;
 extern crate serde_derive;
 extern crate zip;
 
-use std::io::Read;
-use std::fs::File;
-use std::collections::{HashMap, HashSet};
-use std::path::Path;
-use std::rc::Rc;
 use chrono::prelude::*;
-use serde::de::{self, Deserialize, Deserializer};
 use chrono::Duration;
 use failure::Error;
+use serde::de::{self, Deserialize, Deserializer};
+use std::collections::{HashMap, HashSet};
+use std::fs::File;
+use std::io::Read;
+use std::path::Path;
+use std::rc::Rc;
 
 #[derive(Fail, Debug)]
 #[fail(display = "The id {} is not known", id)]
@@ -40,16 +40,23 @@ pub enum LocationType {
 #[derivative(Default(bound = ""))]
 #[derive(Debug, Deserialize, Copy, Clone, PartialEq)]
 pub enum RouteType {
-    #[serde(rename = "0")] Tramway,
-    #[serde(rename = "1")] Subway,
-    #[serde(rename = "2")] Rail,
+    #[serde(rename = "0")]
+    Tramway,
+    #[serde(rename = "1")]
+    Subway,
+    #[serde(rename = "2")]
+    Rail,
     #[derivative(Default)]
     #[serde(rename = "3")]
     Bus,
-    #[serde(rename = "4")] Ferry,
-    #[serde(rename = "5")] CableCar,
-    #[serde(rename = "6")] Gondola,
-    #[serde(rename = "7")] Funicular,
+    #[serde(rename = "4")]
+    Ferry,
+    #[serde(rename = "5")]
+    CableCar,
+    #[serde(rename = "6")]
+    Gondola,
+    #[serde(rename = "7")]
+    Funicular,
 }
 
 #[derive(Derivative)]
@@ -59,23 +66,36 @@ pub enum PickupDropOffType {
     #[derivative(Default)]
     #[serde(rename = "0")]
     Regular,
-    #[serde(rename = "1")] NotAvailable,
-    #[serde(rename = "2")] ArrangeByPhone,
-    #[serde(rename = "3")] CoordinateWithDriver,
+    #[serde(rename = "1")]
+    NotAvailable,
+    #[serde(rename = "2")]
+    ArrangeByPhone,
+    #[serde(rename = "3")]
+    CoordinateWithDriver,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct Calendar {
-    #[serde(rename = "service_id")] pub id: String,
-    #[serde(deserialize_with = "deserialize_bool")] pub monday: bool,
-    #[serde(deserialize_with = "deserialize_bool")] pub tuesday: bool,
-    #[serde(deserialize_with = "deserialize_bool")] pub wednesday: bool,
-    #[serde(deserialize_with = "deserialize_bool")] pub thursday: bool,
-    #[serde(deserialize_with = "deserialize_bool")] pub friday: bool,
-    #[serde(deserialize_with = "deserialize_bool")] pub saturday: bool,
-    #[serde(deserialize_with = "deserialize_bool")] pub sunday: bool,
-    #[serde(deserialize_with = "deserialize_date")] pub start_date: NaiveDate,
-    #[serde(deserialize_with = "deserialize_date")] pub end_date: NaiveDate,
+    #[serde(rename = "service_id")]
+    pub id: String,
+    #[serde(deserialize_with = "deserialize_bool")]
+    pub monday: bool,
+    #[serde(deserialize_with = "deserialize_bool")]
+    pub tuesday: bool,
+    #[serde(deserialize_with = "deserialize_bool")]
+    pub wednesday: bool,
+    #[serde(deserialize_with = "deserialize_bool")]
+    pub thursday: bool,
+    #[serde(deserialize_with = "deserialize_bool")]
+    pub friday: bool,
+    #[serde(deserialize_with = "deserialize_bool")]
+    pub saturday: bool,
+    #[serde(deserialize_with = "deserialize_bool")]
+    pub sunday: bool,
+    #[serde(deserialize_with = "deserialize_date")]
+    pub start_date: NaiveDate,
+    #[serde(deserialize_with = "deserialize_date")]
+    pub end_date: NaiveDate,
 }
 
 impl Calendar {
@@ -95,33 +115,43 @@ impl Calendar {
 #[derive(Debug, Deserialize)]
 pub struct CalendarDate {
     pub service_id: String,
-    #[serde(deserialize_with = "deserialize_date")] pub date: NaiveDate,
+    #[serde(deserialize_with = "deserialize_date")]
+    pub date: NaiveDate,
     pub exception_type: u8,
 }
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct Stop {
-    #[serde(rename = "stop_id")] pub id: String,
-    #[serde(rename = "stop_code")] pub code: Option<String>,
-    #[serde(rename = "stop_name")] pub name: String,
+    #[serde(rename = "stop_id")]
+    pub id: String,
+    #[serde(rename = "stop_code")]
+    pub code: Option<String>,
+    #[serde(rename = "stop_name")]
+    pub name: String,
     #[serde(default, rename = "stop_desc")]
     pub description: String,
     #[serde(deserialize_with = "deserialize_location_type", default = "default_location_type")]
     pub location_type: LocationType,
     pub parent_station: Option<String>,
     #[serde(deserialize_with = "de_with_trimed_float")]
-    #[serde(rename = "stop_lon")] pub longitude: f64,
+    #[serde(rename = "stop_lon")]
+    pub longitude: f64,
     #[serde(deserialize_with = "de_with_trimed_float")]
-    #[serde(rename = "stop_lat")] pub latitude: f64,
-    #[serde(rename = "stop_timezone")] pub timezone: Option<String>,
-    #[serde(default)] pub wheelchair_boarding: Option<String>,
+    #[serde(rename = "stop_lat")]
+    pub latitude: f64,
+    #[serde(rename = "stop_timezone")]
+    pub timezone: Option<String>,
+    #[serde(default)]
+    pub wheelchair_boarding: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
 struct StopTimeGtfs {
     trip_id: String,
-    #[serde(deserialize_with = "deserialize_time")] pub arrival_time: u32,
-    #[serde(deserialize_with = "deserialize_time")] pub departure_time: u32,
+    #[serde(deserialize_with = "deserialize_time")]
+    pub arrival_time: u32,
+    #[serde(deserialize_with = "deserialize_time")]
+    pub departure_time: u32,
     stop_id: String,
     stop_sequence: u16,
     pickup_type: Option<PickupDropOffType>,
@@ -153,30 +183,43 @@ impl StopTime {
 
 #[derive(Debug, Deserialize)]
 pub struct Route {
-    #[serde(rename = "route_id")] pub id: String,
-    #[serde(rename = "route_short_name")] pub short_name: String,
-    #[serde(rename = "route_long_name")] pub long_name: String,
+    #[serde(rename = "route_id")]
+    pub id: String,
+    #[serde(rename = "route_short_name")]
+    pub short_name: String,
+    #[serde(rename = "route_long_name")]
+    pub long_name: String,
     pub route_type: RouteType,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct Trip {
-    #[serde(rename = "trip_id")] pub id: String,
+    #[serde(rename = "trip_id")]
+    pub id: String,
     pub service_id: String,
     pub route_id: String,
-    #[serde(skip)] pub stop_times: Vec<StopTime>,
+    #[serde(skip)]
+    pub stop_times: Vec<StopTime>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct Agency {
-    #[serde(rename = "agency_id")] pub id: Option<String>,
-    #[serde(rename = "agency_name")] pub name: String,
-    #[serde(rename = "agency_url")] pub url: String,
-    #[serde(rename = "agency_timezone")] pub timezone: String,
-    #[serde(rename = "agency_lang")] pub lang: Option<String>,
-    #[serde(rename = "agency_phone")] pub phone: Option<String>,
-    #[serde(rename = "agency_fare_url")] pub fare_url: Option<String>,
-    #[serde(rename = "agency_email")] pub email: Option<String>,
+    #[serde(rename = "agency_id")]
+    pub id: Option<String>,
+    #[serde(rename = "agency_name")]
+    pub name: String,
+    #[serde(rename = "agency_url")]
+    pub url: String,
+    #[serde(rename = "agency_timezone")]
+    pub timezone: String,
+    #[serde(rename = "agency_lang")]
+    pub lang: Option<String>,
+    #[serde(rename = "agency_phone")]
+    pub phone: Option<String>,
+    #[serde(rename = "agency_fare_url")]
+    pub fare_url: Option<String>,
+    #[serde(rename = "agency_email")]
+    pub email: Option<String>,
 }
 
 fn deserialize_date<'de, D>(deserializer: D) -> Result<NaiveDate, D::Error>
@@ -231,7 +274,7 @@ pub struct Gtfs {
     pub stops: HashMap<String, Rc<Stop>>,
     pub routes: HashMap<String, Route>,
     pub trips: HashMap<String, Trip>,
-    pub agencies: Vec<Agency>
+    pub agencies: Vec<Agency>,
 }
 
 impl Gtfs {
@@ -323,7 +366,8 @@ impl Gtfs {
         let mut reader = csv::Reader::from_reader(reader);
         for result in reader.deserialize() {
             let record: CalendarDate = result?;
-            let calendar_date = self.calendar_dates
+            let calendar_date = self
+                .calendar_dates
                 .entry(record.service_id.to_owned())
                 .or_insert(Vec::new());
             calendar_date.push(record);
@@ -362,9 +406,7 @@ impl Gtfs {
 
     fn read_agencies<T: std::io::Read>(&mut self, reader: T) -> Result<(), Error> {
         let mut reader = csv::Reader::from_reader(reader);
-        self.agencies = reader
-            .deserialize()
-            .collect::<Result<_, _>>()?;
+        self.agencies = reader.deserialize().collect::<Result<_, _>>()?;
 
         Ok(())
     }
@@ -394,7 +436,8 @@ impl Gtfs {
 
         // Handle services given by specific days and exceptions
         let mut removed_days = HashSet::new();
-        for extra_day in self.calendar_dates
+        for extra_day in self
+            .calendar_dates
             .get(service_id)
             .iter()
             .flat_map(|e| e.iter())
@@ -417,7 +460,8 @@ impl Gtfs {
             for days_offset in 0..total_days + 1 {
                 let current_date = start_date + Duration::days(days_offset);
 
-                if calendar.start_date <= current_date && calendar.end_date >= current_date
+                if calendar.start_date <= current_date
+                    && calendar.end_date >= current_date
                     && calendar.valid_weekday(current_date)
                     && !removed_days.contains(&days_offset)
                 {
@@ -567,20 +611,12 @@ mod tests {
     #[test]
     fn read_agencies() {
         let mut gtfs = Gtfs::default();
-        gtfs.read_agencies(File::open("fixtures/agency.txt").unwrap()).unwrap();
+        gtfs.read_agencies(File::open("fixtures/agency.txt").unwrap())
+            .unwrap();
         let agencies = &gtfs.agencies;
-        assert_eq!(
-            "BIBUS",
-            agencies[0].name
-        );
-        assert_eq!(
-            "http://www.bibus.fr",
-            agencies[0].url
-        );
-        assert_eq!(
-            "Europe/Paris",
-            agencies[0].timezone
-        );
+        assert_eq!("BIBUS", agencies[0].name);
+        assert_eq!("http://www.bibus.fr", agencies[0].url);
+        assert_eq!("Europe/Paris", agencies[0].timezone);
     }
 
     #[test]

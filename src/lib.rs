@@ -167,6 +167,18 @@ pub struct Trip {
     #[serde(skip)] pub stop_times: Vec<StopTime>,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct Agency {
+    #[serde(rename = "agency_id")] pub id: Option<String>,
+    #[serde(rename = "agency_name")] pub name: String,
+    #[serde(rename = "agency_url")] pub url: String,
+    #[serde(rename = "agency_timezone")] pub timezone: String,
+    #[serde(rename = "agency_lang")] pub lang: Option<String>,
+    #[serde(rename = "agency_phone")] pub phone: Option<String>,
+    #[serde(rename = "agency_fare_url")] pub fare_url: Option<String>,
+    #[serde(rename = "agency_email")] pub email: Option<String>,
+}
+
 fn deserialize_date<'de, D>(deserializer: D) -> Result<NaiveDate, D::Error>
 where
     D: Deserializer<'de>,
@@ -219,6 +231,7 @@ pub struct Gtfs {
     pub stops: HashMap<String, Rc<Stop>>,
     pub routes: HashMap<String, Route>,
     pub trips: HashMap<String, Trip>,
+    pub agencies: Vec<Agency>
 }
 
 impl Gtfs {
@@ -228,6 +241,7 @@ impl Gtfs {
         println!("  Stops: {}", self.stops.len());
         println!("  Routes: {}", self.routes.len());
         println!("  Trips: {}", self.trips.len());
+        println!("  Agencies: {}", self.agencies.len());
     }
 
     pub fn new(path: &str) -> Result<Gtfs, Error> {
@@ -284,6 +298,8 @@ impl Gtfs {
                 result.read_trips(file)?;
             } else if file.name().ends_with("stop_times.txt") {
                 stop_times_index = Some(i);
+            } else if file.name().ends_with("agency.txt") {
+                result.read_agencies(file)?;
             }
         }
         let index = stop_times_index.ok_or(format_err!("Missing stop_times.txt"))?;
@@ -339,6 +355,15 @@ impl Gtfs {
         self.trips = reader
             .deserialize()
             .map(|res| res.map(|e: Trip| (e.id.to_owned(), e)))
+            .collect::<Result<_, _>>()?;
+
+        Ok(())
+    }
+
+    fn read_agencies<T: std::io::Read>(&mut self, reader: T) -> Result<(), Error> {
+        let mut reader = csv::Reader::from_reader(reader);
+        self.agencies = reader
+            .deserialize()
             .collect::<Result<_, _>>()?;
 
         Ok(())
@@ -537,6 +562,25 @@ mod tests {
             stop_times[1].pickup_type.unwrap()
         );
         assert_eq!(None, stop_times[1].drop_off_type);
+    }
+
+    #[test]
+    fn read_agencies() {
+        let mut gtfs = Gtfs::default();
+        gtfs.read_agencies(File::open("fixtures/agency.txt").unwrap()).unwrap();
+        let agencies = &gtfs.agencies;
+        assert_eq!(
+            "BIBUS",
+            agencies[0].name
+        );
+        assert_eq!(
+            "http://www.bibus.fr",
+            agencies[0].url
+        );
+        assert_eq!(
+            "Europe/Paris",
+            agencies[0].timezone
+        );
     }
 
     #[test]

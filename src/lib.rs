@@ -295,6 +295,7 @@ impl Gtfs {
         let calendar_dates_file = File::open(p.join("calendar_dates.txt"))?;
         let routes_file = File::open(p.join("routes.txt"))?;
         let stop_times_file = File::open(p.join("stop_times.txt"))?;
+        let agencies_file = File::open(p.join("agency.txt"))?;
 
         let mut gtfs = Gtfs::default();
 
@@ -304,6 +305,7 @@ impl Gtfs {
         gtfs.read_stops(stops_file)?;
         gtfs.read_routes(routes_file)?;
         gtfs.read_stop_times(stop_times_file)?;
+        gtfs.read_agencies(agencies_file)?;
 
         gtfs.read_duration = Utc::now().signed_duration_since(now).num_milliseconds();
         Ok(gtfs)

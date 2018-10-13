@@ -6,12 +6,13 @@ extern crate derivative;
 extern crate failure;
 #[macro_use]
 extern crate failure_derive;
-extern crate regex;
-extern crate reqwest;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 extern crate zip;
+
+#[cfg(feature = "read-url")]
+extern crate reqwest;
 
 use chrono::prelude::*;
 use chrono::Duration;
@@ -19,9 +20,11 @@ use failure::Error;
 use serde::de::{self, Deserialize, Deserializer};
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
-use std::io::Read;
 use std::path::Path;
 use std::rc::Rc;
+
+#[cfg(feature = "read-url")]
+use std::io::Read;
 
 #[derive(Fail, Debug)]
 #[fail(display = "The id {} is not known", id)]
@@ -316,6 +319,7 @@ impl Gtfs {
         Gtfs::from_reader(reader)
     }
 
+    #[cfg(feature = "read-url")]
     pub fn from_url(url: &str) -> Result<Gtfs, Error> {
         let mut res = reqwest::get(url)?;
         let mut body = Vec::new();

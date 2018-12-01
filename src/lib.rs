@@ -101,7 +101,7 @@ pub struct Calendar {
     pub end_date: NaiveDate,
 }
 
-#[derive(Serialize, Deserialize, Debug, Derivative, PartialEq, Eq, Hash, Clone, Copy)]
+#[derive(Deserialize, Debug, Derivative, PartialEq, Eq, Hash, Clone, Copy)]
 #[derivative(Default)]
 pub enum Availability {
     #[derivative(Default)]
@@ -145,7 +145,10 @@ pub struct Stop {
     pub name: String,
     #[serde(default, rename = "stop_desc")]
     pub description: String,
-    #[serde(deserialize_with = "deserialize_location_type", default = "default_location_type")]
+    #[serde(
+        deserialize_with = "deserialize_location_type",
+        default = "default_location_type"
+    )]
     pub location_type: LocationType,
     pub parent_station: Option<String>,
     #[serde(deserialize_with = "de_with_trimed_float")]
@@ -184,11 +187,11 @@ pub struct StopTime {
 }
 
 impl StopTime {
-    fn from(stop_time_gtfs: StopTimeGtfs, stop: Rc<Stop>) -> Self {
+    fn from(stop_time_gtfs: &StopTimeGtfs, stop: Rc<Stop>) -> Self {
         Self {
             arrival_time: stop_time_gtfs.arrival_time,
             departure_time: stop_time_gtfs.departure_time,
-            stop: stop,
+            stop,
             pickup_type: stop_time_gtfs.pickup_type,
             drop_off_type: stop_time_gtfs.drop_off_type,
             stop_sequence: stop_time_gtfs.stop_sequence,
@@ -245,7 +248,7 @@ where
     NaiveDate::parse_from_str(&s, "%Y%m%d").map_err(serde::de::Error::custom)
 }
 
-pub fn parse_time(s: String) -> Result<u32, Error> {
+pub fn parse_time(s: &str) -> Result<u32, Error> {
     let v: Vec<&str> = s.split(':').collect();
     Ok(&v[0].parse()? * 3600u32 + &v[1].parse()? * 60u32 + &v[2].parse()?)
 }
@@ -255,7 +258,7 @@ where
     D: Deserializer<'de>,
 {
     let s: String = String::deserialize(deserializer)?;
-    parse_time(s).map_err(de::Error::custom)
+    parse_time(&s).map_err(de::Error::custom)
 }
 
 fn deserialize_location_type<'de, D>(deserializer: D) -> Result<LocationType, D::Error>
@@ -372,7 +375,7 @@ impl Gtfs {
                 result.read_agencies(file)?;
             }
         }
-        let index = stop_times_index.ok_or(format_err!("Missing stop_times.txt"))?;
+        let index = stop_times_index.ok_or_else(|| format_err!("Missing stop_times.txt"))?;
         result.read_stop_times(archive.by_index(index)?)?;
 
         result.read_duration = Utc::now().signed_duration_since(now).num_milliseconds();
@@ -396,7 +399,7 @@ impl Gtfs {
             let calendar_date = self
                 .calendar_dates
                 .entry(record.service_id.to_owned())
-                .or_insert(Vec::new());
+                .or_insert_with(Vec::new);
             calendar_date.push(record);
         }
         Ok(())
@@ -441,16 +444,16 @@ impl Gtfs {
     fn read_stop_times<T: std::io::Read>(&mut self, reader: T) -> Result<(), Error> {
         for stop_time in csv::Reader::from_reader(reader).deserialize() {
             let s: StopTimeGtfs = stop_time?;
-            let ref mut trip = self.trips.get_mut(&s.trip_id).ok_or(ReferenceError {
+            let trip = &mut self.trips.get_mut(&s.trip_id).ok_or(ReferenceError {
                 id: s.trip_id.to_string(),
             })?;
             let stop = self.stops.get_mut(&s.stop_id).ok_or(ReferenceError {
                 id: s.stop_id.to_string(),
             })?;
-            trip.stop_times.push(StopTime::from(s, Rc::clone(&stop)));
+            trip.stop_times.push(StopTime::from(&s, Rc::clone(&stop)));
         }
 
-        for (_, ref mut trip) in &mut self.trips {
+        for trip in &mut self.trips.values_mut() {
             trip.stop_times
                 .sort_by(|a, b| a.stop_sequence.cmp(&b.stop_sequence))
         }
@@ -458,7 +461,7 @@ impl Gtfs {
         Ok(())
     }
 
-    pub fn trip_days(&self, service_id: &String, start_date: NaiveDate) -> Vec<u16> {
+    pub fn trip_days(&self, service_id: &str, start_date: NaiveDate) -> Vec<u16> {
         let mut result = Vec::new();
 
         // Handle services given by specific days and exceptions
@@ -479,12 +482,12 @@ impl Gtfs {
             }
         }
 
-        for calendar in self.calendar.get(service_id) {
+        if let Some(calendar) = self.calendar.get(service_id) {
             let total_days = calendar
                 .end_date
                 .signed_duration_since(start_date)
                 .num_days();
-            for days_offset in 0..total_days + 1 {
+            for days_offset in 0..=total_days {
                 let current_date = start_date + Duration::days(days_offset);
 
                 if calendar.start_date <= current_date

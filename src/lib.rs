@@ -101,6 +101,18 @@ pub struct Calendar {
     pub end_date: NaiveDate,
 }
 
+#[derive(Serialize, Deserialize, Debug, Derivative, PartialEq, Eq, Hash, Clone, Copy)]
+#[derivative(Default)]
+pub enum Availability {
+    #[derivative(Default)]
+    #[serde(rename = "0")]
+    InformationNotAvailable,
+    #[serde(rename = "1")]
+    Available,
+    #[serde(rename = "2")]
+    NotAvailable,
+}
+
 impl Calendar {
     pub fn valid_weekday(&self, date: NaiveDate) -> bool {
         match date.weekday() {
@@ -144,8 +156,8 @@ pub struct Stop {
     pub latitude: f64,
     #[serde(rename = "stop_timezone")]
     pub timezone: Option<String>,
-    #[serde(default)]
-    pub wheelchair_boarding: Option<String>,
+    #[serde(deserialize_with = "de_with_empty_default", default)]
+    pub wheelchair_boarding: Availability,
 }
 
 #[derive(Debug, Deserialize)]
@@ -263,6 +275,15 @@ where
     D: ::serde::Deserializer<'de>,
 {
     String::deserialize(de).and_then(|s| s.trim().parse().map_err(de::Error::custom))
+}
+
+pub fn de_with_empty_default<'de, T: Default, D>(de: D) -> Result<T, D::Error>
+where
+    D: ::serde::Deserializer<'de>,
+    T: ::serde::Deserialize<'de>,
+{
+    use serde::Deserialize;
+    Option::<T>::deserialize(de).map(|opt| opt.unwrap_or_else(Default::default))
 }
 
 fn default_location_type() -> LocationType {

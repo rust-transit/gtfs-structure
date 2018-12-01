@@ -1,9 +1,9 @@
 [package]
 description = "Read GTFS (public transit timetables) files"
 name = "gtfs-structures"
-version = "0.6.0"
+version = "0.6.1"
 authors = ["Tristram Gräbener <tristramg@gmail.com>"]
-repository = "https://github.com/Tristramg/gtfs-structure"
+repository = "https://github.com/rust-transit/gtfs-structure"
 license = "MIT"
 
 [features]

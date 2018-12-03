@@ -101,7 +101,7 @@ pub struct Calendar {
     pub end_date: NaiveDate,
 }
 
-#[derive(Deserialize, Debug, Derivative, PartialEq, Eq, Hash, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Derivative, PartialEq, Eq, Hash, Clone, Copy)]
 #[derivative(Default)]
 pub enum Availability {
     #[derivative(Default)]

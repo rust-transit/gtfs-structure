@@ -21,7 +21,7 @@ use serde::de::{self, Deserialize, Deserializer};
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::path::Path;
-use std::rc::Rc;
+use std::sync::Arc;
 
 #[cfg(feature = "read-url")]
 use std::io::Read;
@@ -180,14 +180,14 @@ struct StopTimeGtfs {
 pub struct StopTime {
     pub arrival_time: u32,
     pub departure_time: u32,
-    pub stop: Rc<Stop>,
+    pub stop: Arc<Stop>,
     pub pickup_type: Option<PickupDropOffType>,
     pub drop_off_type: Option<PickupDropOffType>,
     pub stop_sequence: u16,
 }
 
 impl StopTime {
-    fn from(stop_time_gtfs: &StopTimeGtfs, stop: Rc<Stop>) -> Self {
+    fn from(stop_time_gtfs: &StopTimeGtfs, stop: Arc<Stop>) -> Self {
         Self {
             arrival_time: stop_time_gtfs.arrival_time,
             departure_time: stop_time_gtfs.departure_time,
@@ -298,7 +298,7 @@ pub struct Gtfs {
     pub read_duration: i64,
     pub calendar: HashMap<String, Calendar>,
     pub calendar_dates: HashMap<String, Vec<CalendarDate>>,
-    pub stops: HashMap<String, Rc<Stop>>,
+    pub stops: HashMap<String, Arc<Stop>>,
     pub routes: HashMap<String, Route>,
     pub trips: HashMap<String, Trip>,
     pub agencies: Vec<Agency>,
@@ -409,7 +409,7 @@ impl Gtfs {
         let mut reader = csv::Reader::from_reader(reader);
         self.stops = reader
             .deserialize()
-            .map(|res| res.map(|e: Stop| (e.id.to_owned(), Rc::new(e))))
+            .map(|res| res.map(|e: Stop| (e.id.to_owned(), Arc::new(e))))
             .collect::<Result<_, _>>()?;
 
         Ok(())
@@ -450,7 +450,7 @@ impl Gtfs {
             let stop = self.stops.get_mut(&s.stop_id).ok_or(ReferenceError {
                 id: s.stop_id.to_string(),
             })?;
-            trip.stop_times.push(StopTime::from(&s, Rc::clone(&stop)));
+            trip.stop_times.push(StopTime::from(&s, Arc::clone(&stop)));
         }
 
         for trip in &mut self.trips.values_mut() {

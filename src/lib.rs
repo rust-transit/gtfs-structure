@@ -1,22 +1,13 @@
-extern crate chrono;
-extern crate csv;
 #[macro_use]
 extern crate derivative;
 #[macro_use]
-extern crate failure;
-#[macro_use]
 extern crate failure_derive;
-extern crate serde;
 #[macro_use]
 extern crate serde_derive;
-extern crate zip;
-
-#[cfg(feature = "read-url")]
-extern crate reqwest;
 
 use chrono::prelude::*;
 use chrono::Duration;
-use failure::Error;
+use failure::{Error, format_err};
 use serde::de::{self, Deserialize, Deserializer};
 use std::collections::{HashMap, HashSet};
 use std::fs::File;

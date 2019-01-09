@@ -17,6 +17,10 @@ use std::sync::Arc;
 #[cfg(feature = "read-url")]
 use std::io::Read;
 
+pub trait Id {
+    fn id(&self) -> &str;
+}
+
 #[derive(Fail, Debug)]
 #[fail(display = "The id {} is not known", id)]
 pub struct ReferenceError {
@@ -92,6 +96,12 @@ pub struct Calendar {
     pub end_date: NaiveDate,
 }
 
+impl Id for Calendar {
+    fn id(&self) -> &str {
+        &self.id
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Derivative, PartialEq, Eq, Hash, Clone, Copy)]
 #[derivative(Default)]
 pub enum Availability {
@@ -154,6 +164,12 @@ pub struct Stop {
     pub wheelchair_boarding: Availability,
 }
 
+impl Id for Stop {
+    fn id(&self) -> &str {
+        &self.id
+    }
+}
+
 #[derive(Debug, Deserialize)]
 struct StopTimeGtfs {
     trip_id: String,
@@ -203,6 +219,12 @@ pub struct Route {
     pub route_order: Option<u32>,
 }
 
+impl Id for Route {
+    fn id(&self) -> &str {
+        &self.id
+    }
+}
+
 #[derive(Debug, Deserialize)]
 pub struct Trip {
     #[serde(rename = "trip_id")]
@@ -211,6 +233,12 @@ pub struct Trip {
     pub route_id: String,
     #[serde(skip)]
     pub stop_times: Vec<StopTime>,
+}
+
+impl Id for Trip {
+    fn id(&self) -> &str {
+        &self.id
+    }
 }
 
 #[derive(Debug, Deserialize)]

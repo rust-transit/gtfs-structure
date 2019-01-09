@@ -32,7 +32,7 @@ pub enum LocationType {
 
 #[derive(Derivative)]
 #[derivative(Default(bound = ""))]
-#[derive(Debug, Deserialize, Copy, Clone, PartialEq)]
+#[derive(Debug, Deserialize, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum RouteType {
     #[serde(rename = "0")]
     Tramway,
@@ -199,6 +199,8 @@ pub struct Route {
     #[serde(rename = "route_long_name")]
     pub long_name: String,
     pub route_type: RouteType,
+    pub agency_id: Option<String>,
+    pub route_order: Option<u32>,
 }
 
 #[derive(Debug, Deserialize)]

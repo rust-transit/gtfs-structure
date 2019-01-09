@@ -17,6 +17,10 @@ use std::sync::Arc;
 #[cfg(feature = "read-url")]
 use std::io::Read;
 
+pub trait Id {
+    fn id(&self) -> &str;
+}
+
 #[derive(Fail, Debug)]
 #[fail(display = "The id {} is not known", id)]
 pub struct ReferenceError {
@@ -32,7 +36,7 @@ pub enum LocationType {
 
 #[derive(Derivative)]
 #[derivative(Default(bound = ""))]
-#[derive(Debug, Deserialize, Copy, Clone, PartialEq)]
+#[derive(Debug, Deserialize, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum RouteType {
     #[serde(rename = "0")]
     Tramway,
@@ -90,6 +94,12 @@ pub struct Calendar {
     pub start_date: NaiveDate,
     #[serde(deserialize_with = "deserialize_date")]
     pub end_date: NaiveDate,
+}
+
+impl Id for Calendar {
+    fn id(&self) -> &str {
+        &self.id
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Derivative, PartialEq, Eq, Hash, Clone, Copy)]
@@ -154,6 +164,12 @@ pub struct Stop {
     pub wheelchair_boarding: Availability,
 }
 
+impl Id for Stop {
+    fn id(&self) -> &str {
+        &self.id
+    }
+}
+
 #[derive(Debug, Deserialize)]
 struct StopTimeGtfs {
     trip_id: String,
@@ -199,6 +215,14 @@ pub struct Route {
     #[serde(rename = "route_long_name")]
     pub long_name: String,
     pub route_type: RouteType,
+    pub agency_id: Option<String>,
+    pub route_order: Option<u32>,
+}
+
+impl Id for Route {
+    fn id(&self) -> &str {
+        &self.id
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -209,6 +233,12 @@ pub struct Trip {
     pub route_id: String,
     #[serde(skip)]
     pub stop_times: Vec<StopTime>,
+}
+
+impl Id for Trip {
+    fn id(&self) -> &str {
+        &self.id
+    }
 }
 
 #[derive(Debug, Deserialize)]

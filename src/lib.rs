@@ -13,6 +13,7 @@ use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::path::Path;
 use std::sync::Arc;
+use std::fmt;
 
 #[cfg(feature = "read-url")]
 use std::io::Read;
@@ -102,6 +103,12 @@ impl Id for Calendar {
     }
 }
 
+impl fmt::Display for Calendar {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}—{}", self.start_date, self.end_date)
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Derivative, PartialEq, Eq, Hash, Clone, Copy)]
 #[derivative(Default)]
 pub enum Availability {
@@ -170,6 +177,12 @@ impl Id for Stop {
     }
 }
 
+impl fmt::Display for Stop {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.name)
+    }
+}
+
 #[derive(Debug, Deserialize)]
 struct StopTimeGtfs {
     trip_id: String,
@@ -186,8 +199,8 @@ struct StopTimeGtfs {
 #[derive(Debug)]
 pub struct StopTime {
     pub arrival_time: u32,
-    pub departure_time: u32,
     pub stop: Arc<Stop>,
+    pub departure_time: u32,
     pub pickup_type: Option<PickupDropOffType>,
     pub drop_off_type: Option<PickupDropOffType>,
     pub stop_sequence: u16,
@@ -225,6 +238,16 @@ impl Id for Route {
     }
 }
 
+impl fmt::Display for Route {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        if !self.long_name.is_empty() {
+            write!(f, "{}", self.long_name)
+        } else {
+            write!(f, "{}", self.short_name)
+        }
+    }
+}
+
 #[derive(Debug, Deserialize)]
 pub struct Trip {
     #[serde(rename = "trip_id")]
@@ -238,6 +261,12 @@ pub struct Trip {
 impl Id for Trip {
     fn id(&self) -> &str {
         &self.id
+    }
+}
+
+impl fmt::Display for Trip {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "route id: {}, service id: {}", self.route_id, self.service_id)
     }
 }
 
@@ -259,6 +288,13 @@ pub struct Agency {
     pub fare_url: Option<String>,
     #[serde(rename = "agency_email")]
     pub email: Option<String>,
+}
+
+
+impl fmt::Display for Agency {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.name)
+    }
 }
 
 fn deserialize_date<'de, D>(deserializer: D) -> Result<NaiveDate, D::Error>

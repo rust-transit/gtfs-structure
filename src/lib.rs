@@ -7,9 +7,10 @@ extern crate serde_derive;
 
 use chrono::prelude::*;
 use chrono::Duration;
-use failure::{Error, format_err};
+use failure::{format_err, Error};
 use serde::de::{self, Deserialize, Deserializer};
 use std::collections::{HashMap, HashSet};
+use std::fmt;
 use std::fs::File;
 use std::path::Path;
 use std::sync::Arc;
@@ -32,6 +33,12 @@ pub enum LocationType {
     StopPoint = 0,
     StopArea = 1,
     StationEntrance = 2,
+}
+
+impl Default for LocationType {
+    fn default() -> LocationType {
+        LocationType::StopPoint
+    }
 }
 
 #[derive(Derivative)]
@@ -102,6 +109,12 @@ impl Id for Calendar {
     }
 }
 
+impl fmt::Display for Calendar {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}—{}", self.start_date, self.end_date)
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Derivative, PartialEq, Eq, Hash, Clone, Copy)]
 #[derivative(Default)]
 pub enum Availability {
@@ -136,7 +149,7 @@ pub struct CalendarDate {
     pub exception_type: u8,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Default)]
 pub struct Stop {
     #[serde(rename = "stop_id")]
     pub id: String,
@@ -170,7 +183,13 @@ impl Id for Stop {
     }
 }
 
-#[derive(Debug, Deserialize)]
+impl fmt::Display for Stop {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.name)
+    }
+}
+
+#[derive(Debug, Deserialize, Default)]
 struct StopTimeGtfs {
     trip_id: String,
     #[serde(deserialize_with = "deserialize_time")]
@@ -183,11 +202,11 @@ struct StopTimeGtfs {
     drop_off_type: Option<PickupDropOffType>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct StopTime {
     pub arrival_time: u32,
-    pub departure_time: u32,
     pub stop: Arc<Stop>,
+    pub departure_time: u32,
     pub pickup_type: Option<PickupDropOffType>,
     pub drop_off_type: Option<PickupDropOffType>,
     pub stop_sequence: u16,
@@ -206,7 +225,7 @@ impl StopTime {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Default)]
 pub struct Route {
     #[serde(rename = "route_id")]
     pub id: String,
@@ -225,7 +244,17 @@ impl Id for Route {
     }
 }
 
-#[derive(Debug, Deserialize)]
+impl fmt::Display for Route {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        if !self.long_name.is_empty() {
+            write!(f, "{}", self.long_name)
+        } else {
+            write!(f, "{}", self.short_name)
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, Default)]
 pub struct Trip {
     #[serde(rename = "trip_id")]
     pub id: String,
@@ -241,7 +270,17 @@ impl Id for Trip {
     }
 }
 
-#[derive(Debug, Deserialize)]
+impl fmt::Display for Trip {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "route id: {}, service id: {}",
+            self.route_id, self.service_id
+        )
+    }
+}
+
+#[derive(Debug, Deserialize, Default)]
 pub struct Agency {
     #[serde(rename = "agency_id")]
     pub id: Option<String>,
@@ -259,6 +298,12 @@ pub struct Agency {
     pub fare_url: Option<String>,
     #[serde(rename = "agency_email")]
     pub email: Option<String>,
+}
+
+impl fmt::Display for Agency {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.name)
+    }
 }
 
 fn deserialize_date<'de, D>(deserializer: D) -> Result<NaiveDate, D::Error>
@@ -708,5 +753,41 @@ mod tests {
         assert_eq!(1, gtfs.routes.len());
         assert_eq!(1, gtfs.trips.len());
         assert_eq!(2, gtfs.get_trip("trip1").unwrap().stop_times.len());
+    }
+
+    #[test]
+    fn display() {
+        assert_eq!(
+            "Sorano".to_owned(),
+            format!(
+                "{}",
+                Stop {
+                    name: "Sorano".to_owned(),
+                    ..Stop::default()
+                }
+            )
+        );
+
+        assert_eq!(
+            "Long route name".to_owned(),
+            format!(
+                "{}",
+                Route {
+                    long_name: "Long route name".to_owned(),
+                    ..Route::default()
+                }
+            )
+        );
+
+        assert_eq!(
+            "Short route name".to_owned(),
+            format!(
+                "{}",
+                Route {
+                    short_name: "Short route name".to_owned(),
+                    ..Route::default()
+                }
+            )
+        );
     }
 }

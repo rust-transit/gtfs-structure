@@ -754,4 +754,40 @@ mod tests {
         assert_eq!(1, gtfs.trips.len());
         assert_eq!(2, gtfs.get_trip("trip1").unwrap().stop_times.len());
     }
+
+    #[test]
+    fn display() {
+        assert_eq!(
+            "Sorano".to_owned(),
+            format!(
+                "{}",
+                Stop {
+                    name: "Sorano".to_owned(),
+                    ..Stop::default()
+                }
+            )
+        );
+
+        assert_eq!(
+            "Long route name".to_owned(),
+            format!(
+                "{}",
+                Route {
+                    long_name: "Long route name".to_owned(),
+                    ..Route::default()
+                }
+            )
+        );
+
+        assert_eq!(
+            "Short route name".to_owned(),
+            format!(
+                "{}",
+                Route {
+                    short_name: "Short route name".to_owned(),
+                    ..Route::default()
+                }
+            )
+        );
+    }
 }

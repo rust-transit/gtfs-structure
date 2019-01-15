@@ -41,27 +41,46 @@ impl Default for LocationType {
     }
 }
 
-#[derive(Derivative)]
-#[derivative(Default(bound = ""))]
-#[derive(Debug, Deserialize, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum RouteType {
-    #[serde(rename = "0")]
     Tramway,
-    #[serde(rename = "1")]
     Subway,
-    #[serde(rename = "2")]
     Rail,
-    #[derivative(Default)]
-    #[serde(rename = "3")]
     Bus,
-    #[serde(rename = "4")]
     Ferry,
-    #[serde(rename = "5")]
     CableCar,
-    #[serde(rename = "6")]
     Gondola,
-    #[serde(rename = "7")]
     Funicular,
+    // Any other value than 0..7 is invalid in the GTFS
+    // However, some bad files might have other values
+    // We don’t want to stop nor skip too soon during deserialization
+    Other(u16),
+}
+
+impl Default for RouteType {
+    fn default() -> RouteType {
+        RouteType::Bus
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de> for RouteType {
+    fn deserialize<D>(deserializer: D) -> Result<RouteType, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        let i = u16::deserialize(deserializer)?;
+        Ok(match i {
+            0 => RouteType::Tramway,
+            1 => RouteType::Subway,
+            2 => RouteType::Rail,
+            3 => RouteType::Bus,
+            4 => RouteType::Ferry,
+            5 => RouteType::CableCar,
+            6 => RouteType::Gondola,
+            7 => RouteType::Funicular,
+            _ => RouteType::Other(i),
+        })
+    }
 }
 
 #[derive(Derivative)]
@@ -666,8 +685,9 @@ mod tests {
         let mut gtfs = Gtfs::default();
         gtfs.read_routes(File::open("fixtures/routes.txt").unwrap())
             .unwrap();
-        assert_eq!(1, gtfs.routes.len());
+        assert_eq!(2, gtfs.routes.len());
         assert_eq!(RouteType::Bus, gtfs.get_route("1").unwrap().route_type);
+        assert_eq!(RouteType::Other(42), gtfs.get_route("invalid_type").unwrap().route_type);
     }
 
     #[test]

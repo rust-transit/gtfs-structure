@@ -8,6 +8,7 @@ extern crate serde_derive;
 use chrono::prelude::*;
 use chrono::Duration;
 use failure::{format_err, Error};
+use failure::ResultExt;
 use serde::de::{self, Deserialize, Deserializer};
 use std::collections::{HashMap, HashSet};
 use std::fmt;
@@ -445,23 +446,23 @@ impl Gtfs {
         for i in 0..archive.len() {
             let file = archive.by_index(i)?;
             if file.name().ends_with("calendar.txt") {
-                result.read_calendars(file)?;
+                result.read_calendars(file).with_context(|e| format!("Error reading calendar.txt : {}", e))?;
             } else if file.name().ends_with("stops.txt") {
-                result.read_stops(file)?;
+                result.read_stops(file).with_context(|e| format!("Error reading stops.txt : {}", e))?;
             } else if file.name().ends_with("calendar_dates.txt") {
-                result.read_calendar_dates(file)?;
+                result.read_calendar_dates(file).with_context(|e| format!("Error reading calendar_dates.txt : {}", e))?;
             } else if file.name().ends_with("routes.txt") {
-                result.read_routes(file)?;
+                result.read_routes(file).with_context(|e| format!("Error reading routes.txt : {}", e))?;
             } else if file.name().ends_with("trips.txt") {
-                result.read_trips(file)?;
+                result.read_trips(file).with_context(|e| format!("Error reading trips.txt : {}", e))?;
             } else if file.name().ends_with("stop_times.txt") {
                 stop_times_index = Some(i);
             } else if file.name().ends_with("agency.txt") {
-                result.read_agencies(file)?;
+                result.read_agencies(file).with_context(|e| format!("Error reading agency.txt : {}", e))?;
             }
         }
         let index = stop_times_index.ok_or_else(|| format_err!("Missing stop_times.txt"))?;
-        result.read_stop_times(archive.by_index(index)?)?;
+        result.read_stop_times(archive.by_index(index)?).with_context(|e| format!("Error reading stop_times.txt : {}", e))?;
 
         result.read_duration = Utc::now().signed_duration_since(now).num_milliseconds();
         Ok(result)

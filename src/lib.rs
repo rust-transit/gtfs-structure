@@ -326,6 +326,26 @@ impl fmt::Display for Agency {
     }
 }
 
+#[derive(Debug, Deserialize, Default)]
+pub struct Shape {
+    #[serde(rename = "shape_id")]
+    pub id: String,
+    #[serde(rename = "shape_pt_lat")]
+    pub latitude: f64,
+    #[serde(rename = "shape_pt_lon")]
+    pub longitude: f64,
+    #[serde(rename = "shape_pt_sequence")]
+    pub sequence: u16,
+    #[serde(rename = "shape_dist_traveled")]
+    pub dist_traveled: Option<f32>,
+}
+
+impl Id for Shape {
+    fn id(&self) -> &str {
+        &self.id
+    }
+}
+
 fn deserialize_date<'de, D>(deserializer: D) -> Result<NaiveDate, D::Error>
 where
     D: Deserializer<'de>,
@@ -388,6 +408,7 @@ pub struct Gtfs {
     pub routes: HashMap<String, Route>,
     pub trips: HashMap<String, Trip>,
     pub agencies: Vec<Agency>,
+    pub shapes: HashMap<String, Vec<Shape>>,
 }
 
 impl Gtfs {
@@ -398,27 +419,31 @@ impl Gtfs {
         println!("  Routes: {}", self.routes.len());
         println!("  Trips: {}", self.trips.len());
         println!("  Agencies: {}", self.agencies.len());
+        println!("  Shapes: {}", self.shapes.len());
     }
 
     pub fn new(path: &str) -> Result<Gtfs, Error> {
         let now = Utc::now();
         let p = Path::new(path);
+        let trips_file = File::open(p.join("trips.txt"))?;
         let calendar_file = File::open(p.join("calendar.txt"))?;
         let stops_file = File::open(p.join("stops.txt"))?;
         let calendar_dates_file = File::open(p.join("calendar_dates.txt"))?;
         let routes_file = File::open(p.join("routes.txt"))?;
         let stop_times_file = File::open(p.join("stop_times.txt"))?;
         let agencies_file = File::open(p.join("agency.txt"))?;
+        let shapes_file = File::open(p.join("shapes.txt"))?;
 
         let mut gtfs = Gtfs::default();
 
-        gtfs.read_trips(File::open(p.join("trips.txt"))?)?;
+        gtfs.read_trips(trips_file)?;
         gtfs.read_calendars(calendar_file)?;
         gtfs.read_calendar_dates(calendar_dates_file)?;
         gtfs.read_stops(stops_file)?;
         gtfs.read_routes(routes_file)?;
         gtfs.read_stop_times(stop_times_file)?;
         gtfs.read_agencies(agencies_file)?;
+        gtfs.read_shapes(shapes_file)?;
 
         gtfs.read_duration = Utc::now().signed_duration_since(now).num_milliseconds();
         Ok(gtfs)
@@ -459,6 +484,8 @@ impl Gtfs {
                 stop_times_index = Some(i);
             } else if file.name().ends_with("agency.txt") {
                 result.read_agencies(file).with_context(|e| format!("Error reading agency.txt : {}", e))?;
+            } else if file.name().ends_with("shapes.txt") {
+                result.read_shapes(file).with_context(|e| format!("Error reading shapes.txt : {}", e))?;
             }
         }
         let index = stop_times_index.ok_or_else(|| format_err!("Missing stop_times.txt"))?;
@@ -523,6 +550,20 @@ impl Gtfs {
     fn read_agencies<T: std::io::Read>(&mut self, reader: T) -> Result<(), Error> {
         let mut reader = csv::Reader::from_reader(reader);
         self.agencies = reader.deserialize().collect::<Result<_, _>>()?;
+
+        Ok(())
+    }
+
+    fn read_shapes<T: std::io::Read>(&mut self, reader: T) -> Result<(), Error> {
+        let mut reader = csv::Reader::from_reader(reader);
+        for result in reader.deserialize() {
+            let record: Shape = result?;
+            let shape = self
+                .shapes
+                .entry(record.id.to_owned())
+                .or_insert_with(Vec::new);
+            shape.push(record);
+        }
 
         Ok(())
     }
@@ -623,6 +664,13 @@ impl Gtfs {
     ) -> Result<&'a Vec<CalendarDate>, ReferenceError> {
         match self.calendar_dates.get(id) {
             Some(calendar_dates) => Ok(calendar_dates),
+            None => Err(ReferenceError { id: id.to_owned() }),
+        }
+    }
+
+    pub fn get_shape<'a>(&'a self, id: &str) -> Result<&'a Vec<Shape>, ReferenceError> {
+        match self.shapes.get(id) {
+            Some(shape) => Ok(shape),
             None => Err(ReferenceError { id: id.to_owned() }),
         }
     }
@@ -737,6 +785,16 @@ mod tests {
     }
 
     #[test]
+    fn read_shapes() {
+        let mut gtfs = Gtfs::default();
+        gtfs.read_shapes(File::open("fixtures/shapes.txt").unwrap())
+            .unwrap();
+        let shapes = &gtfs.shapes;
+        assert_eq!(37.61956, shapes["A_shp"][0].latitude);
+        assert_eq!(-122.48161, shapes["A_shp"][0].longitude);
+    }
+
+    #[test]
     fn trip_days() {
         let gtfs = Gtfs::new("fixtures/").unwrap();
         let days = gtfs.trip_days(&"service1".to_owned(), NaiveDate::from_ymd(2017, 1, 1));
@@ -754,6 +812,7 @@ mod tests {
         assert_eq!(5, gtfs.stops.len());
         assert_eq!(1, gtfs.routes.len());
         assert_eq!(1, gtfs.trips.len());
+        assert_eq!(1, gtfs.shapes.len());
         assert_eq!(2, gtfs.get_trip("trip1").unwrap().stop_times.len());
 
         assert!(gtfs.get_calendar("service1").is_ok());
@@ -773,6 +832,7 @@ mod tests {
         assert_eq!(5, gtfs.stops.len());
         assert_eq!(1, gtfs.routes.len());
         assert_eq!(1, gtfs.trips.len());
+        assert_eq!(1, gtfs.shapes.len());
         assert_eq!(2, gtfs.get_trip("trip1").unwrap().stop_times.len());
     }
 

@@ -186,10 +186,10 @@ pub struct Stop {
     pub location_type: LocationType,
     pub parent_station: Option<String>,
     #[serde(deserialize_with = "de_with_trimed_float")]
-    #[serde(rename = "stop_lon")]
+    #[serde(rename = "stop_lon", default)]
     pub longitude: f64,
     #[serde(deserialize_with = "de_with_trimed_float")]
-    #[serde(rename = "stop_lat")]
+    #[serde(rename = "stop_lat", default)]
     pub latitude: f64,
     #[serde(rename = "stop_timezone")]
     pub timezone: Option<String>,
@@ -330,9 +330,9 @@ impl fmt::Display for Agency {
 pub struct Shape {
     #[serde(rename = "shape_id")]
     pub id: String,
-    #[serde(rename = "shape_pt_lat")]
+    #[serde(rename = "shape_pt_lat", default)]
     pub latitude: f64,
-    #[serde(rename = "shape_pt_lon")]
+    #[serde(rename = "shape_pt_lon", default)]
     pub longitude: f64,
     #[serde(rename = "shape_pt_sequence")]
     pub sequence: u16,

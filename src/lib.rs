@@ -432,7 +432,7 @@ impl Gtfs {
         let routes_file = File::open(p.join("routes.txt"))?;
         let stop_times_file = File::open(p.join("stop_times.txt"))?;
         let agencies_file = File::open(p.join("agency.txt"))?;
-        let shapes_file = File::open(p.join("shapes.txt"))?;
+        let shapes_file = File::open(p.join("shapes.txt")).ok();
 
         let mut gtfs = Gtfs::default();
 
@@ -443,7 +443,9 @@ impl Gtfs {
         gtfs.read_routes(routes_file)?;
         gtfs.read_stop_times(stop_times_file)?;
         gtfs.read_agencies(agencies_file)?;
-        gtfs.read_shapes(shapes_file)?;
+        if let Some(s_file) = shapes_file {
+            gtfs.read_shapes(s_file)?;
+        }
 
         gtfs.read_duration = Utc::now().signed_duration_since(now).num_milliseconds();
         Ok(gtfs)

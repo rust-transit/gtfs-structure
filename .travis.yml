@@ -12,5 +12,8 @@ matrix:
   - rust: nightly
 deploy:
   provider: cargo
+  on:
+    repo: rust-transit/gtfs-structure
+    branch: master
   token:
     secure: H2aTUNFKa+lfAtjF5NEsWtGsDXmYmIIiLM8NWDGJLxTNkyAN/YHB6kEbcHHBvTjmWVkM8zLzKHkqySfvyo6lAlWjkAFHZc6HOGvyq5f5Dh+Azpt29vKB7rgo9Nn/ffGt35uoDUj4pCmRXsoJCr1rveF2vsGzh6SetrzNIORNQJQ+3Sx6OgAoSeIfxAxiqxmP8Qk5w3V6mxUj8Ny5Y982Z9IE7Ukimd0e+PQLU5HrSZ7q7stHUCF06EiOuB93ifepXQZ604tlUjLSpQ3QkyzcTsqbEwnY9Ib/vr0wsq/XepDIRBnd9PVNK71HpI/br4D9QpTi5uq+IdU14LGLg5twFPeq6N2q7q3QcKp2RwV45Jhf//WaBkWJGli/gt5KXmRgyKbx4gZyUzkJ6F/Vh+EYwAgquQvIJZVhm4fi3EPRLjFxS02gZqCBPLX1oaknBYqE6z3pFyDBI16MQU4SomG39KX9J9Yx4v8PPo5AvS8G2nJuatQxrI4SKieJU8hXtCgNTZQZfe0Q0LR/0C2wpulj2lPbDCjgC5SllMV4/tUp4tRXoqfiMQOP1jJUj3eHMxha1drvnINdmCYm7RF3GLuRfVXBfksdETgk0QKK54k79Rsx8Mf795oRJGMiAvqTm8PGoTg/F5LCe2flIFVu5Tk2MjfBNL4MUWJCN+Q9eCPRxZY=

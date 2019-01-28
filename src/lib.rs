@@ -320,6 +320,15 @@ pub struct Agency {
     pub email: Option<String>,
 }
 
+impl Id for Agency {
+    fn id(&self) -> &str {
+        match &self.id {
+            None => "",
+            Some(id) => id,
+        }
+    }
+}
+
 impl fmt::Display for Agency {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.name)

@@ -23,6 +23,20 @@ pub trait Id {
     fn id(&self) -> &str;
 }
 
+pub trait Type {
+    fn object_type(&self) -> ObjectType;
+}
+
+#[derive(Debug, Serialize)]
+pub enum ObjectType {
+    Agency,
+    Stop,
+    Route,
+    Trip,
+    Calendar,
+    Shape,
+}
+
 #[derive(Fail, Debug)]
 #[fail(display = "The id {} is not known", id)]
 pub struct ReferenceError {
@@ -123,6 +137,12 @@ pub struct Calendar {
     pub end_date: NaiveDate,
 }
 
+impl Type for Calendar {
+    fn object_type(&self) -> ObjectType {
+        ObjectType::Calendar
+    }
+}
+
 impl Id for Calendar {
     fn id(&self) -> &str {
         &self.id
@@ -197,6 +217,12 @@ pub struct Stop {
     pub wheelchair_boarding: Availability,
 }
 
+impl Type for Stop {
+    fn object_type(&self) -> ObjectType {
+        ObjectType::Stop
+    }
+}
+
 impl Id for Stop {
     fn id(&self) -> &str {
         &self.id
@@ -258,6 +284,12 @@ pub struct Route {
     pub route_order: Option<u32>,
 }
 
+impl Type for Route {
+    fn object_type(&self) -> ObjectType {
+        ObjectType::Route
+    }
+}
+
 impl Id for Route {
     fn id(&self) -> &str {
         &self.id
@@ -282,6 +314,13 @@ pub struct Trip {
     pub route_id: String,
     #[serde(skip)]
     pub stop_times: Vec<StopTime>,
+}
+
+
+impl Type for Trip {
+    fn object_type(&self) -> ObjectType {
+        ObjectType::Trip
+    }
 }
 
 impl Id for Trip {
@@ -320,6 +359,12 @@ pub struct Agency {
     pub email: Option<String>,
 }
 
+impl Type for Agency {
+    fn object_type(&self) -> ObjectType {
+        ObjectType::Agency
+    }
+}
+
 impl Id for Agency {
     fn id(&self) -> &str {
         match &self.id {
@@ -347,6 +392,12 @@ pub struct Shape {
     pub sequence: u16,
     #[serde(rename = "shape_dist_traveled")]
     pub dist_traveled: Option<f32>,
+}
+
+impl Type for Shape {
+    fn object_type(&self) -> ObjectType {
+        ObjectType::Shape
+    }
 }
 
 impl Id for Shape {

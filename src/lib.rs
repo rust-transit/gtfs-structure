@@ -27,6 +27,7 @@ pub trait Type {
     fn object_type(&self) -> ObjectType;
 }
 
+#[derive(Debug, Serialize)]
 pub enum ObjectType {
     Agency,
     Stop,

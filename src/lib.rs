@@ -7,8 +7,8 @@ extern crate serde_derive;
 
 use chrono::prelude::*;
 use chrono::Duration;
-use failure::{format_err, Error};
 use failure::ResultExt;
+use failure::{format_err, Error};
 use serde::de::{self, Deserialize, Deserializer};
 use std::collections::{HashMap, HashSet};
 use std::fmt;
@@ -316,7 +316,6 @@ pub struct Trip {
     pub stop_times: Vec<StopTime>,
 }
 
-
 impl Type for Trip {
     fn object_type(&self) -> ObjectType {
         ObjectType::Trip
@@ -406,6 +405,64 @@ impl Id for Shape {
     }
 }
 
+#[derive(Debug, Deserialize)]
+pub struct FareAttribute {
+    #[serde(rename = "fare_id")]
+    pub id: String,
+    pub price: String,
+    #[serde(rename = "currency_type")]
+    pub currency: String,
+    pub payment_method: PaymentMethod,
+    pub transfers: Transfers,
+    pub agency_id: Option<String>,
+    pub transfer_duration: Option<usize>,
+}
+
+impl Id for FareAttribute {
+    fn id(&self) -> &str {
+        &self.id
+    }
+}
+
+#[derive(Debug, Deserialize, Copy, Clone, PartialEq)]
+pub enum PaymentMethod {
+    #[serde(rename = "0")]
+    Aboard,
+    #[serde(rename = "1")]
+    PreBoarding,
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum Transfers {
+    Unlimited,
+    NoTransfer,
+    UniqueTransfer,
+    TwoTransfers,
+    Other(u16),
+}
+
+impl<'de> ::serde::Deserialize<'de> for Transfers {
+    fn deserialize<D>(deserializer: D) -> Result<Transfers, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        let i = Option::<u16>::deserialize(deserializer)?;
+        Ok(match i {
+            Some(0) => Transfers::NoTransfer,
+            Some(1) => Transfers::UniqueTransfer,
+            Some(2) => Transfers::TwoTransfers,
+            Some(a) => Transfers::Other(a),
+            None => Transfers::default(),
+        })
+    }
+}
+
+impl Default for Transfers {
+    fn default() -> Transfers {
+        Transfers::Unlimited
+    }
+}
+
 fn deserialize_date<'de, D>(deserializer: D) -> Result<NaiveDate, D::Error>
 where
     D: Deserializer<'de>,
@@ -469,6 +526,7 @@ pub struct Gtfs {
     pub trips: HashMap<String, Trip>,
     pub agencies: Vec<Agency>,
     pub shapes: HashMap<String, Vec<Shape>>,
+    pub fare_attributes: HashMap<String, FareAttribute>,
 }
 
 impl Gtfs {
@@ -480,6 +538,7 @@ impl Gtfs {
         println!("  Trips: {}", self.trips.len());
         println!("  Agencies: {}", self.agencies.len());
         println!("  Shapes: {}", self.shapes.len());
+        println!("  Fare attributes: {}", self.fare_attributes.len());
     }
 
     pub fn new(path: &str) -> Result<Gtfs, Error> {
@@ -493,6 +552,7 @@ impl Gtfs {
         let stop_times_file = File::open(p.join("stop_times.txt"))?;
         let agencies_file = File::open(p.join("agency.txt"))?;
         let shapes_file = File::open(p.join("shapes.txt")).ok();
+        let fare_attributes_file = File::open(p.join("fare_attributes.txt")).ok();
 
         let mut gtfs = Gtfs::default();
 
@@ -505,6 +565,9 @@ impl Gtfs {
         gtfs.read_agencies(agencies_file)?;
         if let Some(s_file) = shapes_file {
             gtfs.read_shapes(s_file)?;
+        }
+        if let Some(f_a_file) = fare_attributes_file {
+            gtfs.read_fare_attributes(f_a_file)?;
         }
 
         gtfs.read_duration = Utc::now().signed_duration_since(now).num_milliseconds();
@@ -533,25 +596,45 @@ impl Gtfs {
         for i in 0..archive.len() {
             let file = archive.by_index(i)?;
             if file.name().ends_with("calendar.txt") {
-                result.read_calendars(file).with_context(|e| format!("Error reading calendar.txt : {}", e))?;
+                result
+                    .read_calendars(file)
+                    .with_context(|e| format!("Error reading calendar.txt : {}", e))?;
             } else if file.name().ends_with("stops.txt") {
-                result.read_stops(file).with_context(|e| format!("Error reading stops.txt : {}", e))?;
+                result
+                    .read_stops(file)
+                    .with_context(|e| format!("Error reading stops.txt : {}", e))?;
             } else if file.name().ends_with("calendar_dates.txt") {
-                result.read_calendar_dates(file).with_context(|e| format!("Error reading calendar_dates.txt : {}", e))?;
+                result
+                    .read_calendar_dates(file)
+                    .with_context(|e| format!("Error reading calendar_dates.txt : {}", e))?;
             } else if file.name().ends_with("routes.txt") {
-                result.read_routes(file).with_context(|e| format!("Error reading routes.txt : {}", e))?;
+                result
+                    .read_routes(file)
+                    .with_context(|e| format!("Error reading routes.txt : {}", e))?;
             } else if file.name().ends_with("trips.txt") {
-                result.read_trips(file).with_context(|e| format!("Error reading trips.txt : {}", e))?;
+                result
+                    .read_trips(file)
+                    .with_context(|e| format!("Error reading trips.txt : {}", e))?;
             } else if file.name().ends_with("stop_times.txt") {
                 stop_times_index = Some(i);
             } else if file.name().ends_with("agency.txt") {
-                result.read_agencies(file).with_context(|e| format!("Error reading agency.txt : {}", e))?;
+                result
+                    .read_agencies(file)
+                    .with_context(|e| format!("Error reading agency.txt : {}", e))?;
             } else if file.name().ends_with("shapes.txt") {
-                result.read_shapes(file).with_context(|e| format!("Error reading shapes.txt : {}", e))?;
+                result
+                    .read_shapes(file)
+                    .with_context(|e| format!("Error reading shapes.txt : {}", e))?;
+            } else if file.name().ends_with("fare_attributes.txt") {
+                result
+                    .read_fare_attributes(file)
+                    .with_context(|e| format!("Error reading fare_attributes.txt : {}", e))?;
             }
         }
         let index = stop_times_index.ok_or_else(|| format_err!("Missing stop_times.txt"))?;
-        result.read_stop_times(archive.by_index(index)?).with_context(|e| format!("Error reading stop_times.txt : {}", e))?;
+        result
+            .read_stop_times(archive.by_index(index)?)
+            .with_context(|e| format!("Error reading stop_times.txt : {}", e))?;
 
         result.read_duration = Utc::now().signed_duration_since(now).num_milliseconds();
         Ok(result)
@@ -650,6 +733,14 @@ impl Gtfs {
         Ok(())
     }
 
+    fn read_fare_attributes<T: std::io::Read>(&mut self, reader: T) -> Result<(), Error> {
+        let mut reader = csv::Reader::from_reader(reader);
+        let fares: Vec<FareAttribute> = reader.deserialize().collect::<Result<_, _>>()?;
+        self.fare_attributes = fares.into_iter().map(|f| (f.id.clone(), f)).collect();
+
+        Ok(())
+    }
+
     pub fn trip_days(&self, service_id: &str, start_date: NaiveDate) -> Vec<u16> {
         let mut result = Vec::new();
 
@@ -736,6 +827,16 @@ impl Gtfs {
             None => Err(ReferenceError { id: id.to_owned() }),
         }
     }
+
+    pub fn get_fare_attributes<'a>(
+        &'a self,
+        id: &str,
+    ) -> Result<&'a FareAttribute, ReferenceError> {
+        match self.fare_attributes.get(id) {
+            Some(fare_attribute) => Ok(fare_attribute),
+            None => Err(ReferenceError { id: id.to_owned() }),
+        }
+    }
 }
 
 fn deserialize_bool<'de, D>(deserializer: D) -> Result<bool, D::Error>
@@ -798,7 +899,10 @@ mod tests {
             .unwrap();
         assert_eq!(2, gtfs.routes.len());
         assert_eq!(RouteType::Bus, gtfs.get_route("1").unwrap().route_type);
-        assert_eq!(RouteType::Other(42), gtfs.get_route("invalid_type").unwrap().route_type);
+        assert_eq!(
+            RouteType::Other(42),
+            gtfs.get_route("invalid_type").unwrap().route_type
+        );
     }
 
     #[test]
@@ -857,6 +961,20 @@ mod tests {
     }
 
     #[test]
+    fn read_fare_attributes() {
+        let mut gtfs = Gtfs::default();
+        gtfs.read_fare_attributes(File::open("fixtures/fare_attributes.txt").unwrap())
+            .unwrap();
+        assert_eq!(1, gtfs.fare_attributes.len());
+        assert_eq!("1.50", gtfs.get_fare_attributes("50").unwrap().price);
+        assert_eq!("EUR", gtfs.get_fare_attributes("50").unwrap().currency);
+        assert_eq!(
+            PaymentMethod::Aboard,
+            gtfs.get_fare_attributes("50").unwrap().payment_method
+        );
+    }
+
+    #[test]
     fn trip_days() {
         let gtfs = Gtfs::new("fixtures/").unwrap();
         let days = gtfs.trip_days(&"service1".to_owned(), NaiveDate::from_ymd(2017, 1, 1));
@@ -875,6 +993,7 @@ mod tests {
         assert_eq!(1, gtfs.routes.len());
         assert_eq!(1, gtfs.trips.len());
         assert_eq!(1, gtfs.shapes.len());
+        assert_eq!(1, gtfs.fare_attributes.len());
         assert_eq!(2, gtfs.get_trip("trip1").unwrap().stop_times.len());
 
         assert!(gtfs.get_calendar("service1").is_ok());
@@ -882,6 +1001,7 @@ mod tests {
         assert!(gtfs.get_stop("stop1").is_ok());
         assert!(gtfs.get_route("1").is_ok());
         assert!(gtfs.get_trip("trip1").is_ok());
+        assert!(gtfs.get_fare_attributes("50").is_ok());
 
         assert_eq!("Utopia", gtfs.get_stop("Utopia").unwrap_err().id);
     }
@@ -895,6 +1015,7 @@ mod tests {
         assert_eq!(1, gtfs.routes.len());
         assert_eq!(1, gtfs.trips.len());
         assert_eq!(1, gtfs.shapes.len());
+        assert_eq!(1, gtfs.fare_attributes.len());
         assert_eq!(2, gtfs.get_trip("trip1").unwrap().stop_times.len());
     }
 

@@ -832,10 +832,9 @@ impl Gtfs {
         &'a self,
         id: &str,
     ) -> Result<&'a FareAttribute, ReferenceError> {
-        match self.fare_attributes.get(id) {
-            Some(fare_attribute) => Ok(fare_attribute),
-            None => Err(ReferenceError { id: id.to_owned() }),
-        }
+        self.fare_attributes
+            .get(id)
+            .ok_or_else(|| ReferenceError { id: id.to_owned() })
     }
 }
 
@@ -971,6 +970,18 @@ mod tests {
         assert_eq!(
             PaymentMethod::Aboard,
             gtfs.get_fare_attributes("50").unwrap().payment_method
+        );
+        assert_eq!(
+            Transfers::Unlimited,
+            gtfs.get_fare_attributes("50").unwrap().transfers
+        );
+        assert_eq!(
+            Some("1".to_string()),
+            gtfs.get_fare_attributes("50").unwrap().agency_id
+        );
+        assert_eq!(
+            Some(3600),
+            gtfs.get_fare_attributes("50").unwrap().transfer_duration
         );
     }
 

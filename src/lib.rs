@@ -35,6 +35,7 @@ pub enum ObjectType {
     Trip,
     Calendar,
     Shape,
+    Fare,
 }
 
 #[derive(Fail, Debug)]

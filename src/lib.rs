@@ -425,6 +425,12 @@ impl Id for FareAttribute {
     }
 }
 
+impl Type for FareAttribute {
+    fn object_type(&self) -> ObjectType {
+        ObjectType::Fare
+    }
+}
+
 #[derive(Debug, Deserialize, Copy, Clone, PartialEq)]
 pub enum PaymentMethod {
     #[serde(rename = "0")]

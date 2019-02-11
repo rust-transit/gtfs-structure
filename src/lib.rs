@@ -850,7 +850,11 @@ where
     D: Deserializer<'de>,
 {
     let s = String::deserialize(deserializer)?;
-    Ok(s == "1")
+    match &*s {
+            "0" => Ok(false),
+            "1" => Ok(true),
+            &_ => Err(serde::de::Error::custom(format!("Invalid value `{}`, expected 0 or 1", s))),
+        }
 }
 
 #[cfg(test)]

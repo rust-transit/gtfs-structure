@@ -470,12 +470,50 @@ impl Default for Transfers {
     }
 }
 
+#[derive(Debug, Deserialize)]
+pub struct FeedInfo {
+    #[serde(rename = "feed_publisher_name")]
+    pub name: String,
+    #[serde(rename = "feed_publisher_url")]
+    pub url: String,
+    #[serde(rename = "feed_lang")]
+    pub lang: String,
+    #[serde(
+        deserialize_with = "deserialize_option_date",
+        rename = "feed_start_date"
+    )]
+    pub start_date: Option<NaiveDate>,
+    #[serde(deserialize_with = "deserialize_option_date", rename = "feed_end_date")]
+    pub end_date: Option<NaiveDate>,
+    #[serde(rename = "feed_version")]
+    pub version: Option<String>,
+}
+
+impl fmt::Display for FeedInfo {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.name)
+    }
+}
+
 fn deserialize_date<'de, D>(deserializer: D) -> Result<NaiveDate, D::Error>
 where
     D: Deserializer<'de>,
 {
     let s = String::deserialize(deserializer)?;
     NaiveDate::parse_from_str(&s, "%Y%m%d").map_err(serde::de::Error::custom)
+}
+
+fn deserialize_option_date<'de, D>(deserializer: D) -> Result<Option<NaiveDate>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s = Option::<String>::deserialize(deserializer)?
+        .map(|s| NaiveDate::parse_from_str(&s, "%Y%m%d").map_err(serde::de::Error::custom));
+    match s {
+        Some(Ok(s)) => Ok(Some(s)),
+        Some(Err(e)) => Err(e),
+        None => Ok(None),
+    }
 }
 
 pub fn parse_time(s: &str) -> Result<u32, Error> {
@@ -534,6 +572,7 @@ pub struct Gtfs {
     pub agencies: Vec<Agency>,
     pub shapes: HashMap<String, Vec<Shape>>,
     pub fare_attributes: HashMap<String, FareAttribute>,
+    pub feed_info: Vec<FeedInfo>,
 }
 
 impl Gtfs {
@@ -546,6 +585,7 @@ impl Gtfs {
         println!("  Agencies: {}", self.agencies.len());
         println!("  Shapes: {}", self.shapes.len());
         println!("  Fare attributes: {}", self.fare_attributes.len());
+        println!("  Feed info: {}", self.feed_info.len());
     }
 
     pub fn new(path: &str) -> Result<Gtfs, Error> {
@@ -560,6 +600,7 @@ impl Gtfs {
         let agencies_file = File::open(p.join("agency.txt"))?;
         let shapes_file = File::open(p.join("shapes.txt")).ok();
         let fare_attributes_file = File::open(p.join("fare_attributes.txt")).ok();
+        let feed_info_file = File::open(p.join("feed_info.txt")).ok();
 
         let mut gtfs = Gtfs::default();
 
@@ -575,6 +616,9 @@ impl Gtfs {
         }
         if let Some(f_a_file) = fare_attributes_file {
             gtfs.read_fare_attributes(f_a_file)?;
+        }
+        if let Some(f_i_file) = feed_info_file {
+            gtfs.read_feed_info(f_i_file)?;
         }
 
         gtfs.read_duration = Utc::now().signed_duration_since(now).num_milliseconds();
@@ -636,6 +680,10 @@ impl Gtfs {
                 result
                     .read_fare_attributes(file)
                     .with_context(|e| format!("Error reading fare_attributes.txt : {}", e))?;
+            } else if file.name().ends_with("feed_info.txt") {
+                result
+                    .read_feed_info(file)
+                    .with_context(|e| format!("Error reading feed_info.txt : {}", e))?;
             }
         }
         let index = stop_times_index.ok_or_else(|| format_err!("Missing stop_times.txt"))?;
@@ -748,6 +796,13 @@ impl Gtfs {
         Ok(())
     }
 
+    fn read_feed_info<T: std::io::Read>(&mut self, reader: T) -> Result<(), Error> {
+        let mut reader = csv::Reader::from_reader(reader);
+        self.feed_info = reader.deserialize().collect::<Result<_, _>>()?;
+
+        Ok(())
+    }
+
     pub fn trip_days(&self, service_id: &str, start_date: NaiveDate) -> Vec<u16> {
         let mut result = Vec::new();
 
@@ -851,10 +906,13 @@ where
 {
     let s = String::deserialize(deserializer)?;
     match &*s {
-            "0" => Ok(false),
-            "1" => Ok(true),
-            &_ => Err(serde::de::Error::custom(format!("Invalid value `{}`, expected 0 or 1", s))),
-        }
+        "0" => Ok(false),
+        "1" => Ok(true),
+        &_ => Err(serde::de::Error::custom(format!(
+            "Invalid value `{}`, expected 0 or 1",
+            s
+        ))),
+    }
 }
 
 #[cfg(test)]
@@ -997,6 +1055,21 @@ mod tests {
     }
 
     #[test]
+    fn read_feed_info() {
+        let mut gtfs = Gtfs::default();
+        gtfs.read_feed_info(File::open("fixtures/feed_info.txt").unwrap())
+            .unwrap();
+        let feed = &gtfs.feed_info;
+        assert_eq!(1, feed.len());
+        assert_eq!("SNCF", feed[0].name);
+        assert_eq!("http://www.sncf.com", feed[0].url);
+        assert_eq!("fr", feed[0].lang);
+        assert_eq!(Some(NaiveDate::from_ymd(2018, 07, 09)), feed[0].start_date);
+        assert_eq!(Some(NaiveDate::from_ymd(2018, 09, 27)), feed[0].end_date);
+        assert_eq!(Some("0.3".to_string()), feed[0].version);
+    }
+
+    #[test]
     fn trip_days() {
         let gtfs = Gtfs::new("fixtures/").unwrap();
         let days = gtfs.trip_days(&"service1".to_owned(), NaiveDate::from_ymd(2017, 1, 1));
@@ -1016,6 +1089,7 @@ mod tests {
         assert_eq!(1, gtfs.trips.len());
         assert_eq!(1, gtfs.shapes.len());
         assert_eq!(1, gtfs.fare_attributes.len());
+        assert_eq!(1, gtfs.feed_info.len());
         assert_eq!(2, gtfs.get_trip("trip1").unwrap().stop_times.len());
 
         assert!(gtfs.get_calendar("service1").is_ok());

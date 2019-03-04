@@ -389,7 +389,7 @@ pub struct Shape {
     #[serde(rename = "shape_pt_lon", default)]
     pub longitude: f64,
     #[serde(rename = "shape_pt_sequence")]
-    pub sequence: u16,
+    pub sequence: usize,
     #[serde(rename = "shape_dist_traveled")]
     pub dist_traveled: Option<f32>,
 }

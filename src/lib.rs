@@ -7,8 +7,8 @@ extern crate serde_derive;
 
 use chrono::prelude::*;
 use chrono::Duration;
+use failure::Error;
 use failure::ResultExt;
-use failure::{format_err, Error};
 use serde::de::{self, Deserialize, Deserializer};
 use std::collections::{HashMap, HashSet};
 use std::fmt;
@@ -27,7 +27,7 @@ pub trait Type {
     fn object_type(&self) -> ObjectType;
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Eq, PartialEq)]
 pub enum ObjectType {
     Agency,
     Stop,
@@ -237,7 +237,7 @@ impl fmt::Display for Stop {
 }
 
 #[derive(Debug, Deserialize, Default)]
-struct StopTimeGtfs {
+pub struct RawStopTime {
     trip_id: String,
     #[serde(deserialize_with = "deserialize_time")]
     pub arrival_time: u32,
@@ -260,7 +260,7 @@ pub struct StopTime {
 }
 
 impl StopTime {
-    fn from(stop_time_gtfs: &StopTimeGtfs, stop: Arc<Stop>) -> Self {
+    fn from(stop_time_gtfs: &RawStopTime, stop: Arc<Stop>) -> Self {
         Self {
             arrival_time: stop_time_gtfs.arrival_time,
             departure_time: stop_time_gtfs.departure_time,
@@ -308,12 +308,40 @@ impl fmt::Display for Route {
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct Trip {
+pub struct RawTrip {
     #[serde(rename = "trip_id")]
     pub id: String,
     pub service_id: String,
     pub route_id: String,
-    #[serde(skip)]
+}
+
+impl Type for RawTrip {
+    fn object_type(&self) -> ObjectType {
+        ObjectType::Trip
+    }
+}
+
+impl Id for RawTrip {
+    fn id(&self) -> &str {
+        &self.id
+    }
+}
+
+impl fmt::Display for RawTrip {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "route id: {}, service id: {}",
+            self.route_id, self.service_id
+        )
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct Trip {
+    pub id: String,
+    pub service_id: String,
+    pub route_id: String,
     pub stop_times: Vec<StopTime>,
 }
 
@@ -561,6 +589,31 @@ fn default_location_type() -> LocationType {
     LocationType::StopPoint
 }
 
+fn read_objs<T, O>(reader: T) -> Result<Vec<O>, Error>
+where
+    for<'de> O: Deserialize<'de>,
+    T: std::io::Read,
+{
+    Ok(csv::Reader::from_reader(reader)
+        .deserialize()
+        .collect::<Result<_, _>>()?)
+}
+
+#[derive(Default)]
+pub struct RawGtfs {
+    pub read_duration: i64,
+    pub calendar: Vec<Calendar>,
+    pub calendar_dates: Vec<CalendarDate>,
+    pub stops: Vec<Stop>,
+    pub routes: Vec<Route>,
+    pub trips: Vec<RawTrip>,
+    pub agencies: Vec<Agency>,
+    pub shapes: Vec<Shape>,
+    pub fare_attributes: Vec<FareAttribute>,
+    pub feed_info: Vec<FeedInfo>,
+    pub stop_times: Vec<RawStopTime>,
+}
+
 #[derive(Default)]
 pub struct Gtfs {
     pub read_duration: i64,
@@ -573,6 +626,193 @@ pub struct Gtfs {
     pub shapes: HashMap<String, Vec<Shape>>,
     pub fare_attributes: HashMap<String, FareAttribute>,
     pub feed_info: Vec<FeedInfo>,
+}
+
+impl RawGtfs {
+    pub fn print_stats(&self) {
+        println!("GTFS data:");
+        println!("  Read in {} ms", self.read_duration);
+        println!("  Stops: {}", self.stops.len());
+        println!("  Routes: {}", self.routes.len());
+        println!("  Trips: {}", self.trips.len());
+        println!("  Agencies: {}", self.agencies.len());
+        println!("  Shapes: {}", self.shapes.len());
+        println!("  Fare attributes: {}", self.fare_attributes.len());
+        println!("  Feed info: {}", self.feed_info.len());
+    }
+
+    pub fn new(path: &str) -> Result<Self, Error> {
+        let now = Utc::now();
+        let p = Path::new(path);
+        let trips_file = File::open(p.join("trips.txt"))?;
+        let calendar_file = File::open(p.join("calendar.txt"))?;
+        let stops_file = File::open(p.join("stops.txt"))?;
+        let calendar_dates_file = File::open(p.join("calendar_dates.txt"))?;
+        let routes_file = File::open(p.join("routes.txt"))?;
+        let stop_times_file = File::open(p.join("stop_times.txt"))?;
+        let agencies_file = File::open(p.join("agency.txt"))?;
+        let shapes_file = File::open(p.join("shapes.txt")).ok();
+        let fare_attributes_file = File::open(p.join("fare_attributes.txt")).ok();
+        let feed_info_file = File::open(p.join("feed_info.txt")).ok();
+
+        let mut gtfs = Self::default();
+
+        gtfs.trips = read_objs(trips_file)?;
+        gtfs.calendar = read_objs(calendar_file)?;
+        gtfs.calendar_dates = read_objs(calendar_dates_file)?;
+        gtfs.stops = read_objs(stops_file)?;
+        gtfs.routes = read_objs(routes_file)?;
+        gtfs.stop_times = read_objs(stop_times_file)?;
+        gtfs.agencies = read_objs(agencies_file)?;
+        if let Some(s_file) = shapes_file {
+            gtfs.shapes = read_objs(s_file)?;
+        }
+        if let Some(f_a_file) = fare_attributes_file {
+            gtfs.fare_attributes = read_objs(f_a_file)?;
+        }
+        if let Some(f_i_file) = feed_info_file {
+            gtfs.feed_info = read_objs(f_i_file)?;
+        }
+
+        gtfs.read_duration = Utc::now().signed_duration_since(now).num_milliseconds();
+        Ok(gtfs)
+    }
+
+    pub fn from_zip(file: &str) -> Result<Self, Error> {
+        let reader = File::open(file)?;
+        Self::from_reader(reader)
+    }
+
+    #[cfg(feature = "read-url")]
+    pub fn from_url(url: &str) -> Result<Self, Error> {
+        let mut res = reqwest::get(url)?;
+        let mut body = Vec::new();
+        res.read_to_end(&mut body)?;
+        let cursor = std::io::Cursor::new(body);
+        Self::from_reader(cursor)
+    }
+
+    pub fn from_reader<T: std::io::Read + std::io::Seek>(reader: T) -> Result<Self, Error> {
+        let now = Utc::now();
+        let mut archive = zip::ZipArchive::new(reader)?;
+        let mut gtfs = Self::default();
+        for i in 0..archive.len() {
+            let file = archive.by_index(i)?;
+            if file.name().ends_with("calendar.txt") {
+                gtfs.calendar = read_objs(file)
+                    .with_context(|e| format!("Error reading calendar.txt : {}", e))?;
+            } else if file.name().ends_with("stops.txt") {
+                gtfs.stops =
+                    read_objs(file).with_context(|e| format!("Error reading stops.txt : {}", e))?;
+            } else if file.name().ends_with("calendar_dates.txt") {
+                gtfs.calendar_dates = read_objs(file)
+                    .with_context(|e| format!("Error reading calendar_dates.txt : {}", e))?;
+            } else if file.name().ends_with("routes.txt") {
+                gtfs.routes = read_objs(file)
+                    .with_context(|e| format!("Error reading routes.txt : {}", e))?;
+            } else if file.name().ends_with("trips.txt") {
+                gtfs.trips =
+                    read_objs(file).with_context(|e| format!("Error reading trips.txt : {}", e))?;
+            } else if file.name().ends_with("stop_times.txt") {
+                gtfs.stop_times = read_objs(file)
+                    .with_context(|e| format!("Error reading stop_times.txt : {}", e))?;
+            } else if file.name().ends_with("agency.txt") {
+                gtfs.agencies = read_objs(file)
+                    .with_context(|e| format!("Error reading agency.txt : {}", e))?;
+            } else if file.name().ends_with("shapes.txt") {
+                gtfs.shapes = read_objs(file)
+                    .with_context(|e| format!("Error reading shapes.txt : {}", e))?;
+            } else if file.name().ends_with("fare_attributes.txt") {
+                gtfs.fare_attributes = read_objs(file)
+                    .with_context(|e| format!("Error reading fare_attributes.txt : {}", e))?;
+            } else if file.name().ends_with("feed_info.txt") {
+                gtfs.feed_info = read_objs(file)
+                    .with_context(|e| format!("Error reading feed_info.txt : {}", e))?;
+            }
+        }
+        gtfs.read_duration = Utc::now().signed_duration_since(now).num_milliseconds();
+        Ok(gtfs)
+    }
+}
+
+fn to_map<O: Id>(elements: impl IntoIterator<Item = O>) -> HashMap<String, O> {
+    elements
+        .into_iter()
+        .map(|e| (e.id().to_owned(), e))
+        .collect()
+}
+
+fn to_stop_map(stops: Vec<Stop>) -> HashMap<String, Arc<Stop>> {
+    stops
+        .into_iter()
+        .map(|s| (s.id.clone(), Arc::new(s)))
+        .collect()
+}
+
+fn to_shape_map(shapes: Vec<Shape>) -> HashMap<String, Vec<Shape>> {
+    let mut res = HashMap::default();
+    for s in shapes {
+        let shape = res.entry(s.id.to_owned()).or_insert_with(Vec::new);
+        shape.push(s);
+    }
+    res
+}
+
+fn to_calendar_dates(cd: Vec<CalendarDate>) -> HashMap<String, Vec<CalendarDate>> {
+    let mut res = HashMap::default();
+    for c in cd {
+        let cal = res.entry(c.service_id.to_owned()).or_insert_with(Vec::new);
+        cal.push(c);
+    }
+    res
+}
+
+fn create_trips(
+    raw_trips: Vec<RawTrip>,
+    raw_stop_times: Vec<RawStopTime>,
+    stops: &HashMap<String, Arc<Stop>>,
+) -> Result<HashMap<String, Trip>, Error> {
+    let mut trips = to_map(raw_trips.into_iter().map(|rt| Trip {
+        id: rt.id,
+        service_id: rt.service_id,
+        route_id: rt.route_id,
+        stop_times: vec![],
+    }));
+    for s in raw_stop_times {
+        let trip = &mut trips.get_mut(&s.trip_id).ok_or(ReferenceError {
+            id: s.trip_id.to_string(),
+        })?;
+        let stop = stops.get(&s.stop_id).ok_or(ReferenceError {
+            id: s.stop_id.to_string(),
+        })?;
+        trip.stop_times.push(StopTime::from(&s, Arc::clone(&stop)));
+    }
+
+    for trip in &mut trips.values_mut() {
+        trip.stop_times
+            .sort_by(|a, b| a.stop_sequence.cmp(&b.stop_sequence));
+    }
+    Ok(trips)
+}
+
+impl Gtfs {
+    pub fn try_from(raw: RawGtfs) -> Result<Gtfs, Error> {
+        let stops = to_stop_map(raw.stops);
+        let trips = create_trips(raw.trips, raw.stop_times, &stops)?;
+
+        Ok(Gtfs {
+            stops,
+            routes: to_map(raw.routes),
+            trips,
+            agencies: raw.agencies,
+            shapes: to_shape_map(raw.shapes),
+            fare_attributes: to_map(raw.fare_attributes),
+            feed_info: raw.feed_info,
+            calendar: to_map(raw.calendar),
+            calendar_dates: to_calendar_dates(raw.calendar_dates),
+            read_duration: raw.read_duration,
+        })
+    }
 }
 
 impl Gtfs {
@@ -589,218 +829,20 @@ impl Gtfs {
     }
 
     pub fn new(path: &str) -> Result<Gtfs, Error> {
-        let now = Utc::now();
-        let p = Path::new(path);
-        let trips_file = File::open(p.join("trips.txt"))?;
-        let calendar_file = File::open(p.join("calendar.txt"))?;
-        let stops_file = File::open(p.join("stops.txt"))?;
-        let calendar_dates_file = File::open(p.join("calendar_dates.txt"))?;
-        let routes_file = File::open(p.join("routes.txt"))?;
-        let stop_times_file = File::open(p.join("stop_times.txt"))?;
-        let agencies_file = File::open(p.join("agency.txt"))?;
-        let shapes_file = File::open(p.join("shapes.txt")).ok();
-        let fare_attributes_file = File::open(p.join("fare_attributes.txt")).ok();
-        let feed_info_file = File::open(p.join("feed_info.txt")).ok();
-
-        let mut gtfs = Gtfs::default();
-
-        gtfs.read_trips(trips_file)?;
-        gtfs.read_calendars(calendar_file)?;
-        gtfs.read_calendar_dates(calendar_dates_file)?;
-        gtfs.read_stops(stops_file)?;
-        gtfs.read_routes(routes_file)?;
-        gtfs.read_stop_times(stop_times_file)?;
-        gtfs.read_agencies(agencies_file)?;
-        if let Some(s_file) = shapes_file {
-            gtfs.read_shapes(s_file)?;
-        }
-        if let Some(f_a_file) = fare_attributes_file {
-            gtfs.read_fare_attributes(f_a_file)?;
-        }
-        if let Some(f_i_file) = feed_info_file {
-            gtfs.read_feed_info(f_i_file)?;
-        }
-
-        gtfs.read_duration = Utc::now().signed_duration_since(now).num_milliseconds();
-        Ok(gtfs)
+        RawGtfs::new(path).and_then(Gtfs::try_from)
     }
 
     pub fn from_zip(file: &str) -> Result<Gtfs, Error> {
-        let reader = File::open(file)?;
-        Gtfs::from_reader(reader)
+        RawGtfs::from_zip(file).and_then(Gtfs::try_from)
     }
 
     #[cfg(feature = "read-url")]
     pub fn from_url(url: &str) -> Result<Gtfs, Error> {
-        let mut res = reqwest::get(url)?;
-        let mut body = Vec::new();
-        res.read_to_end(&mut body)?;
-        let cursor = std::io::Cursor::new(body);
-        Gtfs::from_reader(cursor)
+        RawGtfs::from_url(url).and_then(Gtfs::try_from)
     }
 
     pub fn from_reader<T: std::io::Read + std::io::Seek>(reader: T) -> Result<Gtfs, Error> {
-        let now = Utc::now();
-        let mut archive = zip::ZipArchive::new(reader)?;
-        let mut result = Gtfs::default();
-        let mut stop_times_index = None;
-        for i in 0..archive.len() {
-            let file = archive.by_index(i)?;
-            if file.name().ends_with("calendar.txt") {
-                result
-                    .read_calendars(file)
-                    .with_context(|e| format!("Error reading calendar.txt : {}", e))?;
-            } else if file.name().ends_with("stops.txt") {
-                result
-                    .read_stops(file)
-                    .with_context(|e| format!("Error reading stops.txt : {}", e))?;
-            } else if file.name().ends_with("calendar_dates.txt") {
-                result
-                    .read_calendar_dates(file)
-                    .with_context(|e| format!("Error reading calendar_dates.txt : {}", e))?;
-            } else if file.name().ends_with("routes.txt") {
-                result
-                    .read_routes(file)
-                    .with_context(|e| format!("Error reading routes.txt : {}", e))?;
-            } else if file.name().ends_with("trips.txt") {
-                result
-                    .read_trips(file)
-                    .with_context(|e| format!("Error reading trips.txt : {}", e))?;
-            } else if file.name().ends_with("stop_times.txt") {
-                stop_times_index = Some(i);
-            } else if file.name().ends_with("agency.txt") {
-                result
-                    .read_agencies(file)
-                    .with_context(|e| format!("Error reading agency.txt : {}", e))?;
-            } else if file.name().ends_with("shapes.txt") {
-                result
-                    .read_shapes(file)
-                    .with_context(|e| format!("Error reading shapes.txt : {}", e))?;
-            } else if file.name().ends_with("fare_attributes.txt") {
-                result
-                    .read_fare_attributes(file)
-                    .with_context(|e| format!("Error reading fare_attributes.txt : {}", e))?;
-            } else if file.name().ends_with("feed_info.txt") {
-                result
-                    .read_feed_info(file)
-                    .with_context(|e| format!("Error reading feed_info.txt : {}", e))?;
-            }
-        }
-        let index = stop_times_index.ok_or_else(|| format_err!("Missing stop_times.txt"))?;
-        result
-            .read_stop_times(archive.by_index(index)?)
-            .with_context(|e| format!("Error reading stop_times.txt : {}", e))?;
-
-        result.read_duration = Utc::now().signed_duration_since(now).num_milliseconds();
-        Ok(result)
-    }
-
-    fn read_calendars<T: std::io::Read>(&mut self, reader: T) -> Result<(), Error> {
-        let mut reader = csv::Reader::from_reader(reader);
-        self.calendar = reader
-            .deserialize()
-            .map(|res| res.map(|e: Calendar| (e.id.to_owned(), e)))
-            .collect::<Result<_, _>>()?;
-
-        Ok(())
-    }
-
-    fn read_calendar_dates<T: std::io::Read>(&mut self, reader: T) -> Result<(), Error> {
-        let mut reader = csv::Reader::from_reader(reader);
-        for result in reader.deserialize() {
-            let record: CalendarDate = result?;
-            let calendar_date = self
-                .calendar_dates
-                .entry(record.service_id.to_owned())
-                .or_insert_with(Vec::new);
-            calendar_date.push(record);
-        }
-        Ok(())
-    }
-
-    fn read_stops<T: std::io::Read>(&mut self, reader: T) -> Result<(), Error> {
-        let mut reader = csv::Reader::from_reader(reader);
-        self.stops = reader
-            .deserialize()
-            .map(|res| res.map(|e: Stop| (e.id.to_owned(), Arc::new(e))))
-            .collect::<Result<_, _>>()?;
-
-        Ok(())
-    }
-
-    fn read_routes<T: std::io::Read>(&mut self, reader: T) -> Result<(), Error> {
-        let mut reader = csv::Reader::from_reader(reader);
-        self.routes = reader
-            .deserialize()
-            .map(|res| res.map(|e: Route| (e.id.to_owned(), e)))
-            .collect::<Result<_, _>>()?;
-        Ok(())
-    }
-
-    fn read_trips<T: std::io::Read>(&mut self, reader: T) -> Result<(), Error> {
-        let mut reader = csv::Reader::from_reader(reader);
-        self.trips = reader
-            .deserialize()
-            .map(|res| res.map(|e: Trip| (e.id.to_owned(), e)))
-            .collect::<Result<_, _>>()?;
-
-        Ok(())
-    }
-
-    fn read_agencies<T: std::io::Read>(&mut self, reader: T) -> Result<(), Error> {
-        let mut reader = csv::Reader::from_reader(reader);
-        self.agencies = reader.deserialize().collect::<Result<_, _>>()?;
-
-        Ok(())
-    }
-
-    fn read_shapes<T: std::io::Read>(&mut self, reader: T) -> Result<(), Error> {
-        let mut reader = csv::Reader::from_reader(reader);
-        for result in reader.deserialize() {
-            let record: Shape = result?;
-            let shape = self
-                .shapes
-                .entry(record.id.to_owned())
-                .or_insert_with(Vec::new);
-            shape.push(record);
-        }
-
-        Ok(())
-    }
-
-    fn read_stop_times<T: std::io::Read>(&mut self, reader: T) -> Result<(), Error> {
-        for stop_time in csv::Reader::from_reader(reader).deserialize() {
-            let s: StopTimeGtfs = stop_time?;
-            let trip = &mut self.trips.get_mut(&s.trip_id).ok_or(ReferenceError {
-                id: s.trip_id.to_string(),
-            })?;
-            let stop = self.stops.get_mut(&s.stop_id).ok_or(ReferenceError {
-                id: s.stop_id.to_string(),
-            })?;
-            trip.stop_times.push(StopTime::from(&s, Arc::clone(&stop)));
-        }
-
-        for trip in &mut self.trips.values_mut() {
-            trip.stop_times
-                .sort_by(|a, b| a.stop_sequence.cmp(&b.stop_sequence))
-        }
-
-        Ok(())
-    }
-
-    fn read_fare_attributes<T: std::io::Read>(&mut self, reader: T) -> Result<(), Error> {
-        let mut reader = csv::Reader::from_reader(reader);
-        let fares: Vec<FareAttribute> = reader.deserialize().collect::<Result<_, _>>()?;
-        self.fare_attributes = fares.into_iter().map(|f| (f.id.clone(), f)).collect();
-
-        Ok(())
-    }
-
-    fn read_feed_info<T: std::io::Read>(&mut self, reader: T) -> Result<(), Error> {
-        let mut reader = csv::Reader::from_reader(reader);
-        self.feed_info = reader.deserialize().collect::<Result<_, _>>()?;
-
-        Ok(())
+        RawGtfs::from_reader(reader).and_then(Gtfs::try_from)
     }
 
     pub fn trip_days(&self, service_id: &str, start_date: NaiveDate) -> Vec<u16> {
@@ -921,9 +963,7 @@ mod tests {
 
     #[test]
     fn read_calendar() {
-        let mut gtfs = Gtfs::default();
-        gtfs.read_calendars(File::open("fixtures/calendar.txt").unwrap())
-            .unwrap();
+        let gtfs = Gtfs::new("fixtures").expect("impossible to read gtfs");
         assert_eq!(1, gtfs.calendar.len());
         assert!(!gtfs.calendar["service1"].monday);
         assert!(gtfs.calendar["service1"].saturday);
@@ -931,9 +971,7 @@ mod tests {
 
     #[test]
     fn read_calendar_dates() {
-        let mut gtfs = Gtfs::default();
-        gtfs.read_calendar_dates(File::open("fixtures/calendar_dates.txt").unwrap())
-            .unwrap();
+        let gtfs = Gtfs::new("fixtures").expect("impossible to read gtfs");
         assert_eq!(2, gtfs.calendar_dates.len());
         assert_eq!(2, gtfs.calendar_dates["service1"].len());
         assert_eq!(2, gtfs.calendar_dates["service1"][0].exception_type);
@@ -942,9 +980,7 @@ mod tests {
 
     #[test]
     fn read_stop() {
-        let mut gtfs = Gtfs::default();
-        gtfs.read_stops(File::open("fixtures/stops.txt").unwrap())
-            .unwrap();
+        let gtfs = Gtfs::new("fixtures").expect("impossible to read gtfs");
         assert_eq!(5, gtfs.stops.len());
         assert_eq!(
             LocationType::StopArea,
@@ -962,9 +998,7 @@ mod tests {
 
     #[test]
     fn read_routes() {
-        let mut gtfs = Gtfs::default();
-        gtfs.read_routes(File::open("fixtures/routes.txt").unwrap())
-            .unwrap();
+        let gtfs = Gtfs::new("fixtures").expect("impossible to read gtfs");
         assert_eq!(2, gtfs.routes.len());
         assert_eq!(RouteType::Bus, gtfs.get_route("1").unwrap().route_type);
         assert_eq!(
@@ -975,21 +1009,13 @@ mod tests {
 
     #[test]
     fn read_trips() {
-        let mut gtfs = Gtfs::default();
-        gtfs.read_trips(File::open("fixtures/trips.txt").unwrap())
-            .unwrap();
+        let gtfs = Gtfs::new("fixtures").expect("impossible to read gtfs");
         assert_eq!(1, gtfs.trips.len());
     }
 
     #[test]
     fn read_stop_times() {
-        let mut gtfs = Gtfs::default();
-        gtfs.read_trips(File::open("fixtures/trips.txt").unwrap())
-            .unwrap();
-        gtfs.read_stops(File::open("fixtures/stops.txt").unwrap())
-            .unwrap();
-        gtfs.read_stop_times(File::open("fixtures/stop_times.txt").unwrap())
-            .unwrap();
+        let gtfs = Gtfs::new("fixtures").expect("impossible to read gtfs");
         let stop_times = &gtfs.trips.get("trip1").unwrap().stop_times;
         assert_eq!(2, stop_times.len());
         assert_eq!(
@@ -1009,9 +1035,7 @@ mod tests {
 
     #[test]
     fn read_agencies() {
-        let mut gtfs = Gtfs::default();
-        gtfs.read_agencies(File::open("fixtures/agency.txt").unwrap())
-            .unwrap();
+        let gtfs = Gtfs::new("fixtures").expect("impossible to read gtfs");
         let agencies = &gtfs.agencies;
         assert_eq!("BIBUS", agencies[0].name);
         assert_eq!("http://www.bibus.fr", agencies[0].url);
@@ -1020,9 +1044,7 @@ mod tests {
 
     #[test]
     fn read_shapes() {
-        let mut gtfs = Gtfs::default();
-        gtfs.read_shapes(File::open("fixtures/shapes.txt").unwrap())
-            .unwrap();
+        let gtfs = Gtfs::new("fixtures").expect("impossible to read gtfs");
         let shapes = &gtfs.shapes;
         assert_eq!(37.61956, shapes["A_shp"][0].latitude);
         assert_eq!(-122.48161, shapes["A_shp"][0].longitude);
@@ -1030,9 +1052,7 @@ mod tests {
 
     #[test]
     fn read_fare_attributes() {
-        let mut gtfs = Gtfs::default();
-        gtfs.read_fare_attributes(File::open("fixtures/fare_attributes.txt").unwrap())
-            .unwrap();
+        let gtfs = Gtfs::new("fixtures").expect("impossible to read gtfs");
         assert_eq!(1, gtfs.fare_attributes.len());
         assert_eq!("1.50", gtfs.get_fare_attributes("50").unwrap().price);
         assert_eq!("EUR", gtfs.get_fare_attributes("50").unwrap().currency);
@@ -1056,9 +1076,7 @@ mod tests {
 
     #[test]
     fn read_feed_info() {
-        let mut gtfs = Gtfs::default();
-        gtfs.read_feed_info(File::open("fixtures/feed_info.txt").unwrap())
-            .unwrap();
+        let gtfs = Gtfs::new("fixtures").expect("impossible to read gtfs");
         let feed = &gtfs.feed_info;
         assert_eq!(1, feed.len());
         assert_eq!("SNCF", feed[0].name);

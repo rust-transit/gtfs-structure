@@ -5,6 +5,9 @@ use failure::Error;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
+/// Data structure with all the GTFS objects
+///
+/// This structure is easier to use than the [RawGtfs] structure.
 #[derive(Default)]
 pub struct Gtfs {
     pub read_duration: i64,

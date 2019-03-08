@@ -7,6 +7,7 @@ use std::path::Path;
 
 use crate::objects::*;
 
+/// Data structure that map the GTFS csv with little intelligence
 #[derive(Default)]
 pub struct RawGtfs {
     pub read_duration: i64,

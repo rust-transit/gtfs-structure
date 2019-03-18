@@ -12,7 +12,7 @@ pub trait Type {
     fn object_type(&self) -> ObjectType;
 }
 
-#[derive(Debug, Serialize, Eq, PartialEq)]
+#[derive(Debug, Serialize, Eq, PartialEq, Hash)]
 pub enum ObjectType {
     Agency,
     Stop,

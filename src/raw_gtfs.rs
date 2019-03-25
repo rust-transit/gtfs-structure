@@ -1,26 +1,25 @@
+use crate::objects::*;
 use chrono::Utc;
+use failure::format_err;
 use failure::Error;
-use failure::ResultExt;
 use serde::Deserialize;
+use std::collections::HashMap;
 use std::fs::File;
 use std::path::Path;
 
-use crate::objects::*;
-
 /// Data structure that map the GTFS csv with little intelligence
-#[derive(Default)]
 pub struct RawGtfs {
     pub read_duration: i64,
-    pub calendar: Vec<Calendar>,
-    pub calendar_dates: Vec<CalendarDate>,
-    pub stops: Vec<Stop>,
-    pub routes: Vec<Route>,
-    pub trips: Vec<RawTrip>,
-    pub agencies: Vec<Agency>,
-    pub shapes: Vec<Shape>,
-    pub fare_attributes: Vec<FareAttribute>,
-    pub feed_info: Vec<FeedInfo>,
-    pub stop_times: Vec<RawStopTime>,
+    pub calendar: Result<Vec<Calendar>, Error>,
+    pub calendar_dates: Result<Vec<CalendarDate>, Error>,
+    pub stops: Result<Vec<Stop>, Error>,
+    pub routes: Result<Vec<Route>, Error>,
+    pub trips: Result<Vec<RawTrip>, Error>,
+    pub agencies: Result<Vec<Agency>, Error>,
+    pub shapes: Option<Result<Vec<Shape>, Error>>,
+    pub fare_attributes: Option<Result<Vec<FareAttribute>, Error>>,
+    pub feed_info: Option<Result<Vec<FeedInfo>, Error>>,
+    pub stop_times: Result<Vec<RawStopTime>, Error>,
 }
 
 fn read_objs<T, O>(reader: T) -> Result<Vec<O>, Error>
@@ -33,54 +32,81 @@ where
         .collect::<Result<_, _>>()?)
 }
 
+fn read_objs_from_path<O>(path: std::path::PathBuf) -> Result<Vec<O>, Error>
+where
+    for<'de> O: Deserialize<'de>,
+{
+    File::open(path)
+        .map_err(|e| format_err!("Could not find file: {}", e))
+        .and_then(read_objs)
+}
+
+fn read_file<O, T>(
+    file_mapping: &HashMap<&&str, usize>,
+    archive: &mut zip::ZipArchive<T>,
+    file_name: &str,
+) -> Result<Vec<O>, Error>
+where
+    for<'de> O: Deserialize<'de>,
+    T: std::io::Read + std::io::Seek,
+{
+    file_mapping
+        .get(&file_name)
+        .map(|i| read_objs(archive.by_index(*i)?))
+        .unwrap_or_else(|| Err(format_err!("Could not find file {}", file_name)))
+}
+
+fn mandatory_file_summary<T>(objs: &Result<Vec<T>, Error>) -> String {
+    match objs {
+        Ok(vec) => format!("{} objects", vec.len()),
+        Err(e) => format!("Could not read {}", e),
+    }
+}
+
+fn optional_file_summary<T>(objs: &Option<Result<Vec<T>, Error>>) -> String {
+    match objs {
+        Some(objs) => mandatory_file_summary(objs),
+        None => "File not present".to_string(),
+    }
+}
+
 impl RawGtfs {
     pub fn print_stats(&self) {
         println!("GTFS data:");
         println!("  Read in {} ms", self.read_duration);
-        println!("  Stops: {}", self.stops.len());
-        println!("  Routes: {}", self.routes.len());
-        println!("  Trips: {}", self.trips.len());
-        println!("  Agencies: {}", self.agencies.len());
-        println!("  Shapes: {}", self.shapes.len());
-        println!("  Fare attributes: {}", self.fare_attributes.len());
-        println!("  Feed info: {}", self.feed_info.len());
+        println!("  Stops: {}", mandatory_file_summary(&self.stops));
+        println!("  Routes: {}", mandatory_file_summary(&self.routes));
+        println!("  Trips: {}", mandatory_file_summary(&self.trips));
+        println!("  Agencies: {}", mandatory_file_summary(&self.agencies));
+        println!("  Stop times: {}", mandatory_file_summary(&self.stop_times));
+        println!("  Shapes: {}", optional_file_summary(&self.shapes));
+        println!("  Fares: {}", optional_file_summary(&self.fare_attributes));
+        println!("  Feed info: {}", optional_file_summary(&self.feed_info));
     }
 
     pub fn new(path: &str) -> Result<Self, Error> {
         let now = Utc::now();
         let p = Path::new(path);
-        let trips_file = File::open(p.join("trips.txt"))?;
-        let calendar_file = File::open(p.join("calendar.txt"))?;
-        let stops_file = File::open(p.join("stops.txt"))?;
-        let calendar_dates_file = File::open(p.join("calendar_dates.txt"))?;
-        let routes_file = File::open(p.join("routes.txt"))?;
-        let stop_times_file = File::open(p.join("stop_times.txt"))?;
-        let agencies_file = File::open(p.join("agency.txt"))?;
+
+        // Thoses files are not mandatory
+        // We use None if they don’t exist, not an Error
         let shapes_file = File::open(p.join("shapes.txt")).ok();
         let fare_attributes_file = File::open(p.join("fare_attributes.txt")).ok();
         let feed_info_file = File::open(p.join("feed_info.txt")).ok();
 
-        let mut gtfs = Self::default();
-
-        gtfs.trips = read_objs(trips_file)?;
-        gtfs.calendar = read_objs(calendar_file)?;
-        gtfs.calendar_dates = read_objs(calendar_dates_file)?;
-        gtfs.stops = read_objs(stops_file)?;
-        gtfs.routes = read_objs(routes_file)?;
-        gtfs.stop_times = read_objs(stop_times_file)?;
-        gtfs.agencies = read_objs(agencies_file)?;
-        if let Some(s_file) = shapes_file {
-            gtfs.shapes = read_objs(s_file)?;
-        }
-        if let Some(f_a_file) = fare_attributes_file {
-            gtfs.fare_attributes = read_objs(f_a_file)?;
-        }
-        if let Some(f_i_file) = feed_info_file {
-            gtfs.feed_info = read_objs(f_i_file)?;
-        }
-
-        gtfs.read_duration = Utc::now().signed_duration_since(now).num_milliseconds();
-        Ok(gtfs)
+        Ok(Self {
+            trips: read_objs_from_path(p.join("trips.txt")),
+            calendar: read_objs_from_path(p.join("calendar.txt")),
+            calendar_dates: read_objs_from_path(p.join("calendar_dates.txt")),
+            stops: read_objs_from_path(p.join("stops.txt")),
+            routes: read_objs_from_path(p.join("routes.txt")),
+            stop_times: read_objs_from_path(p.join("stop_times.txt")),
+            agencies: read_objs_from_path(p.join("agency.txt")),
+            shapes: shapes_file.map(read_objs),
+            fare_attributes: fare_attributes_file.map(read_objs),
+            feed_info: feed_info_file.map(read_objs),
+            read_duration: Utc::now().signed_duration_since(now).num_milliseconds(),
+        })
     }
 
     pub fn from_zip(file: &str) -> Result<Self, Error> {
@@ -97,46 +123,51 @@ impl RawGtfs {
         let cursor = std::io::Cursor::new(body);
         Self::from_reader(cursor)
     }
-
     pub fn from_reader<T: std::io::Read + std::io::Seek>(reader: T) -> Result<Self, Error> {
         let now = Utc::now();
         let mut archive = zip::ZipArchive::new(reader)?;
-        let mut gtfs = Self::default();
+        let mut file_mapping = HashMap::new();
+
         for i in 0..archive.len() {
-            let file = archive.by_index(i)?;
-            if file.name().ends_with("calendar.txt") {
-                gtfs.calendar = read_objs(file)
-                    .with_context(|e| format!("Error reading calendar.txt : {}", e))?;
-            } else if file.name().ends_with("stops.txt") {
-                gtfs.stops =
-                    read_objs(file).with_context(|e| format!("Error reading stops.txt : {}", e))?;
-            } else if file.name().ends_with("calendar_dates.txt") {
-                gtfs.calendar_dates = read_objs(file)
-                    .with_context(|e| format!("Error reading calendar_dates.txt : {}", e))?;
-            } else if file.name().ends_with("routes.txt") {
-                gtfs.routes = read_objs(file)
-                    .with_context(|e| format!("Error reading routes.txt : {}", e))?;
-            } else if file.name().ends_with("trips.txt") {
-                gtfs.trips =
-                    read_objs(file).with_context(|e| format!("Error reading trips.txt : {}", e))?;
-            } else if file.name().ends_with("stop_times.txt") {
-                gtfs.stop_times = read_objs(file)
-                    .with_context(|e| format!("Error reading stop_times.txt : {}", e))?;
-            } else if file.name().ends_with("agency.txt") {
-                gtfs.agencies = read_objs(file)
-                    .with_context(|e| format!("Error reading agency.txt : {}", e))?;
-            } else if file.name().ends_with("shapes.txt") {
-                gtfs.shapes = read_objs(file)
-                    .with_context(|e| format!("Error reading shapes.txt : {}", e))?;
-            } else if file.name().ends_with("fare_attributes.txt") {
-                gtfs.fare_attributes = read_objs(file)
-                    .with_context(|e| format!("Error reading fare_attributes.txt : {}", e))?;
-            } else if file.name().ends_with("feed_info.txt") {
-                gtfs.feed_info = read_objs(file)
-                    .with_context(|e| format!("Error reading feed_info.txt : {}", e))?;
+            let archive_file = archive.by_index(i)?;
+
+            for gtfs_file in &[
+                "agency.txt",
+                "calendar.txt",
+                "calendar_dates.txt",
+                "routes.txt",
+                "stops.txt",
+                "stop_times.txt",
+                "trips.txt",
+                "fare_attributes.txt",
+                "feed_info.txt",
+                "shapes.txt",
+            ] {
+                if archive_file.name().ends_with(gtfs_file) {
+                    file_mapping.insert(gtfs_file, i);
+                    break;
+                }
             }
         }
-        gtfs.read_duration = Utc::now().signed_duration_since(now).num_milliseconds();
-        Ok(gtfs)
+
+        Ok(Self {
+            agencies: read_file(&file_mapping, &mut archive, "agency.txt"),
+            calendar: read_file(&file_mapping, &mut archive, "calendar.txt"),
+            calendar_dates: read_file(&file_mapping, &mut archive, "calendar_dates.txt"),
+            routes: read_file(&file_mapping, &mut archive, "routes.txt"),
+            stops: read_file(&file_mapping, &mut archive, "stops.txt"),
+            stop_times: read_file(&file_mapping, &mut archive, "stop_times.txt"),
+            trips: read_file(&file_mapping, &mut archive, "trips.txt"),
+            fare_attributes: file_mapping
+                .get(&"fare_attributes.txt")
+                .map(|i| read_objs(archive.by_index(*i)?)),
+            feed_info: file_mapping
+                .get(&"feed_info.txt")
+                .map(|i| read_objs(archive.by_index(*i)?)),
+            shapes: file_mapping
+                .get(&"shapes.txt")
+                .map(|i| read_objs(archive.by_index(*i)?)),
+            read_duration: Utc::now().signed_duration_since(now).num_milliseconds(),
+        })
     }
 }

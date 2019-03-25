@@ -5,15 +5,13 @@ extern crate failure_derive;
 #[macro_use]
 extern crate serde_derive;
 
-
+mod gtfs;
 pub(crate) mod objects;
 mod raw_gtfs;
-mod gtfs;
-
 
 #[cfg(test)]
 mod tests;
 
-pub use objects::*;
 pub use gtfs::Gtfs;
+pub use objects::*;
 pub use raw_gtfs::RawGtfs;

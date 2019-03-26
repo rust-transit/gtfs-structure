@@ -24,19 +24,19 @@ pub struct Gtfs {
 
 impl Gtfs {
     pub fn try_from(raw: RawGtfs) -> Result<Gtfs, Error> {
-        let stops = to_stop_map(raw.stops);
-        let trips = create_trips(raw.trips, raw.stop_times, &stops)?;
+        let stops = to_stop_map(raw.stops?);
+        let trips = create_trips(raw.trips?, raw.stop_times?, &stops)?;
 
         Ok(Gtfs {
             stops,
-            routes: to_map(raw.routes),
+            routes: to_map(raw.routes?),
             trips,
-            agencies: raw.agencies,
-            shapes: to_shape_map(raw.shapes),
-            fare_attributes: to_map(raw.fare_attributes),
-            feed_info: raw.feed_info,
-            calendar: to_map(raw.calendar),
-            calendar_dates: to_calendar_dates(raw.calendar_dates),
+            agencies: raw.agencies?,
+            shapes: to_shape_map(raw.shapes.unwrap_or_else(|| Ok(Vec::new()))?),
+            fare_attributes: to_map(raw.fare_attributes.unwrap_or_else(|| Ok(Vec::new()))?),
+            feed_info: raw.feed_info.unwrap_or_else(|| Ok(Vec::new()))?,
+            calendar: to_map(raw.calendar?),
+            calendar_dates: to_calendar_dates(raw.calendar_dates?),
             read_duration: raw.read_duration,
         })
     }

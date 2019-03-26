@@ -1,5 +1,6 @@
 use crate::objects::*;
 use crate::Gtfs;
+use crate::RawGtfs;
 use chrono::NaiveDate;
 
 #[test]
@@ -208,4 +209,24 @@ fn display() {
             }
         )
     );
+}
+
+#[test]
+fn path_files() {
+    let gtfs = RawGtfs::new("fixtures").expect("impossible to read gtfs");
+    assert_eq!(gtfs.files.len(), 12);
+}
+
+#[test]
+fn zip_files() {
+    let gtfs = RawGtfs::from_zip("fixtures/gtfs.zip").expect("impossible to read gtfs");
+    assert_eq!(gtfs.files.len(), 10);
+    assert!(gtfs.files.contains(&"agency.txt".to_owned()));
+}
+
+#[test]
+fn zip_subdirectory_files() {
+    let gtfs = RawGtfs::from_zip("fixtures/subdirectory.zip").expect("impossible to read gtfs");
+    assert_eq!(gtfs.files.len(), 11);
+    assert!(gtfs.files.contains(&"subdirectory/agency.txt".to_owned()));
 }

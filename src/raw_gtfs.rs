@@ -20,6 +20,7 @@ pub struct RawGtfs {
     pub fare_attributes: Option<Result<Vec<FareAttribute>, Error>>,
     pub feed_info: Option<Result<Vec<FeedInfo>, Error>>,
     pub stop_times: Result<Vec<RawStopTime>, Error>,
+    pub files: Vec<String>,
 }
 
 fn read_objs<T, O>(reader: T) -> Result<Vec<O>, Error>
@@ -91,6 +92,9 @@ impl RawGtfs {
         // Thoses files are not mandatory
         // We use None if they don’t exist, not an Error
         let shapes_file = File::open(p.join("shapes.txt")).ok();
+        let files = std::fs::read_dir(path)?
+            .filter_map(|d| d.ok().and_then(|p| p.path().to_str().map(|s| s.to_owned())))
+            .collect();
         let fare_attributes_file = File::open(p.join("fare_attributes.txt")).ok();
         let feed_info_file = File::open(p.join("feed_info.txt")).ok();
 
@@ -106,6 +110,7 @@ impl RawGtfs {
             fare_attributes: fare_attributes_file.map(read_objs),
             feed_info: feed_info_file.map(read_objs),
             read_duration: Utc::now().signed_duration_since(now).num_milliseconds(),
+            files,
         })
     }
 
@@ -127,9 +132,11 @@ impl RawGtfs {
         let now = Utc::now();
         let mut archive = zip::ZipArchive::new(reader)?;
         let mut file_mapping = HashMap::new();
+        let mut files = Vec::new();
 
         for i in 0..archive.len() {
             let archive_file = archive.by_index(i)?;
+            files.push(archive_file.name().to_owned());
 
             for gtfs_file in &[
                 "agency.txt",
@@ -168,6 +175,7 @@ impl RawGtfs {
                 .get(&"shapes.txt")
                 .map(|i| read_objs(archive.by_index(*i)?)),
             read_duration: Utc::now().signed_duration_since(now).num_milliseconds(),
+            files,
         })
     }
 }

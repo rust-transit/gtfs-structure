@@ -6,6 +6,7 @@ use serde::Deserialize;
 use std::collections::HashMap;
 use std::fs::File;
 use std::path::Path;
+use failure::ResultExt;
 
 /// Data structure that map the GTFS csv with little intelligence
 pub struct RawGtfs {
@@ -23,23 +24,24 @@ pub struct RawGtfs {
     pub files: Vec<String>,
 }
 
-fn read_objs<T, O>(reader: T) -> Result<Vec<O>, Error>
+fn read_objs<T, O>(reader: T, file_name: &str) -> Result<Vec<O>, Error>
 where
     for<'de> O: Deserialize<'de>,
     T: std::io::Read,
 {
     Ok(csv::Reader::from_reader(reader)
         .deserialize()
-        .collect::<Result<_, _>>()?)
+        .collect::<Result<_, _>>().context(format!("error while reading {}", file_name))?)
 }
 
 fn read_objs_from_path<O>(path: std::path::PathBuf) -> Result<Vec<O>, Error>
 where
     for<'de> O: Deserialize<'de>,
 {
+    let file_name = path.file_name().and_then(|f| f.to_str()).unwrap_or_else(||"invalid_file_name").to_string();
     File::open(path)
         .map_err(|e| format_err!("Could not find file: {}", e))
-        .and_then(read_objs)
+        .and_then(|r| read_objs(r, &file_name))
 }
 
 fn read_file<O, T>(
@@ -53,7 +55,7 @@ where
 {
     file_mapping
         .get(&file_name)
-        .map(|i| read_objs(archive.by_index(*i)?))
+        .map(|i| read_objs(archive.by_index(*i)?, file_name))
         .unwrap_or_else(|| Err(format_err!("Could not find file {}", file_name)))
 }
 
@@ -106,9 +108,9 @@ impl RawGtfs {
             routes: read_objs_from_path(p.join("routes.txt")),
             stop_times: read_objs_from_path(p.join("stop_times.txt")),
             agencies: read_objs_from_path(p.join("agency.txt")),
-            shapes: shapes_file.map(read_objs),
-            fare_attributes: fare_attributes_file.map(read_objs),
-            feed_info: feed_info_file.map(read_objs),
+            shapes: shapes_file.map(|r| read_objs(r, "shapes.txt")),
+            fare_attributes: fare_attributes_file.map(|r| read_objs(r, "fare_attributes.txt")),
+            feed_info: feed_info_file.map(|r| read_objs(r, "feed_info.txt")),
             read_duration: Utc::now().signed_duration_since(now).num_milliseconds(),
             files,
         })
@@ -167,13 +169,13 @@ impl RawGtfs {
             trips: read_file(&file_mapping, &mut archive, "trips.txt"),
             fare_attributes: file_mapping
                 .get(&"fare_attributes.txt")
-                .map(|i| read_objs(archive.by_index(*i)?)),
+                .map(|i| read_objs(archive.by_index(*i)?, "fare_attributes.txt")),
             feed_info: file_mapping
                 .get(&"feed_info.txt")
-                .map(|i| read_objs(archive.by_index(*i)?)),
+                .map(|i| read_objs(archive.by_index(*i)?, "feed_info.txt")),
             shapes: file_mapping
                 .get(&"shapes.txt")
-                .map(|i| read_objs(archive.by_index(*i)?)),
+                .map(|i| read_objs(archive.by_index(*i)?, "shapes.txt")),
             read_duration: Utc::now().signed_duration_since(now).num_milliseconds(),
             files,
         })

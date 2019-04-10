@@ -2,11 +2,11 @@ use crate::objects::*;
 use chrono::Utc;
 use failure::format_err;
 use failure::Error;
+use failure::ResultExt;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::fs::File;
 use std::path::Path;
-use failure::ResultExt;
 
 /// Data structure that map the GTFS csv with little intelligence
 pub struct RawGtfs {
@@ -29,16 +29,23 @@ where
     for<'de> O: Deserialize<'de>,
     T: std::io::Read,
 {
-    Ok(csv::Reader::from_reader(reader)
+    Ok(csv::ReaderBuilder::new()
+        .flexible(true)
+        .from_reader(reader)
         .deserialize()
-        .collect::<Result<_, _>>().context(format!("error while reading {}", file_name))?)
+        .collect::<Result<_, _>>()
+        .context(format!("error while reading {}", file_name))?)
 }
 
 fn read_objs_from_path<O>(path: std::path::PathBuf) -> Result<Vec<O>, Error>
 where
     for<'de> O: Deserialize<'de>,
 {
-    let file_name = path.file_name().and_then(|f| f.to_str()).unwrap_or_else(||"invalid_file_name").to_string();
+    let file_name = path
+        .file_name()
+        .and_then(|f| f.to_str())
+        .unwrap_or_else(|| "invalid_file_name")
+        .to_string();
     File::open(path)
         .map_err(|e| format_err!("Could not find file: {}", e))
         .and_then(|r| read_objs(r, &file_name))

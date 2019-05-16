@@ -11,8 +11,8 @@ use std::path::Path;
 /// Data structure that map the GTFS csv with little intelligence
 pub struct RawGtfs {
     pub read_duration: i64,
-    pub calendar: Result<Vec<Calendar>, Error>,
-    pub calendar_dates: Result<Vec<CalendarDate>, Error>,
+    pub calendar: Option<Result<Vec<Calendar>, Error>>,
+    pub calendar_dates: Option<Result<Vec<CalendarDate>, Error>>,
     pub stops: Result<Vec<Stop>, Error>,
     pub routes: Result<Vec<Route>, Error>,
     pub trips: Result<Vec<RawTrip>, Error>,
@@ -51,6 +51,18 @@ where
         .and_then(|r| read_objs(r, &file_name))
 }
 
+fn read_objs_from_optional_path<O>(
+    dir_path: &std::path::Path,
+    file_name: &str,
+) -> Option<Result<Vec<O>, Error>>
+where
+    for<'de> O: Deserialize<'de>,
+{
+    File::open(dir_path.join(file_name))
+        .ok()
+        .map(|r| read_objs(r, file_name))
+}
+
 fn read_file<O, T>(
     file_mapping: &HashMap<&&str, usize>,
     archive: &mut zip::ZipArchive<T>,
@@ -64,6 +76,20 @@ where
         .get(&file_name)
         .map(|i| read_objs(archive.by_index(*i)?, file_name))
         .unwrap_or_else(|| Err(format_err!("Could not find file {}", file_name)))
+}
+
+fn read_optional_file<O, T>(
+    file_mapping: &HashMap<&&str, usize>,
+    archive: &mut zip::ZipArchive<T>,
+    file_name: &str,
+) -> Option<Result<Vec<O>, Error>>
+where
+    for<'de> O: Deserialize<'de>,
+    T: std::io::Read + std::io::Seek,
+{
+    file_mapping
+        .get(&file_name)
+        .map(|i| read_objs(archive.by_index(*i)?, file_name))
 }
 
 fn mandatory_file_summary<T>(objs: &Result<Vec<T>, Error>) -> String {
@@ -100,24 +126,21 @@ impl RawGtfs {
 
         // Thoses files are not mandatory
         // We use None if they don’t exist, not an Error
-        let shapes_file = File::open(p.join("shapes.txt")).ok();
         let files = std::fs::read_dir(path)?
             .filter_map(|d| d.ok().and_then(|p| p.path().to_str().map(|s| s.to_owned())))
             .collect();
-        let fare_attributes_file = File::open(p.join("fare_attributes.txt")).ok();
-        let feed_info_file = File::open(p.join("feed_info.txt")).ok();
 
         Ok(Self {
             trips: read_objs_from_path(p.join("trips.txt")),
-            calendar: read_objs_from_path(p.join("calendar.txt")),
-            calendar_dates: read_objs_from_path(p.join("calendar_dates.txt")),
+            calendar: read_objs_from_optional_path(&p, "calendar.txt"),
+            calendar_dates: read_objs_from_optional_path(&p, "calendar_dates.txt"),
             stops: read_objs_from_path(p.join("stops.txt")),
             routes: read_objs_from_path(p.join("routes.txt")),
             stop_times: read_objs_from_path(p.join("stop_times.txt")),
             agencies: read_objs_from_path(p.join("agency.txt")),
-            shapes: shapes_file.map(|r| read_objs(r, "shapes.txt")),
-            fare_attributes: fare_attributes_file.map(|r| read_objs(r, "fare_attributes.txt")),
-            feed_info: feed_info_file.map(|r| read_objs(r, "feed_info.txt")),
+            shapes: read_objs_from_optional_path(&p, "shapes.txt"),
+            fare_attributes: read_objs_from_optional_path(&p, "fare_attributes.txt"),
+            feed_info: read_objs_from_optional_path(&p, "feed_info.txt"),
             read_duration: Utc::now().signed_duration_since(now).num_milliseconds(),
             files,
         })
@@ -168,21 +191,15 @@ impl RawGtfs {
 
         Ok(Self {
             agencies: read_file(&file_mapping, &mut archive, "agency.txt"),
-            calendar: read_file(&file_mapping, &mut archive, "calendar.txt"),
-            calendar_dates: read_file(&file_mapping, &mut archive, "calendar_dates.txt"),
+            calendar: read_optional_file(&file_mapping, &mut archive, "calendar.txt"),
+            calendar_dates: read_optional_file(&file_mapping, &mut archive, "calendar_dates.txt"),
             routes: read_file(&file_mapping, &mut archive, "routes.txt"),
             stops: read_file(&file_mapping, &mut archive, "stops.txt"),
             stop_times: read_file(&file_mapping, &mut archive, "stop_times.txt"),
             trips: read_file(&file_mapping, &mut archive, "trips.txt"),
-            fare_attributes: file_mapping
-                .get(&"fare_attributes.txt")
-                .map(|i| read_objs(archive.by_index(*i)?, "fare_attributes.txt")),
-            feed_info: file_mapping
-                .get(&"feed_info.txt")
-                .map(|i| read_objs(archive.by_index(*i)?, "feed_info.txt")),
-            shapes: file_mapping
-                .get(&"shapes.txt")
-                .map(|i| read_objs(archive.by_index(*i)?, "shapes.txt")),
+            fare_attributes: read_optional_file(&file_mapping, &mut archive, "fare_attributes.txt"),
+            feed_info: read_optional_file(&file_mapping, &mut archive, "feed_info.txt"),
+            shapes: read_optional_file(&file_mapping, &mut archive, "shapes.txt"),
             read_duration: Utc::now().signed_duration_since(now).num_milliseconds(),
             files,
         })

@@ -167,12 +167,20 @@ impl Calendar {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Hash, Clone, Copy)]
+pub enum Exception {
+    #[serde(rename = "1")]
+    Added,
+    #[serde(rename = "2")]
+    Deleted,
+}
+
 #[derive(Debug, Deserialize)]
 pub struct CalendarDate {
     pub service_id: String,
     #[serde(deserialize_with = "deserialize_date")]
     pub date: NaiveDate,
-    pub exception_type: u8,
+    pub exception_type: Exception,
 }
 
 #[derive(Debug, Deserialize, Clone, Default)]

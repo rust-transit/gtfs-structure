@@ -87,9 +87,9 @@ impl Gtfs {
         {
             let offset = extra_day.date.signed_duration_since(start_date).num_days();
             if offset >= 0 {
-                if extra_day.exception_type == 1 {
+                if extra_day.exception_type == Exception::Added {
                     result.push(offset as u16);
-                } else if extra_day.exception_type == 2 {
+                } else if extra_day.exception_type == Exception::Deleted {
                     removed_days.insert(offset);
                 }
             }

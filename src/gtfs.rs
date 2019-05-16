@@ -35,8 +35,10 @@ impl Gtfs {
             shapes: to_shape_map(raw.shapes.unwrap_or_else(|| Ok(Vec::new()))?),
             fare_attributes: to_map(raw.fare_attributes.unwrap_or_else(|| Ok(Vec::new()))?),
             feed_info: raw.feed_info.unwrap_or_else(|| Ok(Vec::new()))?,
-            calendar: to_map(raw.calendar?),
-            calendar_dates: to_calendar_dates(raw.calendar_dates?),
+            calendar: to_map(raw.calendar.unwrap_or_else(|| Ok(Vec::new()))?),
+            calendar_dates: to_calendar_dates(
+                raw.calendar_dates.unwrap_or_else(|| Ok(Vec::new()))?,
+            ),
             read_duration: raw.read_duration,
         })
     }

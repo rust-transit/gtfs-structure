@@ -16,8 +16,14 @@ fn read_calendar_dates() {
     let gtfs = Gtfs::new("fixtures").expect("impossible to read gtfs");
     assert_eq!(2, gtfs.calendar_dates.len());
     assert_eq!(2, gtfs.calendar_dates["service1"].len());
-    assert_eq!(2, gtfs.calendar_dates["service1"][0].exception_type);
-    assert_eq!(1, gtfs.calendar_dates["service2"][0].exception_type);
+    assert_eq!(
+        Exception::Deleted,
+        gtfs.calendar_dates["service1"][0].exception_type
+    );
+    assert_eq!(
+        Exception::Added,
+        gtfs.calendar_dates["service2"][0].exception_type
+    );
 }
 
 #[test]

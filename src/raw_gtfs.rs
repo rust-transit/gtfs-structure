@@ -7,6 +7,9 @@ use serde::Deserialize;
 use std::collections::HashMap;
 use std::fs::File;
 use std::path::Path;
+use sha2::Sha256;
+use sha2::digest::Digest;
+
 
 /// Data structure that map the GTFS csv with little intelligence
 pub struct RawGtfs {
@@ -22,6 +25,7 @@ pub struct RawGtfs {
     pub feed_info: Option<Result<Vec<FeedInfo>, Error>>,
     pub stop_times: Result<Vec<RawStopTime>, Error>,
     pub files: Vec<String>,
+    pub sha256: Option<String>,
 }
 
 fn read_objs<T, O>(reader: T, file_name: &str) -> Result<Vec<O>, Error>
@@ -143,6 +147,7 @@ impl RawGtfs {
             feed_info: read_objs_from_optional_path(&p, "feed_info.txt"),
             read_duration: Utc::now().signed_duration_since(now).num_milliseconds(),
             files,
+            sha256: None,
         })
     }
 
@@ -162,7 +167,11 @@ impl RawGtfs {
     }
     pub fn from_reader<T: std::io::Read + std::io::Seek>(reader: T) -> Result<Self, Error> {
         let now = Utc::now();
-        let mut archive = zip::ZipArchive::new(reader)?;
+        let mut hasher = Sha256::new();
+        let mut buf_reader = std::io::BufReader::new(reader);
+        let _n = std::io::copy(&mut buf_reader, &mut hasher)?;
+        let hash = hasher.result();
+        let mut archive = zip::ZipArchive::new(buf_reader)?;
         let mut file_mapping = HashMap::new();
         let mut files = Vec::new();
 
@@ -202,6 +211,7 @@ impl RawGtfs {
             shapes: read_optional_file(&file_mapping, &mut archive, "shapes.txt"),
             read_duration: Utc::now().signed_duration_since(now).num_milliseconds(),
             files,
+            sha256: Some(format!("{:x}", hash)),
         })
     }
 }

@@ -574,7 +574,6 @@ where
     D: ::serde::Deserializer<'de>,
     T: ::serde::Deserialize<'de>,
 {
-    use serde::Deserialize;
     Option::<T>::deserialize(de).map(|opt| opt.unwrap_or_else(Default::default))
 }
 

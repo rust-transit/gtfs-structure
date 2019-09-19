@@ -240,7 +240,10 @@ fn zip_subdirectory_files() {
 #[test]
 fn compute_sha256() {
     let gtfs = RawGtfs::from_zip("fixtures/gtfs.zip").expect("impossible to read gtfs");
-    assert_eq!(gtfs.sha256, Some("4a262ae109101ffbd1629b67e080a2b074afdaa60d57684db0e1a31c0a1e75b0".to_owned()));
+    assert_eq!(
+        gtfs.sha256,
+        Some("4a262ae109101ffbd1629b67e080a2b074afdaa60d57684db0e1a31c0a1e75b0".to_owned())
+    );
 }
 
 #[test]

@@ -4,13 +4,12 @@ use failure::format_err;
 use failure::Error;
 use failure::ResultExt;
 use serde::Deserialize;
+use sha2::digest::Digest;
+use sha2::Sha256;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
-use sha2::Sha256;
-use sha2::digest::Digest;
-
 
 /// Data structure that map the GTFS csv with little intelligence
 pub struct RawGtfs {
@@ -42,7 +41,6 @@ where
     } else {
         [].chain(reader)
     };
-
 
     Ok(csv::ReaderBuilder::new()
         .flexible(true)

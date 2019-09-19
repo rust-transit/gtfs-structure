@@ -6,6 +6,7 @@ use failure::ResultExt;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::fs::File;
+use std::io::Read;
 use std::path::Path;
 use sha2::Sha256;
 use sha2::digest::Digest;
@@ -28,14 +29,24 @@ pub struct RawGtfs {
     pub sha256: Option<String>,
 }
 
-fn read_objs<T, O>(reader: T, file_name: &str) -> Result<Vec<O>, Error>
+fn read_objs<T, O>(mut reader: T, file_name: &str) -> Result<Vec<O>, Error>
 where
     for<'de> O: Deserialize<'de>,
     T: std::io::Read,
 {
+    let mut bom = [0; 3];
+    reader.read_exact(&mut bom)?;
+
+    let chained = if bom != [0xefu8, 0xbbu8, 0xbfu8] {
+        bom.chain(reader)
+    } else {
+        [].chain(reader)
+    };
+
+
     Ok(csv::ReaderBuilder::new()
         .flexible(true)
-        .from_reader(reader)
+        .from_reader(chained)
         .deserialize()
         .collect::<Result<_, _>>()
         .context(format!("error while reading {}", file_name))?)
@@ -158,7 +169,6 @@ impl RawGtfs {
 
     #[cfg(feature = "read-url")]
     pub fn from_url(url: &str) -> Result<Self, Error> {
-        use std::io::Read;
         let mut res = reqwest::get(url)?;
         let mut body = Vec::new();
         res.read_to_end(&mut body)?;

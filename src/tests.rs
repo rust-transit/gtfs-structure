@@ -220,7 +220,7 @@ fn display() {
 #[test]
 fn path_files() {
     let gtfs = RawGtfs::new("fixtures").expect("impossible to read gtfs");
-    assert_eq!(gtfs.files.len(), 12);
+    assert_eq!(gtfs.files.len(), 13);
 }
 
 #[test]
@@ -241,4 +241,10 @@ fn zip_subdirectory_files() {
 fn compute_sha256() {
     let gtfs = RawGtfs::from_zip("fixtures/gtfs.zip").expect("impossible to read gtfs");
     assert_eq!(gtfs.sha256, Some("4a262ae109101ffbd1629b67e080a2b074afdaa60d57684db0e1a31c0a1e75b0".to_owned()));
+}
+
+#[test]
+fn test_bom() {
+    let gtfs = RawGtfs::from_zip("fixtures/gtfs_with_bom.zip").expect("impossible to read gtfs");
+    assert_eq!(gtfs.agencies.expect("agencies missing").len(), 2);
 }

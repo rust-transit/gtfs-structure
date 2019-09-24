@@ -147,7 +147,7 @@ fn trip_days() {
 
 #[test]
 fn read_from_gtfs() {
-    let gtfs = Gtfs::from_zip("fixtures/gtfs.zip").unwrap();
+    let gtfs = Gtfs::from_zip("fixtures/zips/gtfs.zip").unwrap();
     assert_eq!(1, gtfs.calendar.len());
     assert_eq!(2, gtfs.calendar_dates.len());
     assert_eq!(5, gtfs.stops.len());
@@ -170,7 +170,7 @@ fn read_from_gtfs() {
 
 #[test]
 fn read_from_subdirectory() {
-    let gtfs = Gtfs::from_zip("fixtures/subdirectory.zip").unwrap();
+    let gtfs = Gtfs::from_zip("fixtures/zips/subdirectory.zip").unwrap();
     assert_eq!(1, gtfs.calendar.len());
     assert_eq!(2, gtfs.calendar_dates.len());
     assert_eq!(5, gtfs.stops.len());
@@ -220,26 +220,26 @@ fn display() {
 #[test]
 fn path_files() {
     let gtfs = RawGtfs::new("fixtures").expect("impossible to read gtfs");
-    assert_eq!(gtfs.files.len(), 13);
+    assert_eq!(gtfs.files.len(), 12);
 }
 
 #[test]
 fn zip_files() {
-    let gtfs = RawGtfs::from_zip("fixtures/gtfs.zip").expect("impossible to read gtfs");
+    let gtfs = RawGtfs::from_zip("fixtures/zips/gtfs.zip").expect("impossible to read gtfs");
     assert_eq!(gtfs.files.len(), 10);
     assert!(gtfs.files.contains(&"agency.txt".to_owned()));
 }
 
 #[test]
 fn zip_subdirectory_files() {
-    let gtfs = RawGtfs::from_zip("fixtures/subdirectory.zip").expect("impossible to read gtfs");
+    let gtfs = RawGtfs::from_zip("fixtures/zips/subdirectory.zip").expect("impossible to read gtfs");
     assert_eq!(gtfs.files.len(), 11);
     assert!(gtfs.files.contains(&"subdirectory/agency.txt".to_owned()));
 }
 
 #[test]
 fn compute_sha256() {
-    let gtfs = RawGtfs::from_zip("fixtures/gtfs.zip").expect("impossible to read gtfs");
+    let gtfs = RawGtfs::from_zip("fixtures/zips/gtfs.zip").expect("impossible to read gtfs");
     assert_eq!(
         gtfs.sha256,
         Some("4a262ae109101ffbd1629b67e080a2b074afdaa60d57684db0e1a31c0a1e75b0".to_owned())
@@ -248,6 +248,14 @@ fn compute_sha256() {
 
 #[test]
 fn test_bom() {
-    let gtfs = RawGtfs::from_zip("fixtures/gtfs_with_bom.zip").expect("impossible to read gtfs");
+    let gtfs = RawGtfs::from_zip("fixtures/zips/gtfs_with_bom.zip").expect("impossible to read gtfs");
     assert_eq!(gtfs.agencies.expect("agencies missing").len(), 2);
+}
+
+
+#[test]
+fn test_macosx() {
+    let gtfs = RawGtfs::from_zip("fixtures/zips/macosx.zip").expect("impossible to read gtfs");
+    assert_eq!(gtfs.agencies.expect("agencies missing").len(), 2);
+    assert_eq!(gtfs.stops.expect("stops missing").len(), 5);
 }

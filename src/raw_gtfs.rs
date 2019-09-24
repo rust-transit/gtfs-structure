@@ -199,7 +199,8 @@ impl RawGtfs {
                 "feed_info.txt",
                 "shapes.txt",
             ] {
-                if archive_file.name().ends_with(gtfs_file) {
+                let path = std::path::Path::new(archive_file.name());
+                if path.file_name() == Some(std::ffi::OsStr::new(gtfs_file)) {
                     file_mapping.insert(gtfs_file, i);
                     break;
                 }

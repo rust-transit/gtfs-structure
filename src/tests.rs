@@ -220,7 +220,7 @@ fn display() {
 #[test]
 fn path_files() {
     let gtfs = RawGtfs::new("fixtures").expect("impossible to read gtfs");
-    assert_eq!(gtfs.files.len(), 12);
+    assert_eq!(gtfs.files.len(), 11);
 }
 
 #[test]

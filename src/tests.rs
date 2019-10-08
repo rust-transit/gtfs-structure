@@ -260,3 +260,10 @@ fn test_macosx() {
     assert_eq!(gtfs.agencies.expect("agencies missing").len(), 2);
     assert_eq!(gtfs.stops.expect("stops missing").len(), 5);
 }
+
+#[test]
+fn read_missing_feed_dates() {
+    let gtfs = Gtfs::new("fixtures/missing_feed_date").expect("impossible to read gtfs");
+    assert_eq!(1, gtfs.feed_info.len());
+    assert!(gtfs.feed_info[0].start_date.is_none());
+}

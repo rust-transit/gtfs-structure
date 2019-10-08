@@ -31,7 +31,7 @@ let gtfs = gtfs_structures::Gtfs::from_zip("path_of_a_zip")?;
 If you a lower level model, you can use `gtfs_structures::RawGtfs`:
 
 ```rust
-let raw_gtfs = RawGtfs::new("fixtures").expect("impossible to read gtfs");
+let raw_gtfs = RawGtfs::new("fixtures/basic").expect("impossible to read gtfs");
 for stop in raw_gtfs.stops.expect("impossible to read stops.txt") {
     println!("stop: {}", stop.name);
 }

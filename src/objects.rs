@@ -501,10 +501,15 @@ pub struct FeedInfo {
     pub lang: String,
     #[serde(
         deserialize_with = "deserialize_option_date",
-        rename = "feed_start_date"
+        rename = "feed_start_date",
+        default
     )]
     pub start_date: Option<NaiveDate>,
-    #[serde(deserialize_with = "deserialize_option_date", rename = "feed_end_date")]
+    #[serde(
+        deserialize_with = "deserialize_option_date",
+        rename = "feed_end_date",
+        default
+    )]
     pub end_date: Option<NaiveDate>,
     #[serde(rename = "feed_version")]
     pub version: Option<String>,

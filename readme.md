@@ -1,0 +1,69 @@
+# [GTFS](https://gtfs.org/) Model
+
+The [General Transit Feed Specification](https://gtfs.org/) (GTFS) is a commonly used model to represent transit data.
+
+This crates brings [serde](https://serde.rs) structures of this model.
+
+## Using
+
+This crates has 2 main entry-points.
+
+### Gtfs
+The most common one is to create a `gtfs_structures::Gtfs`:
+
+```rust
+let gtfs = gtfs_structures::Gtfs::new("path_of_a_directory")?;
+println!("there are {} stops in the gtfs", gtfs.stops.len());
+
+// This structure is the easiest to use as the collections are `HashMap`,
+// thus you can access an object by its id.
+let route_1 = gtfs.routes.get("1").expect("no route 1");
+println!("{}: {:?}", route_1.short_name, route_1);
+```
+
+You can also directly read a zip file:
+
+```rust
+let gtfs = gtfs_structures::Gtfs::from_zip("path_of_a_zip")?;
+```
+### RawGtfs
+
+If you a lower level model, you can use `gtfs_structures::RawGtfs`:
+
+```rust
+let raw_gtfs = RawGtfs::new("fixtures").expect("impossible to read gtfs");
+for stop in raw_gtfs.stops.expect("impossible to read stops.txt") {
+    println!("stop: {}", stop.name);
+}
+```
+
+Instead of easy to use `HashMap`, each collection is a `Result` with an error if something went wrong during the reading.
+
+This makes it possible for example for a [GTFS validator](https://github.com/etalab/transport-validator/) to display better error messages.
+
+### Feature 'read-url'
+
+By default the feature 'read-url' is activated. It makes it possible to read a Gtfs from an url.
+
+```rust
+let gtfs = gtfs_structures::Gtfs::from_url("http://www.metromobilite.fr/data/Horaires/SEM-GTFS.zip")?;
+```
+
+If you don't want the dependency to `reqwest`, you can remove this feature.
+
+## Building
+
+You need an up to date rust tool-chain (commonly installed with [rustup](https://rustup.rs/)).
+
+Building is done with:
+
+`cargo build`
+
+You can also run the unit tests:
+
+`cargo test`
+
+And run the examples by giving their names:
+
+`cargo run --example gtfs_reading`
+

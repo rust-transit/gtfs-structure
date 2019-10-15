@@ -1,8 +1,10 @@
 use crate::objects::*;
+use bytes;
 use chrono::Utc;
 use failure::format_err;
 use failure::Error;
 use failure::ResultExt;
+use futures::{Future, Stream};
 use serde::Deserialize;
 use sha2::digest::Digest;
 use sha2::Sha256;
@@ -173,6 +175,26 @@ impl RawGtfs {
         let cursor = std::io::Cursor::new(body);
         Self::from_reader(cursor)
     }
+
+    #[cfg(feature = "read-url")]
+    pub fn from_url_async(url: &str) -> impl Future<Item = Self, Error = Error> {
+        let client = reqwest::r#async::Client::new();
+        client
+            .get(url)
+            .send()
+            .from_err()
+            .and_then(|res| {
+                res.into_body().map_err(Error::from).fold(
+                    bytes::BytesMut::new(),
+                    move |mut body, chunk| {
+                        body.extend_from_slice(&chunk);
+                        Ok::<_, Error>(body)
+                    },
+                )
+            })
+            .and_then(move |body| Self::from_reader(std::io::Cursor::new(body)))
+    }
+
     pub fn from_reader<T: std::io::Read + std::io::Seek>(reader: T) -> Result<Self, Error> {
         let now = Utc::now();
         let mut hasher = Sha256::new();

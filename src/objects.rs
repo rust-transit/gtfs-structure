@@ -34,6 +34,8 @@ pub enum LocationType {
     StopPoint = 0,
     StopArea = 1,
     StationEntrance = 2,
+    GenericNode = 3,
+    BoardingArea = 4,
 }
 
 impl Default for LocationType {
@@ -563,6 +565,8 @@ where
     Ok(match s.as_str() {
         "1" => LocationType::StopArea,
         "2" => LocationType::StationEntrance,
+        "3" => LocationType::GenericNode,
+        "4" => LocationType::BoardingArea,
         _ => LocationType::StopPoint,
     })
 }

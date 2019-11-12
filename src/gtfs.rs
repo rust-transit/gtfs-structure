@@ -57,8 +57,8 @@ impl Gtfs {
         println!("  Feed info: {}", self.feed_info.len());
     }
 
-    pub fn new<P: AsRef<std::path::Path>>(path: P) -> Result<Gtfs, Error> {
-        RawGtfs::new(path).and_then(Gtfs::try_from)
+    pub fn from_path<P: AsRef<std::path::Path>>(path: P) -> Result<Gtfs, Error> {
+        RawGtfs::from_path(path).and_then(Gtfs::try_from)
     }
 
     pub fn from_zip<P: AsRef<std::path::Path>>(file: P) -> Result<Gtfs, Error> {

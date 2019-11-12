@@ -135,7 +135,7 @@ impl RawGtfs {
         println!("  Feed info: {}", optional_file_summary(&self.feed_info));
     }
 
-    pub fn new<P: AsRef<Path>>(path: P) -> Result<Self, Error> {
+    pub fn from_path<P: AsRef<Path>>(path: P) -> Result<Self, Error> {
         let now = Utc::now();
         let p = path.as_ref();
 

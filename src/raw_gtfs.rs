@@ -135,6 +135,24 @@ impl RawGtfs {
         println!("  Feed info: {}", optional_file_summary(&self.feed_info));
     }
 
+    #[cfg(feature = "read-url")]
+    pub fn new(gtfs: &str) -> Result<Self, Error> {
+        match (gtfs.starts_with("http"), gtfs.ends_with(".zip")) {
+            (true, _) => Self::from_url(gtfs),
+            (_, true) => Self::from_zip(gtfs),
+            _ => Self::from_path(gtfs),
+        }
+    }
+
+    #[cfg(not(feature = "read-url"))]
+    pub fn new(gtfs_source: &str) -> Result<Self, Error> {
+        if gtfs_source.ends_with(".zip") {
+            Self::from_zip(gtfs_source)
+        } else {
+            Self::from_path(gtfs_source)
+        }
+    }
+
     pub fn from_path<P: AsRef<Path>>(path: P) -> Result<Self, Error> {
         let now = Utc::now();
         let p = path.as_ref();

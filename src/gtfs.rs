@@ -57,16 +57,16 @@ impl Gtfs {
         println!("  Feed info: {}", self.feed_info.len());
     }
 
-    pub fn new(path: &str) -> Result<Gtfs, Error> {
+    pub fn new<P: AsRef<std::path::Path>>(path: P) -> Result<Gtfs, Error> {
         RawGtfs::new(path).and_then(Gtfs::try_from)
     }
 
-    pub fn from_zip(file: &str) -> Result<Gtfs, Error> {
+    pub fn from_zip<P: AsRef<std::path::Path>>(file: P) -> Result<Gtfs, Error> {
         RawGtfs::from_zip(file).and_then(Gtfs::try_from)
     }
 
     #[cfg(feature = "read-url")]
-    pub fn from_url(url: &str) -> Result<Gtfs, Error> {
+    pub fn from_url<U: reqwest::IntoUrl>(url: U) -> Result<Gtfs, Error> {
         RawGtfs::from_url(url).and_then(Gtfs::try_from)
     }
 

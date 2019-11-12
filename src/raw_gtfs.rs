@@ -135,13 +135,13 @@ impl RawGtfs {
         println!("  Feed info: {}", optional_file_summary(&self.feed_info));
     }
 
-    pub fn new(path: &str) -> Result<Self, Error> {
+    pub fn new<P: AsRef<Path>>(path: P) -> Result<Self, Error> {
         let now = Utc::now();
-        let p = Path::new(path);
+        let p = path.as_ref();
 
         // Thoses files are not mandatory
         // We use None if they don’t exist, not an Error
-        let files = std::fs::read_dir(path)?
+        let files = std::fs::read_dir(p)?
             .filter_map(|d| d.ok().and_then(|p| p.path().to_str().map(|s| s.to_owned())))
             .collect();
 
@@ -162,13 +162,13 @@ impl RawGtfs {
         })
     }
 
-    pub fn from_zip(file: &str) -> Result<Self, Error> {
-        let reader = File::open(file)?;
+    pub fn from_zip<P: AsRef<Path>>(file: P) -> Result<Self, Error> {
+        let reader = File::open(file.as_ref())?;
         Self::from_reader(reader)
     }
 
     #[cfg(feature = "read-url")]
-    pub fn from_url(url: &str) -> Result<Self, Error> {
+    pub fn from_url<U: reqwest::IntoUrl>(url: U) -> Result<Self, Error> {
         let mut res = reqwest::get(url)?;
         let mut body = Vec::new();
         res.read_to_end(&mut body)?;

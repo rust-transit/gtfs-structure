@@ -5,7 +5,7 @@ use chrono::NaiveDate;
 
 #[test]
 fn read_calendar() {
-    let gtfs = Gtfs::new("fixtures/basic").expect("impossible to read gtfs");
+    let gtfs = Gtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
     assert_eq!(1, gtfs.calendar.len());
     assert!(!gtfs.calendar["service1"].monday);
     assert!(gtfs.calendar["service1"].saturday);
@@ -13,7 +13,7 @@ fn read_calendar() {
 
 #[test]
 fn read_calendar_dates() {
-    let gtfs = Gtfs::new("fixtures/basic").expect("impossible to read gtfs");
+    let gtfs = Gtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
     assert_eq!(2, gtfs.calendar_dates.len());
     assert_eq!(2, gtfs.calendar_dates["service1"].len());
     assert_eq!(
@@ -28,7 +28,7 @@ fn read_calendar_dates() {
 
 #[test]
 fn read_stop() {
-    let gtfs = Gtfs::new("fixtures/basic").expect("impossible to read gtfs");
+    let gtfs = Gtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
     assert_eq!(5, gtfs.stops.len());
     assert_eq!(
         LocationType::StopArea,
@@ -46,7 +46,7 @@ fn read_stop() {
 
 #[test]
 fn read_routes() {
-    let gtfs = Gtfs::new("fixtures/basic").expect("impossible to read gtfs");
+    let gtfs = Gtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
     assert_eq!(2, gtfs.routes.len());
     assert_eq!(RouteType::Bus, gtfs.get_route("1").unwrap().route_type);
     assert_eq!(
@@ -57,13 +57,13 @@ fn read_routes() {
 
 #[test]
 fn read_trips() {
-    let gtfs = Gtfs::new("fixtures/basic").expect("impossible to read gtfs");
+    let gtfs = Gtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
     assert_eq!(1, gtfs.trips.len());
 }
 
 #[test]
 fn read_stop_times() {
-    let gtfs = Gtfs::new("fixtures/basic").expect("impossible to read gtfs");
+    let gtfs = Gtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
     let stop_times = &gtfs.trips.get("trip1").unwrap().stop_times;
     assert_eq!(2, stop_times.len());
     assert_eq!(
@@ -83,7 +83,7 @@ fn read_stop_times() {
 
 #[test]
 fn read_agencies() {
-    let gtfs = Gtfs::new("fixtures/basic").expect("impossible to read gtfs");
+    let gtfs = Gtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
     let agencies = &gtfs.agencies;
     assert_eq!("BIBUS", agencies[0].name);
     assert_eq!("http://www.bibus.fr", agencies[0].url);
@@ -92,7 +92,7 @@ fn read_agencies() {
 
 #[test]
 fn read_shapes() {
-    let gtfs = Gtfs::new("fixtures/basic").expect("impossible to read gtfs");
+    let gtfs = Gtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
     let shapes = &gtfs.shapes;
     assert_eq!(37.61956, shapes["A_shp"][0].latitude);
     assert_eq!(-122.48161, shapes["A_shp"][0].longitude);
@@ -100,7 +100,7 @@ fn read_shapes() {
 
 #[test]
 fn read_fare_attributes() {
-    let gtfs = Gtfs::new("fixtures/basic").expect("impossible to read gtfs");
+    let gtfs = Gtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
     assert_eq!(1, gtfs.fare_attributes.len());
     assert_eq!("1.50", gtfs.get_fare_attributes("50").unwrap().price);
     assert_eq!("EUR", gtfs.get_fare_attributes("50").unwrap().currency);
@@ -124,7 +124,7 @@ fn read_fare_attributes() {
 
 #[test]
 fn read_feed_info() {
-    let gtfs = Gtfs::new("fixtures/basic").expect("impossible to read gtfs");
+    let gtfs = Gtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
     let feed = &gtfs.feed_info;
     assert_eq!(1, feed.len());
     assert_eq!("SNCF", feed[0].name);
@@ -137,7 +137,7 @@ fn read_feed_info() {
 
 #[test]
 fn trip_days() {
-    let gtfs = Gtfs::new("fixtures/basic/").unwrap();
+    let gtfs = Gtfs::from_path("fixtures/basic/").unwrap();
     let days = gtfs.trip_days(&"service1".to_owned(), NaiveDate::from_ymd(2017, 1, 1));
     assert_eq!(vec![6, 7, 13, 14], days);
 
@@ -147,7 +147,7 @@ fn trip_days() {
 
 #[test]
 fn read_from_gtfs() {
-    let gtfs = Gtfs::from_zip("fixtures/zips/gtfs.zip").unwrap();
+    let gtfs = Gtfs::from_path("fixtures/zips/gtfs.zip").unwrap();
     assert_eq!(1, gtfs.calendar.len());
     assert_eq!(2, gtfs.calendar_dates.len());
     assert_eq!(5, gtfs.stops.len());
@@ -170,7 +170,7 @@ fn read_from_gtfs() {
 
 #[test]
 fn read_from_subdirectory() {
-    let gtfs = Gtfs::from_zip("fixtures/zips/subdirectory.zip").unwrap();
+    let gtfs = Gtfs::from_path("fixtures/zips/subdirectory.zip").unwrap();
     assert_eq!(1, gtfs.calendar.len());
     assert_eq!(2, gtfs.calendar_dates.len());
     assert_eq!(5, gtfs.stops.len());
@@ -219,13 +219,13 @@ fn display() {
 
 #[test]
 fn path_files() {
-    let gtfs = RawGtfs::new("fixtures/basic").expect("impossible to read gtfs");
+    let gtfs = RawGtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
     assert_eq!(gtfs.files.len(), 10);
 }
 
 #[test]
 fn zip_files() {
-    let gtfs = RawGtfs::from_zip("fixtures/zips/gtfs.zip").expect("impossible to read gtfs");
+    let gtfs = RawGtfs::from_path("fixtures/zips/gtfs.zip").expect("impossible to read gtfs");
     assert_eq!(gtfs.files.len(), 10);
     assert!(gtfs.files.contains(&"agency.txt".to_owned()));
 }
@@ -233,14 +233,14 @@ fn zip_files() {
 #[test]
 fn zip_subdirectory_files() {
     let gtfs =
-        RawGtfs::from_zip("fixtures/zips/subdirectory.zip").expect("impossible to read gtfs");
+        RawGtfs::from_path("fixtures/zips/subdirectory.zip").expect("impossible to read gtfs");
     assert_eq!(gtfs.files.len(), 11);
     assert!(gtfs.files.contains(&"subdirectory/agency.txt".to_owned()));
 }
 
 #[test]
 fn compute_sha256() {
-    let gtfs = RawGtfs::from_zip("fixtures/zips/gtfs.zip").expect("impossible to read gtfs");
+    let gtfs = RawGtfs::from_path("fixtures/zips/gtfs.zip").expect("impossible to read gtfs");
     assert_eq!(
         gtfs.sha256,
         Some("4a262ae109101ffbd1629b67e080a2b074afdaa60d57684db0e1a31c0a1e75b0".to_owned())
@@ -250,20 +250,20 @@ fn compute_sha256() {
 #[test]
 fn test_bom() {
     let gtfs =
-        RawGtfs::from_zip("fixtures/zips/gtfs_with_bom.zip").expect("impossible to read gtfs");
+        RawGtfs::from_path("fixtures/zips/gtfs_with_bom.zip").expect("impossible to read gtfs");
     assert_eq!(gtfs.agencies.expect("agencies missing").len(), 2);
 }
 
 #[test]
 fn test_macosx() {
-    let gtfs = RawGtfs::from_zip("fixtures/zips/macosx.zip").expect("impossible to read gtfs");
+    let gtfs = RawGtfs::from_path("fixtures/zips/macosx.zip").expect("impossible to read gtfs");
     assert_eq!(gtfs.agencies.expect("agencies missing").len(), 2);
     assert_eq!(gtfs.stops.expect("stops missing").len(), 5);
 }
 
 #[test]
 fn read_missing_feed_dates() {
-    let gtfs = Gtfs::new("fixtures/missing_feed_date").expect("impossible to read gtfs");
+    let gtfs = Gtfs::from_path("fixtures/missing_feed_date").expect("impossible to read gtfs");
     assert_eq!(1, gtfs.feed_info.len());
     assert!(gtfs.feed_info[0].start_date.is_none());
 }

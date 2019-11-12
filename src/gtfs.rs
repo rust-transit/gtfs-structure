@@ -57,16 +57,26 @@ impl Gtfs {
         println!("  Feed info: {}", self.feed_info.len());
     }
 
-    pub fn new(path: &str) -> Result<Gtfs, Error> {
-        RawGtfs::new(path).and_then(Gtfs::try_from)
+    /// Reads from an url (if starts with http), or a local path (either a directory or zipped file)
+    /// To read from an url, build with read-url feature
+    /// See also Gtfs::from_url and Gtfs::from_path if you don’t want the library to guess
+    pub fn new(gtfs: &str) -> Result<Gtfs, Error> {
+        RawGtfs::new(gtfs).and_then(Gtfs::try_from)
     }
 
-    pub fn from_zip(file: &str) -> Result<Gtfs, Error> {
-        RawGtfs::from_zip(file).and_then(Gtfs::try_from)
+    /// Reads the GTFS from a local zip archive or local directory
+    pub fn from_path<P>(path: P) -> Result<Gtfs, Error>
+    where
+        P: AsRef<std::path::Path>,
+        P: std::fmt::Display,
+    {
+        RawGtfs::from_path(path).and_then(Gtfs::try_from)
     }
 
+    /// Reads the GTFS from a remote url
+    /// The library must be built with the read-url feature
     #[cfg(feature = "read-url")]
-    pub fn from_url(url: &str) -> Result<Gtfs, Error> {
+    pub fn from_url<U: reqwest::IntoUrl>(url: U) -> Result<Gtfs, Error> {
         RawGtfs::from_url(url).and_then(Gtfs::try_from)
     }
 

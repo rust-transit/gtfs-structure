@@ -122,6 +122,7 @@ fn optional_file_summary<T>(objs: &Option<Result<Vec<T>, Error>>) -> String {
 }
 
 impl RawGtfs {
+    /// Prints on stdout some basic statistics about the GTFS file
     pub fn print_stats(&self) {
         println!("GTFS data:");
         println!("  Read in {} ms", self.read_duration);
@@ -135,13 +136,48 @@ impl RawGtfs {
         println!("  Feed info: {}", optional_file_summary(&self.feed_info));
     }
 
-    pub fn new(path: &str) -> Result<Self, Error> {
-        let now = Utc::now();
-        let p = Path::new(path);
+    /// Reads from an url (if starts with http), or a local path (either a directory or zipped file)
+    /// To read from an url, build with read-url feature
+    /// See also RawGtfs::from_url and RawGtfs::from_path if you don’t want the library to guess
+    #[cfg(feature = "read-url")]
+    pub fn new(gtfs: &str) -> Result<Self, Error> {
+        if gtfs.starts_with("http") {
+            Self::from_url(gtfs)
+        } else {
+            Self::from_path(gtfs)
+        }
+    }
 
+    #[cfg(not(feature = "read-url"))]
+    pub fn new(gtfs_source: &str) -> Result<Self, Error> {
+        Self::from_path(gtfs_source)
+    }
+
+    /// Reads the raw GTFS from a local zip archive or local directory
+    pub fn from_path<P>(path: P) -> Result<Self, Error>
+    where
+        P: AsRef<Path>,
+        P: std::fmt::Display,
+    {
+        let p = path.as_ref();
+        if p.is_file() {
+            let reader = File::open(p)?;
+            Self::from_reader(reader)
+        } else if p.is_dir() {
+            Self::from_directory(p)
+        } else {
+            Err(format_err!(
+                "Could not read GTFS: {} is neither a file nor a directory",
+                path
+            ))
+        }
+    }
+
+    fn from_directory(p: &std::path::Path) -> Result<Self, Error> {
+        let now = Utc::now();
         // Thoses files are not mandatory
         // We use None if they don’t exist, not an Error
-        let files = std::fs::read_dir(path)?
+        let files = std::fs::read_dir(p)?
             .filter_map(|d| d.ok().and_then(|p| p.path().to_str().map(|s| s.to_owned())))
             .collect();
 
@@ -162,13 +198,10 @@ impl RawGtfs {
         })
     }
 
-    pub fn from_zip(file: &str) -> Result<Self, Error> {
-        let reader = File::open(file)?;
-        Self::from_reader(reader)
-    }
-
+    /// Reads the raw GTFS from a remote url
+    /// The library must be built with the read-url feature
     #[cfg(feature = "read-url")]
-    pub fn from_url(url: &str) -> Result<Self, Error> {
+    pub fn from_url<U: reqwest::IntoUrl>(url: U) -> Result<Self, Error> {
         let mut res = reqwest::get(url)?;
         let mut body = Vec::new();
         res.read_to_end(&mut body)?;
@@ -176,6 +209,8 @@ impl RawGtfs {
         Self::from_reader(cursor)
     }
 
+    /// Non-blocking read the raw GTFS from a remote url
+    /// The library must be built with the read-url feature
     #[cfg(feature = "read-url")]
     pub fn from_url_async(url: &str) -> impl Future<Item = Self, Error = Error> {
         let client = reqwest::r#async::Client::new();

@@ -135,54 +135,60 @@ impl RawGtfs {
         println!("  Feed info: {}", optional_file_summary(&self.feed_info));
     }
 
+    /// Reads from an url (if starts with http), or a local path (either a directory or zipped file)
+    /// See also RawGtfs::from_url and RawGtfs::from_path if you don’t want the library to guess
     #[cfg(feature = "read-url")]
     pub fn new(gtfs: &str) -> Result<Self, Error> {
-        match (gtfs.starts_with("http"), gtfs.ends_with(".zip")) {
-            (true, _) => Self::from_url(gtfs),
-            (_, true) => Self::from_zip(gtfs),
-            _ => Self::from_path(gtfs),
+        if gtfs.starts_with("http") {
+            Self::from_url(gtfs)
+        } else {
+            Self::from_path(gtfs)
         }
     }
 
     #[cfg(not(feature = "read-url"))]
     pub fn new(gtfs_source: &str) -> Result<Self, Error> {
-        if gtfs_source.ends_with(".zip") {
-            Self::from_zip(gtfs_source)
-        } else {
-            Self::from_path(gtfs_source)
-        }
+        Self::from_path(gtfs_source)
     }
 
-    pub fn from_path<P: AsRef<Path>>(path: P) -> Result<Self, Error> {
+    pub fn from_path<P>(path: P) -> Result<Self, Error>
+    where
+        P: AsRef<Path>,
+        P: std::fmt::Display,
+    {
         let now = Utc::now();
         let p = path.as_ref();
+        if p.is_file() {
+            let reader = File::open(p)?;
+            Self::from_reader(reader)
+        } else if p.is_dir() {
+            // Thoses files are not mandatory
+            // We use None if they don’t exist, not an Error
+            let files = std::fs::read_dir(p)?
+                .filter_map(|d| d.ok().and_then(|p| p.path().to_str().map(|s| s.to_owned())))
+                .collect();
 
-        // Thoses files are not mandatory
-        // We use None if they don’t exist, not an Error
-        let files = std::fs::read_dir(p)?
-            .filter_map(|d| d.ok().and_then(|p| p.path().to_str().map(|s| s.to_owned())))
-            .collect();
-
-        Ok(Self {
-            trips: read_objs_from_path(p.join("trips.txt")),
-            calendar: read_objs_from_optional_path(&p, "calendar.txt"),
-            calendar_dates: read_objs_from_optional_path(&p, "calendar_dates.txt"),
-            stops: read_objs_from_path(p.join("stops.txt")),
-            routes: read_objs_from_path(p.join("routes.txt")),
-            stop_times: read_objs_from_path(p.join("stop_times.txt")),
-            agencies: read_objs_from_path(p.join("agency.txt")),
-            shapes: read_objs_from_optional_path(&p, "shapes.txt"),
-            fare_attributes: read_objs_from_optional_path(&p, "fare_attributes.txt"),
-            feed_info: read_objs_from_optional_path(&p, "feed_info.txt"),
-            read_duration: Utc::now().signed_duration_since(now).num_milliseconds(),
-            files,
-            sha256: None,
-        })
-    }
-
-    pub fn from_zip<P: AsRef<Path>>(file: P) -> Result<Self, Error> {
-        let reader = File::open(file.as_ref())?;
-        Self::from_reader(reader)
+            Ok(Self {
+                trips: read_objs_from_path(p.join("trips.txt")),
+                calendar: read_objs_from_optional_path(&p, "calendar.txt"),
+                calendar_dates: read_objs_from_optional_path(&p, "calendar_dates.txt"),
+                stops: read_objs_from_path(p.join("stops.txt")),
+                routes: read_objs_from_path(p.join("routes.txt")),
+                stop_times: read_objs_from_path(p.join("stop_times.txt")),
+                agencies: read_objs_from_path(p.join("agency.txt")),
+                shapes: read_objs_from_optional_path(&p, "shapes.txt"),
+                fare_attributes: read_objs_from_optional_path(&p, "fare_attributes.txt"),
+                feed_info: read_objs_from_optional_path(&p, "feed_info.txt"),
+                read_duration: Utc::now().signed_duration_since(now).num_milliseconds(),
+                files,
+                sha256: None,
+            })
+        } else {
+            Err(format_err!(
+                "Could not read GTFS: {} is neither a file nor a directory",
+                path
+            ))
+        }
     }
 
     #[cfg(feature = "read-url")]

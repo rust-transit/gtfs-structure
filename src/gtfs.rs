@@ -64,6 +64,7 @@ impl Gtfs {
         RawGtfs::new(gtfs).and_then(Gtfs::try_from)
     }
 
+    /// Reads the GTFS from a local zip archive or local directory
     pub fn from_path<P>(path: P) -> Result<Gtfs, Error>
     where
         P: AsRef<std::path::Path>,
@@ -72,6 +73,8 @@ impl Gtfs {
         RawGtfs::from_path(path).and_then(Gtfs::try_from)
     }
 
+    /// Reads the GTFS from a remote url
+    /// The library must be built with the read-url feature
     #[cfg(feature = "read-url")]
     pub fn from_url<U: reqwest::IntoUrl>(url: U) -> Result<Gtfs, Error> {
         RawGtfs::from_url(url).and_then(Gtfs::try_from)

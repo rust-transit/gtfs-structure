@@ -67,8 +67,7 @@ impl Gtfs {
     /// Reads the GTFS from a local zip archive or local directory
     pub fn from_path<P>(path: P) -> Result<Gtfs, Error>
     where
-        P: AsRef<std::path::Path>,
-        P: std::fmt::Display,
+        P: AsRef<std::path::Path> + std::fmt::Display,
     {
         RawGtfs::from_path(path).and_then(Gtfs::try_from)
     }

@@ -1,10 +1,8 @@
 use crate::objects::*;
-use bytes;
 use chrono::Utc;
 use failure::format_err;
 use failure::Error;
 use failure::ResultExt;
-use futures::{Future, Stream};
 use serde::Deserialize;
 use sha2::digest::Digest;
 use sha2::Sha256;
@@ -156,8 +154,7 @@ impl RawGtfs {
     /// Reads the raw GTFS from a local zip archive or local directory
     pub fn from_path<P>(path: P) -> Result<Self, Error>
     where
-        P: AsRef<Path>,
-        P: std::fmt::Display,
+        P: AsRef<Path> + std::fmt::Display,
     {
         let p = path.as_ref();
         if p.is_file() {
@@ -212,7 +209,8 @@ impl RawGtfs {
     /// Non-blocking read the raw GTFS from a remote url
     /// The library must be built with the read-url feature
     #[cfg(feature = "read-url")]
-    pub fn from_url_async(url: &str) -> impl Future<Item = Self, Error = Error> {
+    pub fn from_url_async(url: &str) -> impl futures::Future<Item = Self, Error = Error> {
+        use futures::{Future, Stream};
         let client = reqwest::r#async::Client::new();
         client
             .get(url)

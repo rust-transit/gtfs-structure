@@ -234,10 +234,16 @@ impl fmt::Display for Stop {
 #[derive(Debug, Deserialize, Default)]
 pub struct RawStopTime {
     pub trip_id: String,
-    #[serde(deserialize_with = "deserialize_time")]
-    pub arrival_time: u32,
-    #[serde(deserialize_with = "deserialize_time")]
-    pub departure_time: u32,
+    /// Arrival time of the stop time.
+    /// It's an option since the intermediate stops can have have no arrival
+    /// and this arrival needs to be interpolated
+    #[serde(deserialize_with = "deserialize_optional_time")]
+    pub arrival_time: Option<u32>,
+    /// Departure time of the stop time.
+    /// It's an option since the intermediate stops can have have no departure
+    /// and this departure needs to be interpolated
+    #[serde(deserialize_with = "deserialize_optional_time")]
+    pub departure_time: Option<u32>,
     pub stop_id: String,
     pub stop_sequence: u16,
     pub pickup_type: Option<PickupDropOffType>,
@@ -246,9 +252,9 @@ pub struct RawStopTime {
 
 #[derive(Debug, Default)]
 pub struct StopTime {
-    pub arrival_time: u32,
+    pub arrival_time: Option<u32>,
     pub stop: Arc<Stop>,
-    pub departure_time: u32,
+    pub departure_time: Option<u32>,
     pub pickup_type: Option<PickupDropOffType>,
     pub drop_off_type: Option<PickupDropOffType>,
     pub stop_sequence: u16,
@@ -549,12 +555,16 @@ pub fn parse_time(s: &str) -> Result<u32, Error> {
     Ok(&v[0].parse()? * 3600u32 + &v[1].parse()? * 60u32 + &v[2].parse()?)
 }
 
-fn deserialize_time<'de, D>(deserializer: D) -> Result<u32, D::Error>
+fn deserialize_optional_time<'de, D>(deserializer: D) -> Result<Option<u32>, D::Error>
 where
     D: Deserializer<'de>,
 {
-    let s: String = String::deserialize(deserializer)?;
-    parse_time(&s).map_err(de::Error::custom)
+    let s = Option::<String>::deserialize(deserializer)?;
+
+    match s {
+        None => Ok(None),
+        Some(t) => Ok(Some(parse_time(&t).map_err(de::Error::custom)?))
+    }
 }
 
 fn deserialize_location_type<'de, D>(deserializer: D) -> Result<LocationType, D::Error>

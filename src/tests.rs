@@ -267,3 +267,16 @@ fn read_missing_feed_dates() {
     assert_eq!(1, gtfs.feed_info.len());
     assert!(gtfs.feed_info[0].start_date.is_none());
 }
+
+#[test]
+fn read_interpolated_stops() {
+    let gtfs =
+        Gtfs::from_path("fixtures/interpolated_stop_times").expect("impossible to read gtfs");
+    assert_eq!(1, gtfs.feed_info.len());
+    // the second stop have no departure/arrival, it should not cause any problems
+    assert_eq!(
+        gtfs.trips["trip1"].stop_times[1].stop.name,
+        "Stop Point child of 1"
+    );
+    assert!(gtfs.trips["trip1"].stop_times[1].arrival_time.is_none());
+}

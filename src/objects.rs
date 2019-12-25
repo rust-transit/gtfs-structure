@@ -551,7 +551,7 @@ where
 }
 
 pub fn parse_time(s: &str) -> Result<u32, Error> {
-    let v: Vec<&str> = s.split(':').collect();
+    let v: Vec<&str> = s.trim_start().split(':').collect();
     Ok(&v[0].parse()? * 3600u32 + &v[1].parse()? * 60u32 + &v[2].parse()?)
 }
 

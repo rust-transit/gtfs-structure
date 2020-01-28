@@ -12,7 +12,9 @@ This crates has 2 main entry-points.
 The most common one is to create a `gtfs_structures::Gtfs`:
 
 ```rust
-let gtfs = gtfs_structures::Gtfs::new("path_of_a_directory")?;
+// Gtfs::new will try to guess if you provide a path, a local zip file or a remote zip file.
+// You can also use Gtfs::from_path or Gtfs::from_url
+let gtfs = gtfs_structures::Gtfs::new("path_of_a_zip_or_directory_or_url")?;
 println!("there are {} stops in the gtfs", gtfs.stops.len());
 
 // This structure is the easiest to use as the collections are `HashMap`,
@@ -21,14 +23,9 @@ let route_1 = gtfs.routes.get("1").expect("no route 1");
 println!("{}: {:?}", route_1.short_name, route_1);
 ```
 
-You can also directly read a zip file:
-
-```rust
-let gtfs = gtfs_structures::Gtfs::from_zip("path_of_a_zip")?;
-```
 ### RawGtfs
 
-If you a lower level model, you can use `gtfs_structures::RawGtfs`:
+If you want a lower level model, you can use `gtfs_structures::RawGtfs`:
 
 ```rust
 let raw_gtfs = RawGtfs::new("fixtures/basic").expect("impossible to read gtfs");
@@ -45,6 +42,11 @@ This makes it possible for example for a [GTFS validator](https://github.com/eta
 
 By default the feature 'read-url' is activated. It makes it possible to read a Gtfs from an url.
 
+```rust
+let gtfs = gtfs_structures::Gtfs::new("http://www.metromobilite.fr/data/Horaires/SEM-GTFS.zip")?;
+```
+
+Or you can use the explicit constructor:
 ```rust
 let gtfs = gtfs_structures::Gtfs::from_url("http://www.metromobilite.fr/data/Horaires/SEM-GTFS.zip")?;
 ```

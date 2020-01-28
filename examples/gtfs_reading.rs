@@ -2,7 +2,7 @@ use gtfs_structures::Gtfs;
 
 fn main() {
     /* Gtfs::new will try to guess if you provide a path, a local zip file or a remote zip file.
-       You can also use Gtfs::from_path, Gtfs::from_zip, Gtfs::from_url
+       You can also use Gtfs::from_path, Gtfs::from_url
     */
     let gtfs = Gtfs::new("fixtures/basic").expect("impossible to read gtfs");
 

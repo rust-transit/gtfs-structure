@@ -67,3 +67,8 @@ And run the examples by giving their names:
 
 `cargo run --example gtfs_reading`
 
+# Alternative
+
+If you are interested in transit data, you can also use the really nice crate [transit_model](https://github.com/CanalTP/transit_model) that can also handle GTFS data.
+
+The price to pay is a steeper learning curve (and a documentation that could be improved :face_with_rolling_eyes:), but this crate provides very nice ergonomics to handle transit data and lots of utilities like data format conversions, datasets merge, ...

@@ -197,7 +197,7 @@ impl RawGtfs {
     /// The library must be built with the read-url feature
     #[cfg(feature = "read-url")]
     pub fn from_url<U: reqwest::IntoUrl>(url: U) -> Result<Self, Error> {
-        let mut res = reqwest::get(url)?;
+        let mut res = reqwest::blocking::get(url)?;
         let mut body = Vec::new();
         res.read_to_end(&mut body)?;
         let cursor = std::io::Cursor::new(body);
@@ -207,23 +207,11 @@ impl RawGtfs {
     /// Non-blocking read the raw GTFS from a remote url
     /// The library must be built with the read-url feature
     #[cfg(feature = "read-url")]
-    pub fn from_url_async(url: &str) -> impl futures::Future<Item = Self, Error = Error> {
-        use futures::{Future, Stream};
-        let client = reqwest::r#async::Client::new();
-        client
-            .get(url)
-            .send()
-            .from_err()
-            .and_then(|res| {
-                res.into_body().map_err(Error::from).fold(
-                    bytes::BytesMut::new(),
-                    move |mut body, chunk| {
-                        body.extend_from_slice(&chunk);
-                        Ok::<_, Error>(body)
-                    },
-                )
-            })
-            .and_then(move |body| Self::from_reader(std::io::Cursor::new(body)))
+    pub async fn from_url_async(url: &str) -> Result<Self, Error> {
+        let res = reqwest::get(url).await?.bytes().await?;
+
+        let reader = std::io::Cursor::new(res);
+        Self::from_reader(reader)
     }
 
     pub fn from_reader<T: std::io::Read + std::io::Seek>(reader: T) -> Result<Self, Error> {

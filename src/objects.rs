@@ -1,5 +1,5 @@
+use anyhow::Error;
 use chrono::{Datelike, NaiveDate, Weekday};
-use failure::Error;
 use serde::de::{self, Deserialize, Deserializer};
 use std::fmt;
 use std::sync::Arc;
@@ -23,10 +23,17 @@ pub enum ObjectType {
     Fare,
 }
 
-#[derive(Fail, Debug)]
-#[fail(display = "The id {} is not known", id)]
+#[derive(Debug)]
 pub struct ReferenceError {
     pub id: String,
+}
+
+impl std::error::Error for ReferenceError {}
+
+impl fmt::Display for ReferenceError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "The id {} is not known", self.id)
+    }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -563,7 +570,7 @@ where
 
     match s {
         None => Ok(None),
-        Some(t) => Ok(Some(parse_time(&t).map_err(de::Error::custom)?))
+        Some(t) => Ok(Some(parse_time(&t).map_err(de::Error::custom)?)),
     }
 }
 

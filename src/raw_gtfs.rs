@@ -1,8 +1,6 @@
 use crate::objects::*;
+use anyhow::{anyhow, Context, Error};
 use chrono::Utc;
-use failure::format_err;
-use failure::Error;
-use failure::ResultExt;
 use serde::Deserialize;
 use sha2::digest::Digest;
 use sha2::Sha256;
@@ -60,7 +58,7 @@ where
         .unwrap_or_else(|| "invalid_file_name")
         .to_string();
     File::open(path)
-        .map_err(|e| format_err!("Could not find file: {}", e))
+        .map_err(|e| anyhow!("Could not find file: {}", e))
         .and_then(|r| read_objs(r, &file_name))
 }
 
@@ -88,7 +86,7 @@ where
     file_mapping
         .get(&file_name)
         .map(|i| read_objs(archive.by_index(*i)?, file_name))
-        .unwrap_or_else(|| Err(format_err!("Could not find file {}", file_name)))
+        .unwrap_or_else(|| Err(anyhow!("Could not find file {}", file_name)))
 }
 
 fn read_optional_file<O, T>(
@@ -163,7 +161,7 @@ impl RawGtfs {
         } else if p.is_dir() {
             Self::from_directory(p)
         } else {
-            Err(format_err!(
+            Err(anyhow!(
                 "Could not read GTFS: {} is neither a file nor a directory",
                 path
             ))
@@ -199,7 +197,7 @@ impl RawGtfs {
     /// The library must be built with the read-url feature
     #[cfg(feature = "read-url")]
     pub fn from_url<U: reqwest::IntoUrl>(url: U) -> Result<Self, Error> {
-        let mut res = reqwest::get(url)?;
+        let mut res = reqwest::blocking::get(url)?;
         let mut body = Vec::new();
         res.read_to_end(&mut body)?;
         let cursor = std::io::Cursor::new(body);
@@ -209,23 +207,11 @@ impl RawGtfs {
     /// Non-blocking read the raw GTFS from a remote url
     /// The library must be built with the read-url feature
     #[cfg(feature = "read-url")]
-    pub fn from_url_async(url: &str) -> impl futures::Future<Item = Self, Error = Error> {
-        use futures::{Future, Stream};
-        let client = reqwest::r#async::Client::new();
-        client
-            .get(url)
-            .send()
-            .from_err()
-            .and_then(|res| {
-                res.into_body().map_err(Error::from).fold(
-                    bytes::BytesMut::new(),
-                    move |mut body, chunk| {
-                        body.extend_from_slice(&chunk);
-                        Ok::<_, Error>(body)
-                    },
-                )
-            })
-            .and_then(move |body| Self::from_reader(std::io::Cursor::new(body)))
+    pub async fn from_url_async(url: &str) -> Result<Self, Error> {
+        let res = reqwest::get(url).await?.bytes().await?;
+
+        let reader = std::io::Cursor::new(res);
+        Self::from_reader(reader)
     }
 
     pub fn from_reader<T: std::io::Read + std::io::Seek>(reader: T) -> Result<Self, Error> {

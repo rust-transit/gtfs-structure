@@ -1,8 +1,6 @@
 use crate::objects::*;
+use anyhow::{anyhow, Context, Error};
 use chrono::Utc;
-use failure::format_err;
-use failure::Error;
-use failure::ResultExt;
 use serde::Deserialize;
 use sha2::digest::Digest;
 use sha2::Sha256;
@@ -60,7 +58,7 @@ where
         .unwrap_or_else(|| "invalid_file_name")
         .to_string();
     File::open(path)
-        .map_err(|e| format_err!("Could not find file: {}", e))
+        .map_err(|e| anyhow!("Could not find file: {}", e))
         .and_then(|r| read_objs(r, &file_name))
 }
 
@@ -88,7 +86,7 @@ where
     file_mapping
         .get(&file_name)
         .map(|i| read_objs(archive.by_index(*i)?, file_name))
-        .unwrap_or_else(|| Err(format_err!("Could not find file {}", file_name)))
+        .unwrap_or_else(|| Err(anyhow!("Could not find file {}", file_name)))
 }
 
 fn read_optional_file<O, T>(
@@ -163,7 +161,7 @@ impl RawGtfs {
         } else if p.is_dir() {
             Self::from_directory(p)
         } else {
-            Err(format_err!(
+            Err(anyhow!(
                 "Could not read GTFS: {} is neither a file nor a directory",
                 path
             ))

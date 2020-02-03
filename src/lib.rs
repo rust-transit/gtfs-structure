@@ -1,8 +1,6 @@
 #[macro_use]
 extern crate derivative;
 #[macro_use]
-extern crate failure_derive;
-#[macro_use]
 extern crate serde_derive;
 
 mod gtfs;

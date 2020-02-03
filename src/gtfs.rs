@@ -1,7 +1,7 @@
 use crate::{objects::*, RawGtfs};
+use anyhow::Error;
 use chrono::prelude::NaiveDate;
 use chrono::Duration;
-use failure::Error;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 

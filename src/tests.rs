@@ -165,7 +165,7 @@ fn read_from_gtfs() {
     assert!(gtfs.get_trip("trip1").is_ok());
     assert!(gtfs.get_fare_attributes("50").is_ok());
 
-    assert_eq!("Utopia", gtfs.get_stop("Utopia").unwrap_err().id);
+    assert!(gtfs.get_stop("Utopia").is_err());
 }
 
 #[test]

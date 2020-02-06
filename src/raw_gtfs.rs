@@ -1,5 +1,5 @@
 use crate::objects::*;
-use anyhow::{anyhow, Context, Error};
+use crate::Error;
 use chrono::Utc;
 use serde::Deserialize;
 use sha2::digest::Digest;
@@ -10,6 +10,7 @@ use std::io::Read;
 use std::path::Path;
 
 /// Data structure that map the GTFS csv with little intelligence
+#[derive(Debug)]
 pub struct RawGtfs {
     pub read_duration: i64,
     pub calendar: Option<Result<Vec<Calendar>, Error>>,
@@ -32,7 +33,12 @@ where
     T: std::io::Read,
 {
     let mut bom = [0; 3];
-    reader.read_exact(&mut bom)?;
+    reader
+        .read_exact(&mut bom)
+        .map_err(|e| Error::NamedFileIO {
+            file_name: file_name.to_owned(),
+            source: e,
+        })?;
 
     let chained = if bom != [0xefu8, 0xbbu8, 0xbfu8] {
         bom.chain(reader)
@@ -45,7 +51,10 @@ where
         .from_reader(chained)
         .deserialize()
         .collect::<Result<_, _>>()
-        .context(format!("error while reading {}", file_name))?)
+        .map_err(|e| Error::CSVError {
+            file_name: file_name.to_owned(),
+            source: e,
+        })?)
 }
 
 fn read_objs_from_path<O>(path: std::path::PathBuf) -> Result<Vec<O>, Error>
@@ -58,7 +67,7 @@ where
         .unwrap_or_else(|| "invalid_file_name")
         .to_string();
     File::open(path)
-        .map_err(|e| anyhow!("Could not find file: {}", e))
+        .map_err(|e| Error::MissingFile(format!("Could not find file: {}", e)))
         .and_then(|r| read_objs(r, &file_name))
 }
 
@@ -85,8 +94,15 @@ where
 {
     file_mapping
         .get(&file_name)
-        .map(|i| read_objs(archive.by_index(*i)?, file_name))
-        .unwrap_or_else(|| Err(anyhow!("Could not find file {}", file_name)))
+        .map(|i| {
+            read_objs(
+                archive.by_index(*i).map_err(|_| {
+                    Error::MissingFile(format!("Could not find file: {}", file_name.clone()))
+                })?,
+                file_name,
+            )
+        })
+        .unwrap_or_else(|| Err(Error::MissingFile(file_name.to_owned())))
 }
 
 fn read_optional_file<O, T>(
@@ -98,9 +114,14 @@ where
     for<'de> O: Deserialize<'de>,
     T: std::io::Read + std::io::Seek,
 {
-    file_mapping
-        .get(&file_name)
-        .map(|i| read_objs(archive.by_index(*i)?, file_name))
+    file_mapping.get(&file_name).map(|i| {
+        read_objs(
+            archive.by_index(*i).map_err(|_| {
+                Error::MissingFile(format!("Could not find file: {}", file_name.clone()))
+            })?,
+            file_name,
+        )
+    })
 }
 
 fn mandatory_file_summary<T>(objs: &Result<Vec<T>, Error>) -> String {
@@ -161,10 +182,7 @@ impl RawGtfs {
         } else if p.is_dir() {
             Self::from_directory(p)
         } else {
-            Err(anyhow!(
-                "Could not read GTFS: {} is neither a file nor a directory",
-                path
-            ))
+            Err(Error::NotFileNorDirectory(format!("{}", p.display())))
         }
     }
 

@@ -1,4 +1,3 @@
-use anyhow::Error;
 use chrono::{Datelike, NaiveDate, Weekday};
 use serde::de::{self, Deserialize, Deserializer};
 use std::fmt;
@@ -21,19 +20,6 @@ pub enum ObjectType {
     Calendar,
     Shape,
     Fare,
-}
-
-#[derive(Debug)]
-pub struct ReferenceError {
-    pub id: String,
-}
-
-impl std::error::Error for ReferenceError {}
-
-impl fmt::Display for ReferenceError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "The id {} is not known", self.id)
-    }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -557,9 +543,17 @@ where
     }
 }
 
-pub fn parse_time(s: &str) -> Result<u32, Error> {
-    let v: Vec<&str> = s.trim_start().split(':').collect();
+fn parse_time_impl(v: Vec<&str>) -> Result<u32, std::num::ParseIntError> {
     Ok(&v[0].parse()? * 3600u32 + &v[1].parse()? * 60u32 + &v[2].parse()?)
+}
+
+pub fn parse_time(s: &str) -> Result<u32, crate::Error> {
+    let v: Vec<&str> = s.trim_start().split(':').collect();
+    if v.len() != 3 {
+        Err(crate::Error::InvalidTime(s.to_owned()))
+    } else {
+        Ok(parse_time_impl(v).map_err(|_| crate::Error::InvalidTime(s.to_owned()))?)
+    }
 }
 
 fn deserialize_optional_time<'de, D>(deserializer: D) -> Result<Option<u32>, D::Error>

@@ -1,5 +1,4 @@
-use crate::{objects::*, RawGtfs};
-use anyhow::Error;
+use crate::{objects::*, Error, RawGtfs};
 use chrono::prelude::NaiveDate;
 use chrono::Duration;
 use std::collections::{HashMap, HashSet};
@@ -125,58 +124,52 @@ impl Gtfs {
         result
     }
 
-    pub fn get_stop<'a>(&'a self, id: &str) -> Result<&'a Stop, ReferenceError> {
+    pub fn get_stop<'a>(&'a self, id: &str) -> Result<&'a Stop, Error> {
         match self.stops.get(id) {
             Some(stop) => Ok(stop),
-            None => Err(ReferenceError { id: id.to_owned() }),
+            None => Err(Error::ReferenceError(id.to_owned())),
         }
     }
 
-    pub fn get_trip<'a>(&'a self, id: &str) -> Result<&'a Trip, ReferenceError> {
+    pub fn get_trip<'a>(&'a self, id: &str) -> Result<&'a Trip, Error> {
         match self.trips.get(id) {
             Some(trip) => Ok(trip),
-            None => Err(ReferenceError { id: id.to_owned() }),
+            None => Err(Error::ReferenceError(id.to_owned())),
         }
     }
 
-    pub fn get_route<'a>(&'a self, id: &str) -> Result<&'a Route, ReferenceError> {
+    pub fn get_route<'a>(&'a self, id: &str) -> Result<&'a Route, Error> {
         match self.routes.get(id) {
             Some(route) => Ok(route),
-            None => Err(ReferenceError { id: id.to_owned() }),
+            None => Err(Error::ReferenceError(id.to_owned())),
         }
     }
 
-    pub fn get_calendar<'a>(&'a self, id: &str) -> Result<&'a Calendar, ReferenceError> {
+    pub fn get_calendar<'a>(&'a self, id: &str) -> Result<&'a Calendar, Error> {
         match self.calendar.get(id) {
             Some(calendar) => Ok(calendar),
-            None => Err(ReferenceError { id: id.to_owned() }),
+            None => Err(Error::ReferenceError(id.to_owned())),
         }
     }
 
-    pub fn get_calendar_date<'a>(
-        &'a self,
-        id: &str,
-    ) -> Result<&'a Vec<CalendarDate>, ReferenceError> {
+    pub fn get_calendar_date<'a>(&'a self, id: &str) -> Result<&'a Vec<CalendarDate>, Error> {
         match self.calendar_dates.get(id) {
             Some(calendar_dates) => Ok(calendar_dates),
-            None => Err(ReferenceError { id: id.to_owned() }),
+            None => Err(Error::ReferenceError(id.to_owned())),
         }
     }
 
-    pub fn get_shape<'a>(&'a self, id: &str) -> Result<&'a Vec<Shape>, ReferenceError> {
+    pub fn get_shape<'a>(&'a self, id: &str) -> Result<&'a Vec<Shape>, Error> {
         match self.shapes.get(id) {
             Some(shape) => Ok(shape),
-            None => Err(ReferenceError { id: id.to_owned() }),
+            None => Err(Error::ReferenceError(id.to_owned())),
         }
     }
 
-    pub fn get_fare_attributes<'a>(
-        &'a self,
-        id: &str,
-    ) -> Result<&'a FareAttribute, ReferenceError> {
+    pub fn get_fare_attributes<'a>(&'a self, id: &str) -> Result<&'a FareAttribute, Error> {
         self.fare_attributes
             .get(id)
-            .ok_or_else(|| ReferenceError { id: id.to_owned() })
+            .ok_or_else(|| Error::ReferenceError(id.to_owned()))
     }
 }
 
@@ -224,12 +217,12 @@ fn create_trips(
         stop_times: vec![],
     }));
     for s in raw_stop_times {
-        let trip = &mut trips.get_mut(&s.trip_id).ok_or(ReferenceError {
-            id: s.trip_id.to_string(),
-        })?;
-        let stop = stops.get(&s.stop_id).ok_or(ReferenceError {
-            id: s.stop_id.to_string(),
-        })?;
+        let trip = &mut trips
+            .get_mut(&s.trip_id)
+            .ok_or(Error::ReferenceError(s.trip_id.to_string()))?;
+        let stop = stops
+            .get(&s.stop_id)
+            .ok_or(Error::ReferenceError(s.stop_id.to_string()))?;
         trip.stop_times.push(StopTime::from(&s, Arc::clone(&stop)));
     }
 

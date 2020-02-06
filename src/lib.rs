@@ -3,7 +3,7 @@ extern crate derivative;
 #[macro_use]
 extern crate serde_derive;
 
-mod error;
+pub mod error;
 mod gtfs;
 pub(crate) mod objects;
 mod raw_gtfs;

@@ -46,15 +46,38 @@ where
         [].chain(reader)
     };
 
-    Ok(csv::ReaderBuilder::new()
+    let mut reader = csv::ReaderBuilder::new()
         .flexible(true)
-        .from_reader(chained)
-        .deserialize()
-        .collect::<Result<_, _>>()
+        .from_reader(chained);
+    // We store the headers to be able to return them in case of errors
+    let headers = reader
+        .headers()
         .map_err(|e| Error::CSVError {
             file_name: file_name.to_owned(),
             source: e,
-        })?)
+            line_in_error: None,
+        })?
+        .clone();
+
+    let mut res = Vec::new();
+    for rec in reader.records() {
+        let r = rec.map_err(|e| Error::CSVError {
+            file_name: file_name.to_owned(),
+            source: e,
+            line_in_error: None,
+        })?;
+        let o = r.deserialize(Some(&headers)).map_err(|e| Error::CSVError {
+            file_name: file_name.to_owned(),
+            source: e,
+            line_in_error: Some(crate::error::LineError {
+                headers: headers.into_iter().map(|s| s.to_owned()).collect(),
+                values: r.into_iter().map(|s| s.to_owned()).collect(),
+            }),
+        })?;
+        res.push(o);
+    }
+
+    Ok(res)
 }
 
 fn read_objs_from_path<O>(path: std::path::PathBuf) -> Result<Vec<O>, Error>

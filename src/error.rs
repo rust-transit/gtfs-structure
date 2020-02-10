@@ -1,5 +1,11 @@
 use thiserror::Error;
 
+#[derive(Debug)]
+pub struct LineError {
+    pub headers: Vec<String>,
+    pub values: Vec<String>,
+}
+
 /// An error that can occur when processing GTFS data.
 #[derive(Error, Debug)]
 pub enum Error {
@@ -27,6 +33,7 @@ pub enum Error {
         file_name: String,
         #[source]
         source: csv::Error,
+        line_in_error: Option<LineError>,
     },
     #[error(transparent)]
     Zip(#[from] zip::result::ZipError),

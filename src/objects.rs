@@ -81,7 +81,7 @@ impl<'de> ::serde::Deserialize<'de> for RouteType {
 
 #[derive(Derivative)]
 #[derivative(Default(bound = ""))]
-#[derive(Debug, Deserialize, Copy, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Copy, Clone, PartialEq)]
 pub enum PickupDropOffType {
     #[derivative(Default)]
     #[serde(rename = "0")]
@@ -301,7 +301,7 @@ impl fmt::Display for Route {
     }
 }
 
-#[derive(Debug, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct RawTrip {
     #[serde(rename = "trip_id")]
     pub id: String,
@@ -361,7 +361,7 @@ impl fmt::Display for Trip {
     }
 }
 
-#[derive(Debug, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Agency {
     #[serde(rename = "agency_id")]
     pub id: Option<String>,
@@ -402,7 +402,7 @@ impl fmt::Display for Agency {
     }
 }
 
-#[derive(Debug, Deserialize, Default)]
+#[derive(Debug, Deserialize, Default, Serialize)]
 pub struct Shape {
     #[serde(rename = "shape_id")]
     pub id: String,
@@ -453,7 +453,7 @@ impl Type for FareAttribute {
     }
 }
 
-#[derive(Debug, Deserialize, Copy, Clone, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, Copy, Clone, PartialEq)]
 pub enum PaymentMethod {
     #[serde(rename = "0")]
     Aboard,

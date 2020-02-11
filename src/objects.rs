@@ -1,5 +1,6 @@
 use chrono::{Datelike, NaiveDate, Weekday};
 use serde::de::{self, Deserialize, Deserializer};
+use serde::ser::{Serializer};
 use std::fmt;
 use std::sync::Arc;
 
@@ -94,27 +95,27 @@ pub enum PickupDropOffType {
     CoordinateWithDriver,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Calendar {
     #[serde(rename = "service_id")]
     pub id: String,
-    #[serde(deserialize_with = "deserialize_bool")]
+    #[serde(deserialize_with = "deserialize_bool", serialize_with = "serialize_bool")]
     pub monday: bool,
-    #[serde(deserialize_with = "deserialize_bool")]
+    #[serde(deserialize_with = "deserialize_bool", serialize_with = "serialize_bool")]
     pub tuesday: bool,
-    #[serde(deserialize_with = "deserialize_bool")]
+    #[serde(deserialize_with = "deserialize_bool", serialize_with = "serialize_bool")]
     pub wednesday: bool,
-    #[serde(deserialize_with = "deserialize_bool")]
+    #[serde(deserialize_with = "deserialize_bool", serialize_with = "serialize_bool")]
     pub thursday: bool,
-    #[serde(deserialize_with = "deserialize_bool")]
+    #[serde(deserialize_with = "deserialize_bool", serialize_with = "serialize_bool")]
     pub friday: bool,
-    #[serde(deserialize_with = "deserialize_bool")]
+    #[serde(deserialize_with = "deserialize_bool", serialize_with = "serialize_bool")]
     pub saturday: bool,
-    #[serde(deserialize_with = "deserialize_bool")]
+    #[serde(deserialize_with = "deserialize_bool", serialize_with = "serialize_bool")]
     pub sunday: bool,
-    #[serde(deserialize_with = "deserialize_date")]
+    #[serde(deserialize_with = "deserialize_date", serialize_with = "serialize_date")]
     pub start_date: NaiveDate,
-    #[serde(deserialize_with = "deserialize_date")]
+    #[serde(deserialize_with = "deserialize_date", serialize_with = "serialize_date")]
     pub end_date: NaiveDate,
 }
 
@@ -530,6 +531,13 @@ where
     NaiveDate::parse_from_str(&s, "%Y%m%d").map_err(serde::de::Error::custom)
 }
 
+fn serialize_date<'ser, S>(date: &NaiveDate, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    serializer.serialize_str(format!("{}{}{}", date.year(), date.month(), date.day()).as_str())
+}
+
 fn deserialize_option_date<'de, D>(deserializer: D) -> Result<Option<NaiveDate>, D::Error>
 where
     D: Deserializer<'de>,
@@ -613,5 +621,16 @@ where
             "Invalid value `{}`, expected 0 or 1",
             s
         ))),
+    }
+}
+
+fn serialize_bool<'ser, S>(value: &bool, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer
+{
+    if *value {
+        serializer.serialize_u8(1)
+    } else {
+        serializer.serialize_u8(0)
     }
 }

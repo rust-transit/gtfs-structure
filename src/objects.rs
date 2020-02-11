@@ -171,10 +171,10 @@ pub enum Exception {
     Deleted,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct CalendarDate {
     pub service_id: String,
-    #[serde(deserialize_with = "deserialize_date")]
+    #[serde(deserialize_with = "deserialize_date", serialize_with = "serialize_date")]
     pub date: NaiveDate,
     pub exception_type: Exception,
 }

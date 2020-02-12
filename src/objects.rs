@@ -80,6 +80,25 @@ impl<'de> ::serde::Deserialize<'de> for RouteType {
     }
 }
 
+impl ::serde::Serialize for RouteType {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_u16(match self {
+            RouteType::Tramway   => 0,
+            RouteType::Subway    => 1,
+            RouteType::Rail      => 2,
+            RouteType::Bus       => 3,
+            RouteType::Ferry     => 4,
+            RouteType::CableCar  => 5,
+            RouteType::Gondola   => 6,
+            RouteType::Funicular => 7,
+            RouteType::Other(i)  => *i,
+        })
+    }
+}
+
 #[derive(Derivative)]
 #[derivative(Default(bound = ""))]
 #[derive(Debug, Serialize, Deserialize, Copy, Clone, PartialEq)]

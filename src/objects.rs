@@ -422,7 +422,7 @@ impl fmt::Display for Agency {
     }
 }
 
-#[derive(Debug, Deserialize, Default, Serialize)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Shape {
     #[serde(rename = "shape_id")]
     pub id: String,
@@ -448,7 +448,7 @@ impl Id for Shape {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct FareAttribute {
     #[serde(rename = "fare_id")]
     pub id: String,
@@ -527,7 +527,7 @@ impl Default for Transfers {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct FeedInfo {
     #[serde(rename = "feed_publisher_name")]
     pub name: String,
@@ -537,12 +537,14 @@ pub struct FeedInfo {
     pub lang: String,
     #[serde(
         deserialize_with = "deserialize_option_date",
+        serialize_with = "serialize_option_date",
         rename = "feed_start_date",
         default
     )]
     pub start_date: Option<NaiveDate>,
     #[serde(
         deserialize_with = "deserialize_option_date",
+        serialize_with = "serialize_option_date",
         rename = "feed_end_date",
         default
     )]
@@ -582,6 +584,16 @@ where
         Some(Ok(s)) => Ok(Some(s)),
         Some(Err(e)) => Err(e),
         None => Ok(None),
+    }
+}
+
+fn serialize_option_date<S>(date: &Option<NaiveDate>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer
+{
+    match date {
+        None => serializer.serialize_none(),
+        Some(d) => serializer.serialize_str(format!("{}{}{}", d.year(), d.month(), d.day()).as_str())
     }
 }
 

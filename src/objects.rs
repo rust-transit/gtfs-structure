@@ -60,10 +60,10 @@ impl Default for RouteType {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for RouteType {
+impl<'de> Deserialize<'de> for RouteType {
     fn deserialize<D>(deserializer: D) -> Result<RouteType, D::Error>
     where
-        D: ::serde::Deserializer<'de>,
+        D: Deserializer<'de>,
     {
         let i = u16::deserialize(deserializer)?;
         Ok(match i {
@@ -490,10 +490,10 @@ pub enum Transfers {
     Other(u16),
 }
 
-impl<'de> ::serde::Deserialize<'de> for Transfers {
+impl<'de> Deserialize<'de> for Transfers {
     fn deserialize<D>(deserializer: D) -> Result<Transfers, D::Error>
     where
-        D: ::serde::Deserializer<'de>,
+        D: Deserializer<'de>,
     {
         let i = Option::<u16>::deserialize(deserializer)?;
         Ok(match i {
@@ -503,6 +503,21 @@ impl<'de> ::serde::Deserialize<'de> for Transfers {
             Some(a) => Transfers::Other(a),
             None => Transfers::default(),
         })
+    }
+}
+
+impl ::serde::Serialize for Transfers {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Transfers::NoTransfer =>     serializer.serialize_u16(0),
+            Transfers::UniqueTransfer => serializer.serialize_u16(1),
+            Transfers::TwoTransfers =>   serializer.serialize_u16(2),
+            Transfers::Other(a) => serializer.serialize_u16(*a),
+            Transfers::Unlimited => serializer.serialize_none(),
+        }
     }
 }
 

@@ -1,6 +1,6 @@
 use chrono::{Datelike, NaiveDate, Weekday};
 use serde::de::{self, Deserialize, Deserializer};
-use serde::ser::{Serializer};
+use serde::ser::{Serialize, Serializer};
 use std::fmt;
 use std::sync::Arc;
 
@@ -23,13 +23,29 @@ pub enum ObjectType {
     Fare,
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Serialize)]
 pub enum LocationType {
     StopPoint = 0,
     StopArea = 1,
     StationEntrance = 2,
     GenericNode = 3,
     BoardingArea = 4,
+}
+
+impl<'de> Deserialize<'de> for LocationType {
+    fn deserialize<D>(deserializer: D) -> Result<LocationType, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s: String = String::deserialize(deserializer)?;
+        Ok(match s.as_str() {
+            "1" => LocationType::StopArea,
+            "2" => LocationType::StationEntrance,
+            "3" => LocationType::GenericNode,
+            "4" => LocationType::BoardingArea,
+            _ => LocationType::StopPoint,
+        })
+    }
 }
 
 impl Default for LocationType {
@@ -80,7 +96,7 @@ impl<'de> Deserialize<'de> for RouteType {
     }
 }
 
-impl ::serde::Serialize for RouteType {
+impl Serialize for RouteType {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -198,7 +214,7 @@ pub struct CalendarDate {
     pub exception_type: Exception,
 }
 
-#[derive(Debug, Deserialize, Clone, Default)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct Stop {
     #[serde(rename = "stop_id")]
     pub id: String,
@@ -208,10 +224,7 @@ pub struct Stop {
     pub name: String,
     #[serde(default, rename = "stop_desc")]
     pub description: String,
-    #[serde(
-        deserialize_with = "deserialize_location_type",
-        default = "default_location_type"
-    )]
+    #[serde(default = "default_location_type")]
     pub location_type: LocationType,
     pub parent_station: Option<String>,
     #[serde(deserialize_with = "de_with_trimed_float")]
@@ -506,7 +519,7 @@ impl<'de> Deserialize<'de> for Transfers {
     }
 }
 
-impl ::serde::Serialize for Transfers {
+impl Serialize for Transfers {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -632,31 +645,17 @@ where
     }
 }
 
-fn deserialize_location_type<'de, D>(deserializer: D) -> Result<LocationType, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let s: String = String::deserialize(deserializer)?;
-    Ok(match s.as_str() {
-        "1" => LocationType::StopArea,
-        "2" => LocationType::StationEntrance,
-        "3" => LocationType::GenericNode,
-        "4" => LocationType::BoardingArea,
-        _ => LocationType::StopPoint,
-    })
-}
-
 fn de_with_trimed_float<'de, D>(de: D) -> Result<f64, D::Error>
 where
-    D: ::serde::Deserializer<'de>,
+    D: Deserializer<'de>,
 {
     String::deserialize(de).and_then(|s| s.trim().parse().map_err(de::Error::custom))
 }
 
 pub fn de_with_empty_default<'de, T: Default, D>(de: D) -> Result<T, D::Error>
 where
-    D: ::serde::Deserializer<'de>,
-    T: ::serde::Deserialize<'de>,
+    D: Deserializer<'de>,
+    T: Deserialize<'de>,
 {
     Option::<T>::deserialize(de).map(|opt| opt.unwrap_or_else(Default::default))
 }

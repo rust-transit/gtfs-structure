@@ -102,15 +102,15 @@ impl Serialize for RouteType {
         S: Serializer,
     {
         serializer.serialize_u16(match self {
-            RouteType::Tramway   => 0,
-            RouteType::Subway    => 1,
-            RouteType::Rail      => 2,
-            RouteType::Bus       => 3,
-            RouteType::Ferry     => 4,
-            RouteType::CableCar  => 5,
-            RouteType::Gondola   => 6,
+            RouteType::Tramway => 0,
+            RouteType::Subway => 1,
+            RouteType::Rail => 2,
+            RouteType::Bus => 3,
+            RouteType::Ferry => 4,
+            RouteType::CableCar => 5,
+            RouteType::Gondola => 6,
             RouteType::Funicular => 7,
-            RouteType::Other(i)  => *i,
+            RouteType::Other(i) => *i,
         })
     }
 }
@@ -134,23 +134,50 @@ pub enum PickupDropOffType {
 pub struct Calendar {
     #[serde(rename = "service_id")]
     pub id: String,
-    #[serde(deserialize_with = "deserialize_bool", serialize_with = "serialize_bool")]
+    #[serde(
+        deserialize_with = "deserialize_bool",
+        serialize_with = "serialize_bool"
+    )]
     pub monday: bool,
-    #[serde(deserialize_with = "deserialize_bool", serialize_with = "serialize_bool")]
+    #[serde(
+        deserialize_with = "deserialize_bool",
+        serialize_with = "serialize_bool"
+    )]
     pub tuesday: bool,
-    #[serde(deserialize_with = "deserialize_bool", serialize_with = "serialize_bool")]
+    #[serde(
+        deserialize_with = "deserialize_bool",
+        serialize_with = "serialize_bool"
+    )]
     pub wednesday: bool,
-    #[serde(deserialize_with = "deserialize_bool", serialize_with = "serialize_bool")]
+    #[serde(
+        deserialize_with = "deserialize_bool",
+        serialize_with = "serialize_bool"
+    )]
     pub thursday: bool,
-    #[serde(deserialize_with = "deserialize_bool", serialize_with = "serialize_bool")]
+    #[serde(
+        deserialize_with = "deserialize_bool",
+        serialize_with = "serialize_bool"
+    )]
     pub friday: bool,
-    #[serde(deserialize_with = "deserialize_bool", serialize_with = "serialize_bool")]
+    #[serde(
+        deserialize_with = "deserialize_bool",
+        serialize_with = "serialize_bool"
+    )]
     pub saturday: bool,
-    #[serde(deserialize_with = "deserialize_bool", serialize_with = "serialize_bool")]
+    #[serde(
+        deserialize_with = "deserialize_bool",
+        serialize_with = "serialize_bool"
+    )]
     pub sunday: bool,
-    #[serde(deserialize_with = "deserialize_date", serialize_with = "serialize_date")]
+    #[serde(
+        deserialize_with = "deserialize_date",
+        serialize_with = "serialize_date"
+    )]
     pub start_date: NaiveDate,
-    #[serde(deserialize_with = "deserialize_date", serialize_with = "serialize_date")]
+    #[serde(
+        deserialize_with = "deserialize_date",
+        serialize_with = "serialize_date"
+    )]
     pub end_date: NaiveDate,
 }
 
@@ -209,7 +236,10 @@ pub enum Exception {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct CalendarDate {
     pub service_id: String,
-    #[serde(deserialize_with = "deserialize_date", serialize_with = "serialize_date")]
+    #[serde(
+        deserialize_with = "deserialize_date",
+        serialize_with = "serialize_date"
+    )]
     pub date: NaiveDate,
     pub exception_type: Exception,
 }
@@ -263,12 +293,18 @@ pub struct RawStopTime {
     /// Arrival time of the stop time.
     /// It's an option since the intermediate stops can have have no arrival
     /// and this arrival needs to be interpolated
-    #[serde(deserialize_with = "deserialize_optional_time", serialize_with = "serialize_optional_time")]
+    #[serde(
+        deserialize_with = "deserialize_optional_time",
+        serialize_with = "serialize_optional_time"
+    )]
     pub arrival_time: Option<u32>,
     /// Departure time of the stop time.
     /// It's an option since the intermediate stops can have have no departure
     /// and this departure needs to be interpolated
-    #[serde(deserialize_with = "deserialize_optional_time", serialize_with = "serialize_optional_time")]
+    #[serde(
+        deserialize_with = "deserialize_optional_time",
+        serialize_with = "serialize_optional_time"
+    )]
     pub departure_time: Option<u32>,
     pub stop_id: String,
     pub stop_sequence: u16,
@@ -525,9 +561,9 @@ impl Serialize for Transfers {
         S: Serializer,
     {
         match self {
-            Transfers::NoTransfer =>     serializer.serialize_u16(0),
+            Transfers::NoTransfer => serializer.serialize_u16(0),
             Transfers::UniqueTransfer => serializer.serialize_u16(1),
-            Transfers::TwoTransfers =>   serializer.serialize_u16(2),
+            Transfers::TwoTransfers => serializer.serialize_u16(2),
             Transfers::Other(a) => serializer.serialize_u16(*a),
             Transfers::Unlimited => serializer.serialize_none(),
         }
@@ -602,11 +638,13 @@ where
 
 fn serialize_option_date<S>(date: &Option<NaiveDate>, serializer: S) -> Result<S::Ok, S::Error>
 where
-    S: Serializer
+    S: Serializer,
 {
     match date {
         None => serializer.serialize_none(),
-        Some(d) => serializer.serialize_str(format!("{}{}{}", d.year(), d.month(), d.day()).as_str())
+        Some(d) => {
+            serializer.serialize_str(format!("{}{}{}", d.year(), d.month(), d.day()).as_str())
+        }
     }
 }
 
@@ -681,7 +719,7 @@ where
 
 fn serialize_bool<'ser, S>(value: &bool, serializer: S) -> Result<S::Ok, S::Error>
 where
-    S: Serializer
+    S: Serializer,
 {
     if *value {
         serializer.serialize_u8(1)

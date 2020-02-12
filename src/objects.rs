@@ -244,18 +244,18 @@ impl fmt::Display for Stop {
     }
 }
 
-#[derive(Debug, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct RawStopTime {
     pub trip_id: String,
     /// Arrival time of the stop time.
     /// It's an option since the intermediate stops can have have no arrival
     /// and this arrival needs to be interpolated
-    #[serde(deserialize_with = "deserialize_optional_time")]
+    #[serde(deserialize_with = "deserialize_optional_time", serialize_with = "serialize_optional_time")]
     pub arrival_time: Option<u32>,
     /// Departure time of the stop time.
     /// It's an option since the intermediate stops can have have no departure
     /// and this departure needs to be interpolated
-    #[serde(deserialize_with = "deserialize_optional_time")]
+    #[serde(deserialize_with = "deserialize_optional_time", serialize_with = "serialize_optional_time")]
     pub departure_time: Option<u32>,
     pub stop_id: String,
     pub stop_sequence: u16,
@@ -619,6 +619,16 @@ where
     match s {
         None => Ok(None),
         Some(t) => Ok(Some(parse_time(&t).map_err(de::Error::custom)?)),
+    }
+}
+
+fn serialize_optional_time<S>(time: &Option<u32>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    match time {
+        None => serializer.serialize_none(),
+        Some(t) => serializer.serialize_str(format!("{}", t).as_str()),
     }
 }
 

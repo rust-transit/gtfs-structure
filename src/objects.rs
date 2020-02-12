@@ -286,7 +286,7 @@ impl StopTime {
     }
 }
 
-#[derive(Debug, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Route {
     #[serde(rename = "route_id")]
     pub id: String,

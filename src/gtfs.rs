@@ -78,6 +78,13 @@ impl Gtfs {
         RawGtfs::from_url(url).and_then(Gtfs::try_from)
     }
 
+    /// Asynchronously reads the GTFS from a remote url
+    /// The library must be built with the read-url feature
+    #[cfg(feature = "read-url")]
+    pub async fn from_url_async<U: reqwest::IntoUrl>(url: U) -> Result<Gtfs, Error> {
+        RawGtfs::from_url_async(url).await.and_then(Gtfs::try_from)
+    }
+
     pub fn from_reader<T: std::io::Read + std::io::Seek>(reader: T) -> Result<Gtfs, Error> {
         RawGtfs::from_reader(reader).and_then(Gtfs::try_from)
     }

@@ -1,5 +1,6 @@
 use chrono::{Datelike, NaiveDate, Weekday};
 use serde::de::{self, Deserialize, Deserializer};
+use serde::ser::{Serialize, Serializer};
 use std::fmt;
 use std::sync::Arc;
 
@@ -22,13 +23,29 @@ pub enum ObjectType {
     Fare,
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Serialize)]
 pub enum LocationType {
     StopPoint = 0,
     StopArea = 1,
     StationEntrance = 2,
     GenericNode = 3,
     BoardingArea = 4,
+}
+
+impl<'de> Deserialize<'de> for LocationType {
+    fn deserialize<D>(deserializer: D) -> Result<LocationType, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s: String = String::deserialize(deserializer)?;
+        Ok(match s.as_str() {
+            "1" => LocationType::StopArea,
+            "2" => LocationType::StationEntrance,
+            "3" => LocationType::GenericNode,
+            "4" => LocationType::BoardingArea,
+            _ => LocationType::StopPoint,
+        })
+    }
 }
 
 impl Default for LocationType {
@@ -59,10 +76,10 @@ impl Default for RouteType {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for RouteType {
+impl<'de> Deserialize<'de> for RouteType {
     fn deserialize<D>(deserializer: D) -> Result<RouteType, D::Error>
     where
-        D: ::serde::Deserializer<'de>,
+        D: Deserializer<'de>,
     {
         let i = u16::deserialize(deserializer)?;
         Ok(match i {
@@ -79,9 +96,28 @@ impl<'de> ::serde::Deserialize<'de> for RouteType {
     }
 }
 
+impl Serialize for RouteType {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_u16(match self {
+            RouteType::Tramway => 0,
+            RouteType::Subway => 1,
+            RouteType::Rail => 2,
+            RouteType::Bus => 3,
+            RouteType::Ferry => 4,
+            RouteType::CableCar => 5,
+            RouteType::Gondola => 6,
+            RouteType::Funicular => 7,
+            RouteType::Other(i) => *i,
+        })
+    }
+}
+
 #[derive(Derivative)]
 #[derivative(Default(bound = ""))]
-#[derive(Debug, Deserialize, Copy, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Copy, Clone, PartialEq)]
 pub enum PickupDropOffType {
     #[derivative(Default)]
     #[serde(rename = "0")]
@@ -94,27 +130,54 @@ pub enum PickupDropOffType {
     CoordinateWithDriver,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Calendar {
     #[serde(rename = "service_id")]
     pub id: String,
-    #[serde(deserialize_with = "deserialize_bool")]
+    #[serde(
+        deserialize_with = "deserialize_bool",
+        serialize_with = "serialize_bool"
+    )]
     pub monday: bool,
-    #[serde(deserialize_with = "deserialize_bool")]
+    #[serde(
+        deserialize_with = "deserialize_bool",
+        serialize_with = "serialize_bool"
+    )]
     pub tuesday: bool,
-    #[serde(deserialize_with = "deserialize_bool")]
+    #[serde(
+        deserialize_with = "deserialize_bool",
+        serialize_with = "serialize_bool"
+    )]
     pub wednesday: bool,
-    #[serde(deserialize_with = "deserialize_bool")]
+    #[serde(
+        deserialize_with = "deserialize_bool",
+        serialize_with = "serialize_bool"
+    )]
     pub thursday: bool,
-    #[serde(deserialize_with = "deserialize_bool")]
+    #[serde(
+        deserialize_with = "deserialize_bool",
+        serialize_with = "serialize_bool"
+    )]
     pub friday: bool,
-    #[serde(deserialize_with = "deserialize_bool")]
+    #[serde(
+        deserialize_with = "deserialize_bool",
+        serialize_with = "serialize_bool"
+    )]
     pub saturday: bool,
-    #[serde(deserialize_with = "deserialize_bool")]
+    #[serde(
+        deserialize_with = "deserialize_bool",
+        serialize_with = "serialize_bool"
+    )]
     pub sunday: bool,
-    #[serde(deserialize_with = "deserialize_date")]
+    #[serde(
+        deserialize_with = "deserialize_date",
+        serialize_with = "serialize_date"
+    )]
     pub start_date: NaiveDate,
-    #[serde(deserialize_with = "deserialize_date")]
+    #[serde(
+        deserialize_with = "deserialize_date",
+        serialize_with = "serialize_date"
+    )]
     pub end_date: NaiveDate,
 }
 
@@ -170,15 +233,18 @@ pub enum Exception {
     Deleted,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct CalendarDate {
     pub service_id: String,
-    #[serde(deserialize_with = "deserialize_date")]
+    #[serde(
+        deserialize_with = "deserialize_date",
+        serialize_with = "serialize_date"
+    )]
     pub date: NaiveDate,
     pub exception_type: Exception,
 }
 
-#[derive(Debug, Deserialize, Clone, Default)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct Stop {
     #[serde(rename = "stop_id")]
     pub id: String,
@@ -188,10 +254,7 @@ pub struct Stop {
     pub name: String,
     #[serde(default, rename = "stop_desc")]
     pub description: String,
-    #[serde(
-        deserialize_with = "deserialize_location_type",
-        default = "default_location_type"
-    )]
+    #[serde(default = "default_location_type")]
     pub location_type: LocationType,
     pub parent_station: Option<String>,
     #[serde(deserialize_with = "de_with_trimed_float")]
@@ -224,18 +287,24 @@ impl fmt::Display for Stop {
     }
 }
 
-#[derive(Debug, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct RawStopTime {
     pub trip_id: String,
     /// Arrival time of the stop time.
     /// It's an option since the intermediate stops can have have no arrival
     /// and this arrival needs to be interpolated
-    #[serde(deserialize_with = "deserialize_optional_time")]
+    #[serde(
+        deserialize_with = "deserialize_optional_time",
+        serialize_with = "serialize_optional_time"
+    )]
     pub arrival_time: Option<u32>,
     /// Departure time of the stop time.
     /// It's an option since the intermediate stops can have have no departure
     /// and this departure needs to be interpolated
-    #[serde(deserialize_with = "deserialize_optional_time")]
+    #[serde(
+        deserialize_with = "deserialize_optional_time",
+        serialize_with = "serialize_optional_time"
+    )]
     pub departure_time: Option<u32>,
     pub stop_id: String,
     pub stop_sequence: u16,
@@ -266,7 +335,7 @@ impl StopTime {
     }
 }
 
-#[derive(Debug, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Route {
     #[serde(rename = "route_id")]
     pub id: String,
@@ -301,7 +370,7 @@ impl fmt::Display for Route {
     }
 }
 
-#[derive(Debug, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct RawTrip {
     #[serde(rename = "trip_id")]
     pub id: String,
@@ -361,7 +430,7 @@ impl fmt::Display for Trip {
     }
 }
 
-#[derive(Debug, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Agency {
     #[serde(rename = "agency_id")]
     pub id: Option<String>,
@@ -402,7 +471,7 @@ impl fmt::Display for Agency {
     }
 }
 
-#[derive(Debug, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Shape {
     #[serde(rename = "shape_id")]
     pub id: String,
@@ -428,7 +497,7 @@ impl Id for Shape {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct FareAttribute {
     #[serde(rename = "fare_id")]
     pub id: String,
@@ -453,7 +522,7 @@ impl Type for FareAttribute {
     }
 }
 
-#[derive(Debug, Deserialize, Copy, Clone, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, Copy, Clone, PartialEq)]
 pub enum PaymentMethod {
     #[serde(rename = "0")]
     Aboard,
@@ -470,10 +539,10 @@ pub enum Transfers {
     Other(u16),
 }
 
-impl<'de> ::serde::Deserialize<'de> for Transfers {
+impl<'de> Deserialize<'de> for Transfers {
     fn deserialize<D>(deserializer: D) -> Result<Transfers, D::Error>
     where
-        D: ::serde::Deserializer<'de>,
+        D: Deserializer<'de>,
     {
         let i = Option::<u16>::deserialize(deserializer)?;
         Ok(match i {
@@ -486,13 +555,28 @@ impl<'de> ::serde::Deserialize<'de> for Transfers {
     }
 }
 
+impl Serialize for Transfers {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Transfers::NoTransfer => serializer.serialize_u16(0),
+            Transfers::UniqueTransfer => serializer.serialize_u16(1),
+            Transfers::TwoTransfers => serializer.serialize_u16(2),
+            Transfers::Other(a) => serializer.serialize_u16(*a),
+            Transfers::Unlimited => serializer.serialize_none(),
+        }
+    }
+}
+
 impl Default for Transfers {
     fn default() -> Transfers {
         Transfers::Unlimited
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct FeedInfo {
     #[serde(rename = "feed_publisher_name")]
     pub name: String,
@@ -502,12 +586,14 @@ pub struct FeedInfo {
     pub lang: String,
     #[serde(
         deserialize_with = "deserialize_option_date",
+        serialize_with = "serialize_option_date",
         rename = "feed_start_date",
         default
     )]
     pub start_date: Option<NaiveDate>,
     #[serde(
         deserialize_with = "deserialize_option_date",
+        serialize_with = "serialize_option_date",
         rename = "feed_end_date",
         default
     )]
@@ -530,6 +616,13 @@ where
     NaiveDate::parse_from_str(&s, "%Y%m%d").map_err(serde::de::Error::custom)
 }
 
+fn serialize_date<'ser, S>(date: &NaiveDate, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    serializer.serialize_str(format!("{}{}{}", date.year(), date.month(), date.day()).as_str())
+}
+
 fn deserialize_option_date<'de, D>(deserializer: D) -> Result<Option<NaiveDate>, D::Error>
 where
     D: Deserializer<'de>,
@@ -540,6 +633,18 @@ where
         Some(Ok(s)) => Ok(Some(s)),
         Some(Err(e)) => Err(e),
         None => Ok(None),
+    }
+}
+
+fn serialize_option_date<S>(date: &Option<NaiveDate>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    match date {
+        None => serializer.serialize_none(),
+        Some(d) => {
+            serializer.serialize_str(format!("{}{}{}", d.year(), d.month(), d.day()).as_str())
+        }
     }
 }
 
@@ -568,31 +673,27 @@ where
     }
 }
 
-fn deserialize_location_type<'de, D>(deserializer: D) -> Result<LocationType, D::Error>
+fn serialize_optional_time<S>(time: &Option<u32>, serializer: S) -> Result<S::Ok, S::Error>
 where
-    D: Deserializer<'de>,
+    S: Serializer,
 {
-    let s: String = String::deserialize(deserializer)?;
-    Ok(match s.as_str() {
-        "1" => LocationType::StopArea,
-        "2" => LocationType::StationEntrance,
-        "3" => LocationType::GenericNode,
-        "4" => LocationType::BoardingArea,
-        _ => LocationType::StopPoint,
-    })
+    match time {
+        None => serializer.serialize_none(),
+        Some(t) => serializer.serialize_str(format!("{}", t).as_str()),
+    }
 }
 
 fn de_with_trimed_float<'de, D>(de: D) -> Result<f64, D::Error>
 where
-    D: ::serde::Deserializer<'de>,
+    D: Deserializer<'de>,
 {
     String::deserialize(de).and_then(|s| s.trim().parse().map_err(de::Error::custom))
 }
 
 pub fn de_with_empty_default<'de, T: Default, D>(de: D) -> Result<T, D::Error>
 where
-    D: ::serde::Deserializer<'de>,
-    T: ::serde::Deserialize<'de>,
+    D: Deserializer<'de>,
+    T: Deserialize<'de>,
 {
     Option::<T>::deserialize(de).map(|opt| opt.unwrap_or_else(Default::default))
 }
@@ -613,5 +714,16 @@ where
             "Invalid value `{}`, expected 0 or 1",
             s
         ))),
+    }
+}
+
+fn serialize_bool<'ser, S>(value: &bool, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    if *value {
+        serializer.serialize_u8(1)
+    } else {
+        serializer.serialize_u8(0)
     }
 }

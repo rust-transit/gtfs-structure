@@ -248,7 +248,7 @@ impl RawGtfs {
     /// Non-blocking read the raw GTFS from a remote url
     /// The library must be built with the read-url feature
     #[cfg(feature = "read-url")]
-    pub async fn from_url_async(url: &str) -> Result<Self, Error> {
+    pub async fn from_url_async<U: reqwest::IntoUrl>(url: U) -> Result<Self, Error> {
         let res = reqwest::get(url).await?.bytes().await?;
 
         let reader = std::io::Cursor::new(res);

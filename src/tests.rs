@@ -29,7 +29,7 @@ fn read_calendar_dates() {
 #[test]
 fn read_stop() {
     let gtfs = Gtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
-    assert_eq!(5, gtfs.stops.len());
+    assert_eq!(6, gtfs.stops.len());
     assert_eq!(
         LocationType::StopArea,
         gtfs.get_stop("stop1").unwrap().location_type
@@ -38,10 +38,16 @@ fn read_stop() {
         LocationType::StopPoint,
         gtfs.get_stop("stop2").unwrap().location_type
     );
+    assert_eq!(Some(48.796_058), gtfs.get_stop("stop2").unwrap().latitude);
     assert_eq!(
         Some("1".to_owned()),
         gtfs.get_stop("stop3").unwrap().parent_station
     );
+    assert_eq!(
+        LocationType::GenericNode,
+        gtfs.get_stop("stop6").unwrap().location_type
+    );
+    assert_eq!(None, gtfs.get_stop("stop6").unwrap().latitude);
 }
 
 #[test]

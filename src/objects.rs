@@ -257,12 +257,12 @@ pub struct Stop {
     #[serde(default = "default_location_type")]
     pub location_type: LocationType,
     pub parent_station: Option<String>,
-    #[serde(deserialize_with = "de_with_trimed_float")]
+    #[serde(deserialize_with = "de_with_optional_float")]
     #[serde(rename = "stop_lon", default)]
-    pub longitude: f64,
-    #[serde(deserialize_with = "de_with_trimed_float")]
+    pub longitude: Option<f64>,
+    #[serde(deserialize_with = "de_with_optional_float")]
     #[serde(rename = "stop_lat", default)]
-    pub latitude: f64,
+    pub latitude: Option<f64>,
     #[serde(rename = "stop_timezone")]
     pub timezone: Option<String>,
     #[serde(deserialize_with = "de_with_empty_default", default)]
@@ -683,11 +683,18 @@ where
     }
 }
 
-fn de_with_trimed_float<'de, D>(de: D) -> Result<f64, D::Error>
+fn de_with_optional_float<'de, D>(de: D) -> Result<Option<f64>, D::Error>
 where
     D: Deserializer<'de>,
 {
-    String::deserialize(de).and_then(|s| s.trim().parse().map_err(de::Error::custom))
+    String::deserialize(de).and_then(|s| {
+        let s = s.trim();
+        if s == "" {
+            Ok(None)
+        } else {
+            s.parse().map(Some).map_err(de::Error::custom)
+        }
+    })
 }
 
 pub fn de_with_empty_default<'de, T: Default, D>(de: D) -> Result<T, D::Error>

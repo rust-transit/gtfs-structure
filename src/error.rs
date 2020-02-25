@@ -17,6 +17,8 @@ pub enum Error {
     NotFileNorDirectory(String),
     #[error("'{0}' is not a valid time")]
     InvalidTime(String),
+    #[error("'{0}' is not a valid color")]
+    InvalidColor(String),
     #[error("impossible to read file")]
     IO(#[from] std::io::Error),
     #[error("impossible to read '{file_name}'")]

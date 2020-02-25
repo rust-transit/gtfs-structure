@@ -2,6 +2,7 @@ use crate::objects::*;
 use crate::Gtfs;
 use crate::RawGtfs;
 use chrono::NaiveDate;
+use rgb::RGB8;
 
 #[test]
 fn read_calendar() {
@@ -55,6 +56,14 @@ fn read_routes() {
     let gtfs = Gtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
     assert_eq!(2, gtfs.routes.len());
     assert_eq!(RouteType::Bus, gtfs.get_route("1").unwrap().route_type);
+    assert_eq!(
+        Some(RGB8::new(0, 0, 0)),
+        gtfs.get_route("1").unwrap().route_color
+    );
+    assert_eq!(
+        Some(RGB8::new(255, 255, 255)),
+        gtfs.get_route("1").unwrap().route_text_color
+    );
     assert_eq!(
         RouteType::Other(42),
         gtfs.get_route("invalid_type").unwrap().route_type

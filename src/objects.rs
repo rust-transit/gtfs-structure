@@ -1,4 +1,5 @@
 use chrono::{Datelike, NaiveDate, Weekday};
+use rgb::RGB8;
 use serde::de::{self, Deserialize, Deserializer};
 use serde::ser::{Serialize, Serializer};
 use std::fmt;
@@ -346,6 +347,16 @@ pub struct Route {
     pub route_type: RouteType,
     pub agency_id: Option<String>,
     pub route_order: Option<u32>,
+    #[serde(
+        deserialize_with = "de_with_optional_color",
+        serialize_with = "serialize_optional_color"
+    )]
+    pub route_color: Option<RGB8>,
+    #[serde(
+        deserialize_with = "de_with_optional_color",
+        serialize_with = "serialize_optional_color"
+    )]
+    pub route_text_color: Option<RGB8>,
 }
 
 impl Type for Route {
@@ -695,6 +706,45 @@ where
             s.parse().map(Some).map_err(de::Error::custom)
         }
     })
+}
+
+pub fn parse_color(s: &str) -> Result<RGB8, crate::Error> {
+    if s.len() != 6 {
+        return Err(crate::Error::InvalidColor(s.to_owned()));
+    }
+    let r =
+        u8::from_str_radix(&s[0..2], 16).map_err(|_| crate::Error::InvalidColor(s.to_owned()))?;
+    let g =
+        u8::from_str_radix(&s[2..4], 16).map_err(|_| crate::Error::InvalidColor(s.to_owned()))?;
+    let b =
+        u8::from_str_radix(&s[4..6], 16).map_err(|_| crate::Error::InvalidColor(s.to_owned()))?;
+    Ok(RGB8::new(r, g, b))
+}
+
+fn de_with_optional_color<'de, D>(de: D) -> Result<Option<RGB8>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    String::deserialize(de).and_then(|s| {
+        let s = s.trim();
+        if s == "" {
+            Ok(None)
+        } else {
+            parse_color(s).map(Some).map_err(de::Error::custom)
+        }
+    })
+}
+
+fn serialize_optional_color<S>(color: &Option<RGB8>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    match color {
+        None => serializer.serialize_none(),
+        Some(RGB8 { r, g, b }) => {
+            serializer.serialize_str(format!("{:02X}{:02X}{:02X}", r, g, b).as_str())
+        }
+    }
 }
 
 pub fn de_with_empty_default<'de, T: Default, D>(de: D) -> Result<T, D::Error>

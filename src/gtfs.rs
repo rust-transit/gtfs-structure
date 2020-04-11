@@ -222,6 +222,7 @@ fn create_trips(
         service_id: rt.service_id,
         route_id: rt.route_id,
         stop_times: vec![],
+        shape_id: rt.shape_id,
     }));
     for s in raw_stop_times {
         let trip = &mut trips

@@ -295,3 +295,18 @@ fn read_interpolated_stops() {
     );
     assert!(gtfs.trips["trip1"].stop_times[1].arrival_time.is_none());
 }
+
+#[test]
+fn read_only_required_fields() {
+    let gtfs = Gtfs::from_path("fixtures/only_required_fields").expect("impossible to read gtfs");
+    let route = gtfs.routes.get("1").unwrap();
+    let fare_attribute = gtfs.fare_attributes.get("50").unwrap();
+    let feed = &gtfs.feed_info[0];
+    let shape = &gtfs.shapes.get("A_shp").unwrap()[0];
+    assert_eq!(route.route_color, None);
+    assert_eq!(route.route_text_color, None);
+    assert_eq!(fare_attribute.transfer_duration, None);
+    assert_eq!(feed.start_date, None);
+    assert_eq!(feed.end_date, None);
+    assert_eq!(shape.dist_traveled, None);
+}

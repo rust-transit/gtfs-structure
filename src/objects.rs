@@ -349,12 +349,14 @@ pub struct Route {
     pub route_order: Option<u32>,
     #[serde(
         deserialize_with = "de_with_optional_color",
-        serialize_with = "serialize_optional_color"
+        serialize_with = "serialize_optional_color",
+        default
     )]
     pub route_color: Option<RGB8>,
     #[serde(
         deserialize_with = "de_with_optional_color",
-        serialize_with = "serialize_optional_color"
+        serialize_with = "serialize_optional_color",
+        default
     )]
     pub route_text_color: Option<RGB8>,
 }

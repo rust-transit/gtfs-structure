@@ -88,8 +88,8 @@ impl<'de> Deserialize<'de> for RouteType {
         let hundreds = i / 100;
         Ok(match (i, hundreds) {
             (0, _) | (_, 9) => RouteType::Tramway,
-            (1, _) | (_, 4) | (_, 5) | (_, 6) => RouteType::Subway,
-            (2, _) | (_, 1) | (_, 3) => RouteType::Rail,
+            (1, _) | (_, 4) => RouteType::Subway,
+            (2, _) | (_, 1) => RouteType::Rail,
             (3, _) | (_, 7) | (_, 8) => RouteType::Bus,
             (4, _) | (_, 10) | (_, 12) => RouteType::Ferry,
             (5, _) => RouteType::CableCar,

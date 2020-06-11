@@ -65,9 +65,10 @@ pub enum RouteType {
     CableCar,
     Gondola,
     Funicular,
-    // Any other value than 0..7 is invalid in the GTFS
-    // However, some bad files might have other values
-    // We don’t want to stop nor skip too soon during deserialization
+    // extended GTFS (https://developers.google.com/transit/gtfs/reference/extended-route-types)
+    Coach,
+    Air,
+    Taxi,
     Other(u16),
 }
 
@@ -83,15 +84,20 @@ impl<'de> Deserialize<'de> for RouteType {
         D: Deserializer<'de>,
     {
         let i = u16::deserialize(deserializer)?;
-        Ok(match i {
-            0 => RouteType::Tramway,
-            1 => RouteType::Subway,
-            2 => RouteType::Rail,
-            3 => RouteType::Bus,
-            4 => RouteType::Ferry,
-            5 => RouteType::CableCar,
-            6 => RouteType::Gondola,
-            7 => RouteType::Funicular,
+
+        let hundreds = i / 100;
+        Ok(match (i, hundreds) {
+            (0, _) | (_, 9) => RouteType::Tramway,
+            (1, _) | (_, 4) => RouteType::Subway,
+            (2, _) | (_, 1) => RouteType::Rail,
+            (3, _) | (_, 7) | (_, 8) => RouteType::Bus,
+            (4, _) | (_, 10) | (_, 12) => RouteType::Ferry,
+            (5, _) => RouteType::CableCar,
+            (6, _) | (_, 13) => RouteType::Gondola,
+            (7, _) | (_, 14) => RouteType::Funicular,
+            (_, 2) => RouteType::Coach,
+            (_, 11) => RouteType::Air,
+            (_, 15) => RouteType::Taxi,
             _ => RouteType::Other(i),
         })
     }
@@ -102,6 +108,7 @@ impl Serialize for RouteType {
     where
         S: Serializer,
     {
+        // Note: for extended route type, we might loose the initial precise route type
         serializer.serialize_u16(match self {
             RouteType::Tramway => 0,
             RouteType::Subway => 1,
@@ -111,6 +118,9 @@ impl Serialize for RouteType {
             RouteType::CableCar => 5,
             RouteType::Gondola => 6,
             RouteType::Funicular => 7,
+            RouteType::Coach => 200,
+            RouteType::Air => 1100,
+            RouteType::Taxi => 1500,
             RouteType::Other(i) => *i,
         })
     }

@@ -2,6 +2,7 @@ use crate::{objects::*, Error, RawGtfs};
 use chrono::prelude::NaiveDate;
 use chrono::Duration;
 use std::collections::{HashMap, HashSet};
+use std::convert::TryFrom;
 use std::sync::Arc;
 
 /// Data structure with all the GTFS objects
@@ -21,8 +22,9 @@ pub struct Gtfs {
     pub feed_info: Vec<FeedInfo>,
 }
 
-impl Gtfs {
-    pub fn try_from(raw: RawGtfs) -> Result<Gtfs, Error> {
+impl TryFrom<RawGtfs> for Gtfs {
+    type Error = Error;
+    fn try_from(raw: RawGtfs) -> Result<Gtfs, Error> {
         let stops = to_stop_map(raw.stops?);
         let trips = create_trips(raw.trips?, raw.stop_times?, &stops)?;
 
@@ -200,6 +202,11 @@ fn to_shape_map(shapes: Vec<Shape>) -> HashMap<String, Vec<Shape>> {
         let shape = res.entry(s.id.to_owned()).or_insert_with(Vec::new);
         shape.push(s);
     }
+    // we sort the shape by it's pt_sequence
+    for (_key, shapes) in &mut res {
+        shapes.sort_by_key(|s| s.sequence);
+    }
+
     res
 }
 

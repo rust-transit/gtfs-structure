@@ -260,7 +260,7 @@ impl RawGtfs {
         let mut hasher = Sha256::new();
         let mut buf_reader = std::io::BufReader::new(reader);
         let _n = std::io::copy(&mut buf_reader, &mut hasher)?;
-        let hash = hasher.result();
+        let hash = hasher.finalize();
         let mut archive = zip::ZipArchive::new(buf_reader)?;
         let mut file_mapping = HashMap::new();
         let mut files = Vec::new();

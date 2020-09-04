@@ -3,6 +3,7 @@ use chrono::prelude::NaiveDate;
 use chrono::Duration;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
+use std::convert::TryFrom;
 
 /// Data structure with all the GTFS objects
 ///
@@ -21,8 +22,9 @@ pub struct Gtfs {
     pub feed_info: Vec<FeedInfo>,
 }
 
-impl Gtfs {
-    pub fn try_from(raw: RawGtfs) -> Result<Gtfs, Error> {
+impl TryFrom<RawGtfs> for Gtfs {
+    type Error = Error;
+    fn try_from(raw: RawGtfs) -> Result<Gtfs, Error> {
         let stops = to_stop_map(raw.stops?);
         let trips = create_trips(raw.trips?, raw.stop_times?, &stops)?;
 

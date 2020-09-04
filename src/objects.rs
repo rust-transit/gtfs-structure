@@ -400,7 +400,7 @@ pub struct RawTrip {
     pub service_id: String,
     pub route_id: String,
     pub shape_id: Option<String>,
-    pub trip_headsign: Option<String>, 
+    pub trip_headsign: Option<String>,
 }
 
 impl Type for RawTrip {
@@ -432,7 +432,7 @@ pub struct Trip {
     pub route_id: String,
     pub stop_times: Vec<StopTime>,
     pub shape_id: Option<String>,
-    pub trip_headsign: Option<String>, 
+    pub trip_headsign: Option<String>,
 }
 
 impl Type for Trip {

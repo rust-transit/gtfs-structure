@@ -310,3 +310,23 @@ fn read_only_required_fields() {
     assert_eq!(feed.end_date, None);
     assert_eq!(shape.dist_traveled, None);
 }
+
+#[test]
+fn sorted_shapes() {
+    let gtfs = Gtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
+    let shape = &gtfs.shapes.get("Unordered_shp").unwrap();
+
+    let points = shape
+        .into_iter()
+        .map(|s| (s.sequence, s.latitude, s.longitude))
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        points,
+        vec![
+            (0, 37.61956, -122.48161),
+            (6, 37.64430, -122.41070),
+            (11, 37.65863, -122.30839),
+        ]
+    );
+}

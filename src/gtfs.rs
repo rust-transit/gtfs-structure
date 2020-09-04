@@ -202,6 +202,11 @@ fn to_shape_map(shapes: Vec<Shape>) -> HashMap<String, Vec<Shape>> {
         let shape = res.entry(s.id.to_owned()).or_insert_with(Vec::new);
         shape.push(s);
     }
+    // we sort the shape by it's pt_sequence
+    for (_key, shapes) in &mut res {
+        shapes.sort_by_key(|s| s.sequence);
+    }
+
     res
 }
 

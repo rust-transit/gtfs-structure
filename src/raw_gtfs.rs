@@ -90,7 +90,7 @@ where
         .unwrap_or_else(|| "invalid_file_name")
         .to_string();
     File::open(path)
-        .map_err(|e| Error::MissingFile(format!("Could not find file: {}", e)))
+        .map_err(|e| Error::MissingFile(format!("Could not find file: {} - {})", file_name, e)))
         .and_then(|r| read_objs(r, &file_name))
 }
 

@@ -393,6 +393,34 @@ impl fmt::Display for Route {
     }
 }
 
+#[derive(Debug, Deserialize, Serialize, Copy, Clone, PartialEq)]
+pub enum DirectionType {
+    #[serde(rename = "0")]
+    Outbound,
+    #[serde(rename = "1")]
+    Inbound,
+}
+
+#[derive(Debug, Deserialize, Serialize, Copy, Clone, PartialEq)]
+pub enum WheelChairAccessibleType {
+    #[serde(rename = "0")]
+    NoAccessibilityInfo,
+    #[serde(rename = "1")]
+    AtLeastOneWheelChair,
+    #[serde(rename = "2")]
+    NotWheelChairAccessible,
+}
+
+#[derive(Debug, Deserialize, Serialize, Copy, Clone, PartialEq)]
+pub enum BikesAllowedType {
+    #[serde(rename = "0")]
+    NoBikeInfo,
+    #[serde(rename = "1")]
+    AtLeastOneBike,
+    #[serde(rename = "2")]
+    NoBikesAllowed,
+}
+
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct RawTrip {
     #[serde(rename = "trip_id")]
@@ -401,6 +429,11 @@ pub struct RawTrip {
     pub route_id: String,
     pub shape_id: Option<String>,
     pub trip_headsign: Option<String>,
+    pub trip_short_name: Option<String>,
+    pub direction_id: Option<DirectionType>,
+    pub block_id: Option<String>,
+    pub wheelchair_accessible: Option<WheelChairAccessibleType>,
+    pub bikes_allowed: Option<BikesAllowedType>,
 }
 
 impl Type for RawTrip {
@@ -433,6 +466,11 @@ pub struct Trip {
     pub stop_times: Vec<StopTime>,
     pub shape_id: Option<String>,
     pub trip_headsign: Option<String>,
+    pub trip_short_name: Option<String>,
+    pub direction_id: Option<DirectionType>,
+    pub block_id: Option<String>,
+    pub wheelchair_accessible: Option<WheelChairAccessibleType>,
+    pub bikes_allowed: Option<BikesAllowedType>,
 }
 
 impl Type for Trip {

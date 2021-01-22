@@ -231,6 +231,11 @@ fn create_trips(
         stop_times: vec![],
         shape_id: rt.shape_id,
         trip_headsign: rt.trip_headsign,
+        trip_short_name: rt.trip_short_name,
+        direction_id: rt.direction_id,
+        block_id: rt.block_id,
+        wheelchair_accessible: rt.wheelchair_accessible,
+        bikes_allowed: rt.bikes_allowed,
     }));
     for s in raw_stop_times {
         let trip = &mut trips

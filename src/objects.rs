@@ -695,6 +695,7 @@ pub struct FeedInfo {
     pub url: String,
     #[serde(rename = "feed_lang")]
     pub lang: String,
+    pub default_lang: String,
     #[serde(
         deserialize_with = "deserialize_option_date",
         serialize_with = "serialize_option_date",
@@ -711,6 +712,10 @@ pub struct FeedInfo {
     pub end_date: Option<NaiveDate>,
     #[serde(rename = "feed_version")]
     pub version: Option<String>,
+    #[serde(rename = "feed_contact_email")]
+    pub contact_email: Option<String>,
+    #[serde(rename = "feed_contact_url")]
+    pub contact_url: Option<String>,
 }
 
 impl fmt::Display for FeedInfo {

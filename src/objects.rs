@@ -339,8 +339,17 @@ pub struct RawStopTime {
     pub departure_time: Option<u32>,
     pub stop_id: String,
     pub stop_sequence: u16,
+    pub stop_headsign: Option<String>,
     pub pickup_type: Option<PickupDropOffType>,
     pub drop_off_type: Option<PickupDropOffType>,
+    pub continuous_pickup: Option<ContinuousPickupDropOff>,
+    pub continuous_drop_off: Option<ContinuousPickupDropOff>,
+    pub shape_dist_traveled: Option<f32>,
+    #[serde(
+        deserialize_with = "deserialize_bool_default_true",
+        serialize_with = "serialize_bool"
+    )]
+    pub timepoint: bool,
 }
 
 #[derive(Debug, Default)]
@@ -351,6 +360,11 @@ pub struct StopTime {
     pub pickup_type: Option<PickupDropOffType>,
     pub drop_off_type: Option<PickupDropOffType>,
     pub stop_sequence: u16,
+    pub stop_headsign: Option<String>,
+    pub continuous_pickup: Option<ContinuousPickupDropOff>,
+    pub continuous_drop_off: Option<ContinuousPickupDropOff>,
+    pub shape_dist_traveled: Option<f32>,
+    pub timepoint: bool,
 }
 
 impl StopTime {
@@ -362,6 +376,11 @@ impl StopTime {
             pickup_type: stop_time_gtfs.pickup_type,
             drop_off_type: stop_time_gtfs.drop_off_type,
             stop_sequence: stop_time_gtfs.stop_sequence,
+            stop_headsign: stop_time_gtfs.stop_headsign.clone(),
+            continuous_pickup: stop_time_gtfs.continuous_pickup,
+            continuous_drop_off: stop_time_gtfs.continuous_drop_off,
+            shape_dist_traveled: stop_time_gtfs.shape_dist_traveled,
+            timepoint: stop_time_gtfs.timepoint,
         }
     }
 }
@@ -848,6 +867,21 @@ where
     match &*s {
         "0" => Ok(false),
         "1" => Ok(true),
+        &_ => Err(serde::de::Error::custom(format!(
+            "Invalid value `{}`, expected 0 or 1",
+            s
+        ))),
+    }
+}
+
+fn deserialize_bool_default_true<'de, D>(deserializer: D) -> Result<bool, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+    match &*s {
+        "0" => Ok(false),
+        "1" | "" => Ok(true),
         &_ => Err(serde::de::Error::custom(format!(
             "Invalid value `{}`, expected 0 or 1",
             s

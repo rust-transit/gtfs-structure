@@ -380,6 +380,7 @@ pub struct Route {
     #[serde(rename = "route_url")]
     pub url: Option<String>,
     pub agency_id: Option<String>,
+    #[serde(rename = "route_sort_order")]
     pub route_order: Option<u32>,
     #[serde(
         deserialize_with = "de_with_optional_color",

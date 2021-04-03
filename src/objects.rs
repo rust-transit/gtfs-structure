@@ -268,6 +268,9 @@ pub struct Stop {
     #[serde(default = "default_location_type")]
     pub location_type: LocationType,
     pub parent_station: Option<String>,
+    pub zone_id: Option<String>,
+    #[serde(rename = "stop_url")]
+    pub url: Option<String>,
     #[serde(deserialize_with = "de_with_optional_float")]
     #[serde(rename = "stop_lon", default)]
     pub longitude: Option<f64>,
@@ -278,6 +281,8 @@ pub struct Stop {
     pub timezone: Option<String>,
     #[serde(deserialize_with = "de_with_empty_default", default)]
     pub wheelchair_boarding: Availability,
+    pub level_id: Option<String>,
+    pub platform_code: Option<String>,
 }
 
 impl Type for Stop {

@@ -141,6 +141,21 @@ pub enum PickupDropOffType {
     CoordinateWithDriver,
 }
 
+#[derive(Derivative)]
+#[derivative(Default(bound = ""))]
+#[derive(Debug, Serialize, Deserialize, Copy, Clone, PartialEq)]
+pub enum ContinuousPickupDropOff {
+    #[serde(rename = "0")]
+    Continuous,
+    #[derivative(Default)]
+    #[serde(rename = "1")]
+    NotAvailable,
+    #[serde(rename = "2")]
+    ArrangeByPhone,
+    #[serde(rename = "3")]
+    CoordinateWithDriver,
+}
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Calendar {
     #[serde(rename = "service_id")]
@@ -359,7 +374,11 @@ pub struct Route {
     pub short_name: String,
     #[serde(rename = "route_long_name")]
     pub long_name: String,
+    #[serde(rename = "route_desc")]
+    pub desc: Option<String>,
     pub route_type: RouteType,
+    #[serde(rename = "route_url")]
+    pub url: Option<String>,
     pub agency_id: Option<String>,
     pub route_order: Option<u32>,
     #[serde(
@@ -374,6 +393,8 @@ pub struct Route {
         default
     )]
     pub route_text_color: Option<RGB8>,
+    pub continuous_pickup: Option<ContinuousPickupDropOff>,
+    pub continuous_drop_off: Option<ContinuousPickupDropOff>,
 }
 
 impl Type for Route {

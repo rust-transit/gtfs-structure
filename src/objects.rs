@@ -141,6 +141,21 @@ pub enum PickupDropOffType {
     CoordinateWithDriver,
 }
 
+#[derive(Derivative)]
+#[derivative(Default(bound = ""))]
+#[derive(Debug, Serialize, Deserialize, Copy, Clone, PartialEq)]
+pub enum ContinuousPickupDropOff {
+    #[serde(rename = "0")]
+    Continuous,
+    #[derivative(Default)]
+    #[serde(rename = "1")]
+    NotAvailable,
+    #[serde(rename = "2")]
+    ArrangeByPhone,
+    #[serde(rename = "3")]
+    CoordinateWithDriver,
+}
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Calendar {
     #[serde(rename = "service_id")]
@@ -268,6 +283,9 @@ pub struct Stop {
     #[serde(default = "default_location_type")]
     pub location_type: LocationType,
     pub parent_station: Option<String>,
+    pub zone_id: Option<String>,
+    #[serde(rename = "stop_url")]
+    pub url: Option<String>,
     #[serde(deserialize_with = "de_with_optional_float")]
     #[serde(rename = "stop_lon", default)]
     pub longitude: Option<f64>,
@@ -278,6 +296,8 @@ pub struct Stop {
     pub timezone: Option<String>,
     #[serde(deserialize_with = "de_with_empty_default", default)]
     pub wheelchair_boarding: Availability,
+    pub level_id: Option<String>,
+    pub platform_code: Option<String>,
 }
 
 impl Type for Stop {
@@ -319,8 +339,18 @@ pub struct RawStopTime {
     pub departure_time: Option<u32>,
     pub stop_id: String,
     pub stop_sequence: u16,
+    pub stop_headsign: Option<String>,
     pub pickup_type: Option<PickupDropOffType>,
     pub drop_off_type: Option<PickupDropOffType>,
+    pub continuous_pickup: Option<ContinuousPickupDropOff>,
+    pub continuous_drop_off: Option<ContinuousPickupDropOff>,
+    pub shape_dist_traveled: Option<f32>,
+    #[serde(
+        deserialize_with = "deserialize_bool",
+        serialize_with = "serialize_bool",
+        default = "bool_default_true"
+    )]
+    pub timepoint: bool,
 }
 
 #[derive(Debug, Default)]
@@ -331,6 +361,11 @@ pub struct StopTime {
     pub pickup_type: Option<PickupDropOffType>,
     pub drop_off_type: Option<PickupDropOffType>,
     pub stop_sequence: u16,
+    pub stop_headsign: Option<String>,
+    pub continuous_pickup: Option<ContinuousPickupDropOff>,
+    pub continuous_drop_off: Option<ContinuousPickupDropOff>,
+    pub shape_dist_traveled: Option<f32>,
+    pub timepoint: bool,
 }
 
 impl StopTime {
@@ -342,6 +377,11 @@ impl StopTime {
             pickup_type: stop_time_gtfs.pickup_type,
             drop_off_type: stop_time_gtfs.drop_off_type,
             stop_sequence: stop_time_gtfs.stop_sequence,
+            stop_headsign: stop_time_gtfs.stop_headsign.clone(),
+            continuous_pickup: stop_time_gtfs.continuous_pickup,
+            continuous_drop_off: stop_time_gtfs.continuous_drop_off,
+            shape_dist_traveled: stop_time_gtfs.shape_dist_traveled,
+            timepoint: stop_time_gtfs.timepoint,
         }
     }
 }
@@ -354,8 +394,13 @@ pub struct Route {
     pub short_name: String,
     #[serde(rename = "route_long_name")]
     pub long_name: String,
+    #[serde(rename = "route_desc")]
+    pub desc: Option<String>,
     pub route_type: RouteType,
+    #[serde(rename = "route_url")]
+    pub url: Option<String>,
     pub agency_id: Option<String>,
+    #[serde(rename = "route_sort_order")]
     pub route_order: Option<u32>,
     #[serde(
         deserialize_with = "de_with_optional_color",
@@ -369,6 +414,8 @@ pub struct Route {
         default
     )]
     pub route_text_color: Option<RGB8>,
+    pub continuous_pickup: Option<ContinuousPickupDropOff>,
+    pub continuous_drop_off: Option<ContinuousPickupDropOff>,
 }
 
 impl Type for Route {
@@ -649,6 +696,7 @@ pub struct FeedInfo {
     pub url: String,
     #[serde(rename = "feed_lang")]
     pub lang: String,
+    pub default_lang: Option<String>,
     #[serde(
         deserialize_with = "deserialize_option_date",
         serialize_with = "serialize_option_date",
@@ -665,6 +713,10 @@ pub struct FeedInfo {
     pub end_date: Option<NaiveDate>,
     #[serde(rename = "feed_version")]
     pub version: Option<String>,
+    #[serde(rename = "feed_contact_email")]
+    pub contact_email: Option<String>,
+    #[serde(rename = "feed_contact_url")]
+    pub contact_url: Option<String>,
 }
 
 impl fmt::Display for FeedInfo {
@@ -826,6 +878,10 @@ where
             s
         ))),
     }
+}
+
+fn bool_default_true() -> bool {
+    true
 }
 
 fn serialize_bool<'ser, S>(value: &bool, serializer: S) -> Result<S::Ok, S::Error>

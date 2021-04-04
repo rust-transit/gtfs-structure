@@ -346,8 +346,9 @@ pub struct RawStopTime {
     pub continuous_drop_off: Option<ContinuousPickupDropOff>,
     pub shape_dist_traveled: Option<f32>,
     #[serde(
-        deserialize_with = "deserialize_bool_default_true",
-        serialize_with = "serialize_bool"
+        deserialize_with = "deserialize_bool",
+        serialize_with = "serialize_bool",
+        default = "bool_default_true"
     )]
     pub timepoint: bool,
 }
@@ -695,7 +696,7 @@ pub struct FeedInfo {
     pub url: String,
     #[serde(rename = "feed_lang")]
     pub lang: String,
-    pub default_lang: String,
+    pub default_lang: Option<String>,
     #[serde(
         deserialize_with = "deserialize_option_date",
         serialize_with = "serialize_option_date",
@@ -879,19 +880,8 @@ where
     }
 }
 
-fn deserialize_bool_default_true<'de, D>(deserializer: D) -> Result<bool, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let s = String::deserialize(deserializer)?;
-    match &*s {
-        "0" => Ok(false),
-        "1" | "" => Ok(true),
-        &_ => Err(serde::de::Error::custom(format!(
-            "Invalid value `{}`, expected 0 or 1",
-            s
-        ))),
-    }
+fn bool_default_true() -> bool {
+    true
 }
 
 fn serialize_bool<'ser, S>(value: &bool, serializer: S) -> Result<S::Ok, S::Error>

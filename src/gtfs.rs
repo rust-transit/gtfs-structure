@@ -140,7 +140,7 @@ impl Gtfs {
         result
     }
 
-    fn translate(
+    pub fn translate(
         &self,
         table_name: &str,
         field_name: &str,
@@ -184,63 +184,7 @@ impl Gtfs {
         language: &str
     ) -> Result<Stop, Error> {
         let stop = self.get_stop(id)?;
-        Ok(Stop {
-            id: stop.id.clone(),
-            code: stop.code.as_ref().map(|code| 
-                self.translate(
-                    "stops",
-                    "stop_code",
-                    language,
-                    &stop.id,
-                    None,
-                    &code
-                )
-            ),
-            name: self.translate(
-                "stops",
-                "stop_name",
-                language,
-                &stop.id,
-                None,
-                &stop.name
-            ),
-            description: self.translate(
-                "stops",
-                "stop_desc",
-                language,
-                &stop.id,
-                None,
-                &stop.description
-            ),
-            location_type: stop.location_type,
-            parent_station: stop.parent_station.clone(),
-            zone_id: stop.zone_id.clone(),
-            url: stop.code.as_ref().map(|url|
-                self.translate(
-                    "stops",
-                    "stop_url",
-                    language,
-                    &stop.id,
-                    None,
-                    &url
-                )
-            ),
-            longitude: stop.longitude,
-            latitude: stop.latitude,
-            timezone: stop.timezone.clone(),
-            wheelchair_boarding: stop.wheelchair_boarding,
-            level_id: stop.level_id.clone(),
-            platform_code: stop.code.as_ref().map(|platform_code|
-                self.translate(
-                    "stops",
-                    "platform_code",
-                    language,
-                    &stop.id,
-                    None,
-                    &platform_code
-                )
-            ),
-        })
+        Ok(stop.to_owned().translate(self, language))
     }
 
     pub fn get_trip<'a>(&'a self, id: &str) -> Result<&'a Trip, Error> {

@@ -1,3 +1,4 @@
+use crate::Gtfs;
 use chrono::{Datelike, NaiveDate, Weekday};
 use rgb::RGB8;
 use serde::de::{self, Deserialize, Deserializer};
@@ -11,6 +12,10 @@ pub trait Id {
 
 pub trait Type {
     fn object_type(&self) -> ObjectType;
+}
+
+pub trait Translatable {
+    fn translate(&self, gtfs: &Gtfs, language: &str) -> Self;
 }
 
 #[derive(Derivative)]
@@ -341,6 +346,68 @@ impl Type for Stop {
 impl Id for Stop {
     fn id(&self) -> &str {
         &self.id
+    }
+}
+
+impl Translatable for Stop {
+    fn translate(&self, gtfs: &Gtfs, language: &str) -> Self {
+        Stop {
+            id: self.id.clone(),
+            code: self.code.as_ref().map(|code| 
+                gtfs.translate(
+                    "stops",
+                    "stop_code",
+                    language,
+                    &self.id,
+                    None,
+                    &code
+                )
+            ),
+            name: gtfs.translate(
+                "stops",
+                "stop_name",
+                language,
+                &self.id,
+                None,
+                &self.name
+            ),
+            description: gtfs.translate(
+                "stops",
+                "stop_desc",
+                language,
+                &self.id,
+                None,
+                &self.description
+            ),
+            location_type: self.location_type,
+            parent_station: self.parent_station.clone(),
+            zone_id: self.zone_id.clone(),
+            url: self.code.as_ref().map(|url|
+                gtfs.translate(
+                    "stops",
+                    "stop_url",
+                    language,
+                    &self.id,
+                    None,
+                    &url
+                )
+            ),
+            longitude: self.longitude,
+            latitude: self.latitude,
+            timezone: self.timezone.clone(),
+            wheelchair_boarding: self.wheelchair_boarding,
+            level_id: self.level_id.clone(),
+            platform_code: self.code.as_ref().map(|platform_code|
+                gtfs.translate(
+                    "stops",
+                    "platform_code",
+                    language,
+                    &self.id,
+                    None,
+                    &platform_code
+                )
+            ),
+        }
     }
 }
 

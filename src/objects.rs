@@ -13,7 +13,20 @@ pub trait Type {
     fn object_type(&self) -> ObjectType;
 }
 
-#[derive(Debug, Serialize, Eq, PartialEq, Hash)]
+#[derive(Derivative)]
+#[derivative(Default(bound = ""))]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+pub struct Translation {
+    pub table_name: String,
+    pub field_name: String,
+    pub language: String,
+    pub translation: String,
+    pub record_id: Option<String>,
+    pub record_sub_id: Option<String>,
+    pub field_value: Option<String>,
+}
+
+#[derive(Debug, Serialize, Eq, PartialEq, Hash, Clone)]
 pub enum ObjectType {
     Agency,
     Stop,
@@ -22,6 +35,8 @@ pub enum ObjectType {
     Calendar,
     Shape,
     Fare,
+    StopTime,
+    FeedInfo,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Serialize)]

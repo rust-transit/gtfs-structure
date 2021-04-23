@@ -1,3 +1,4 @@
+use crate::objects::Translation;
 use crate::objects::*;
 use crate::Error;
 use chrono::Utc;
@@ -25,6 +26,7 @@ pub struct RawGtfs {
     pub stop_times: Result<Vec<RawStopTime>, Error>,
     pub files: Vec<String>,
     pub sha256: Option<String>,
+    pub translations: Option<Result<Vec<Translation>, Error>>,
 }
 
 fn read_objs<T, O>(mut reader: T, file_name: &str) -> Result<Vec<O>, Error>
@@ -228,6 +230,7 @@ impl RawGtfs {
             shapes: read_objs_from_optional_path(&p, "shapes.txt"),
             fare_attributes: read_objs_from_optional_path(&p, "fare_attributes.txt"),
             feed_info: read_objs_from_optional_path(&p, "feed_info.txt"),
+            translations: read_objs_from_optional_path(&p, "translations.txt"),
             read_duration: Utc::now().signed_duration_since(now).num_milliseconds(),
             files,
             sha256: None,
@@ -280,6 +283,7 @@ impl RawGtfs {
                 "fare_attributes.txt",
                 "feed_info.txt",
                 "shapes.txt",
+                "translations.txt",
             ] {
                 let path = std::path::Path::new(archive_file.name());
                 if path.file_name() == Some(std::ffi::OsStr::new(gtfs_file)) {
@@ -300,6 +304,7 @@ impl RawGtfs {
             fare_attributes: read_optional_file(&file_mapping, &mut archive, "fare_attributes.txt"),
             feed_info: read_optional_file(&file_mapping, &mut archive, "feed_info.txt"),
             shapes: read_optional_file(&file_mapping, &mut archive, "shapes.txt"),
+            translations: read_optional_file(&file_mapping, &mut archive, "translations.txt"),
             read_duration: Utc::now().signed_duration_since(now).num_milliseconds(),
             files,
             sha256: Some(format!("{:x}", hash)),

@@ -1,0 +1,2 @@
+table_name,field_name,language,translation,field_value
+agency,agency_name,nl,BIBUS,BIBUS

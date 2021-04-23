@@ -337,17 +337,12 @@ fn read_translations() {
     assert!(gtfs.translations.is_some());
     let translations_res = gtfs.translations.unwrap();
     assert!(translations_res.is_ok());
-    let translations = translations_res.unwrap();
-    assert_eq!(1, translations.len());
-    assert_eq!(translations[0], Translation {
-        table_name: "agency".to_string(),
-        field_name: "agency_name".to_string(),
-        language: "nl".to_string(),
-        translation: "BIBUS".to_string(),
-        record_id: None,
-        record_sub_id: None,
-        field_value: Some(
-            "BIBUS".to_string(),
-        ),
-    })
+}
+
+#[test]
+fn translations() {
+    let gtfs = Gtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
+    assert_eq!(gtfs.get_stop_translated("stop1", "nl").unwrap().name, "Stop Gebied");
+    assert_eq!(gtfs.get_stop_translated("stop1", "fr").unwrap().name, "Arrêt Région");
+    assert_eq!(gtfs.get_stop_translated("stop1", "en").unwrap().name, "Stop Area");
 }

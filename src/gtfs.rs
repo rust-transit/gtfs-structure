@@ -210,6 +210,15 @@ impl Gtfs {
         }
     }
 
+    pub fn get_route_translated(
+        &self,
+        id: &str,
+        language: &str
+    ) -> Result<Route, Error> {
+        let route = self.get_route(id)?;
+        Ok(route.to_owned().translate(self, language))
+    }
+
     pub fn get_calendar<'a>(&'a self, id: &str) -> Result<&'a Calendar, Error> {
         match self.calendar.get(id) {
             Some(calendar) => Ok(calendar),

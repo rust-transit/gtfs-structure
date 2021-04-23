@@ -548,6 +548,53 @@ impl Id for Route {
     }
 }
 
+impl Translatable for Route {
+    fn translate(&self, gtfs: &Gtfs, language: &str) -> Route {
+        Route {
+            id: self.id.clone(),
+            short_name: gtfs.translate(
+                "routes",
+                "route_short_name",
+                language,
+                &self.id,
+                None,
+                &self.short_name
+            ),
+            long_name: gtfs.translate(
+                "routes",
+                "route_long_name",
+                language,
+                &self.id,
+                None,
+                &self.long_name
+            ),
+            desc: self.desc.as_ref().map(|desc| gtfs.translate(
+                    "routes",
+                    "route_desc",
+                    language,
+                    &self.id,
+                    None,
+                    &desc
+            )),
+            route_type: self.route_type.clone(),
+            url: self.url.as_ref().map(|url| gtfs.translate(
+                    "routes",
+                    "route_url",
+                    language,
+                    &self.id,
+                    None,
+                    &url
+            )),
+            agency_id: self.agency_id.clone(),
+            route_order: self.route_order.clone(),
+            route_color: self.route_color.clone(),
+            route_text_color: self.route_text_color.clone(),
+            continuous_pickup: self.continuous_pickup.clone(),
+            continuous_drop_off: self.continuous_drop_off.clone(),
+        }
+    }
+}
+
 impl fmt::Display for Route {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if !self.long_name.is_empty() {

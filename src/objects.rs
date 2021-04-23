@@ -467,6 +467,25 @@ pub struct StopTime {
     pub timepoint: bool,
 }
 
+impl Translatable for StopTime {
+    fn translate(&self, gtfs: &Gtfs, language: &str) -> Self {
+        StopTime {
+            arrival_time: self.arrival_time.clone(),
+            stop: Arc::new(self.stop.translate(gtfs, language)),
+            departure_time: self.departure_time.clone(),
+            pickup_type: self.pickup_type.clone(),
+            drop_off_type: self.drop_off_type.clone(),
+            stop_sequence: self.stop_sequence,
+            // Headsign can't be translated as we do not have a reference to this StopTime's Trip
+            stop_headsign: self.stop_headsign.clone(),
+            continuous_pickup: self.continuous_pickup.clone(),
+            continuous_drop_off: self.continuous_drop_off.clone(),
+            shape_dist_traveled: self.shape_dist_traveled,
+            timepoint: self.timepoint
+        }
+    }
+}
+
 impl StopTime {
     pub fn from(stop_time_gtfs: &RawStopTime, stop: Arc<Stop>) -> Self {
         Self {
@@ -628,6 +647,38 @@ impl Type for Trip {
 impl Id for Trip {
     fn id(&self) -> &str {
         &self.id
+    }
+}
+
+impl Translatable for Trip {
+    fn translate(&self, gtfs: &Gtfs, language: &str) -> Self {
+        Trip {
+            id: self.id.clone(),
+            service_id: self.service_id.clone(),
+            route_id: self.route_id.clone(),
+            stop_times: self.stop_times.iter().map(|stop_time| stop_time.translate(gtfs, language)).collect(),
+            shape_id: self.shape_id.clone(),
+            trip_headsign: self.trip_headsign.as_ref().map(|headsign| gtfs.translate(
+                "trips",
+                "trip_headsign",
+                language,
+                &self.id,
+                None,
+                &headsign
+            )),
+            trip_short_name: self.trip_short_name.as_ref().map(|short_name| gtfs.translate(
+                "trips",
+                "trip_short_name",
+                language,
+                &self.id,
+                None,
+                &short_name
+            )),
+            direction_id: self.direction_id.clone(),
+            block_id: self.block_id.clone(),
+            wheelchair_accessible: self.wheelchair_accessible.clone(),
+            bikes_allowed: self.bikes_allowed.clone(),
+        }
     }
 }
 

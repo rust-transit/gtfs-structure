@@ -194,6 +194,15 @@ impl Gtfs {
         }
     }
 
+    pub fn get_trip_translated(
+        &self,
+        id: &str,
+        language: &str
+    ) -> Result<Trip, Error> {
+        let trip = self.get_trip(id)?;
+        Ok(trip.to_owned().translate(self, language))
+    }
+
     pub fn get_route<'a>(&'a self, id: &str) -> Result<&'a Route, Error> {
         match self.routes.get(id) {
             Some(route) => Ok(route),

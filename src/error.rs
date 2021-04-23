@@ -15,6 +15,8 @@ pub enum Error {
     ReferenceError(String),
     #[error("Could not read GTFS: {0} is neither a file nor a directory")]
     NotFileNorDirectory(String),
+    #[error("Invalid translation: {0}")]
+    InvalidTranslation(String),
     #[error("'{0}' is not a valid time")]
     InvalidTime(String),
     #[error("'{0}' is not a valid color")]

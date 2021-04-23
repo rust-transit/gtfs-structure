@@ -26,6 +26,23 @@ pub struct Translation {
     pub field_value: Option<String>,
 }
 
+#[derive(Debug, Eq, PartialEq, Hash)]
+pub struct TranslationByIdKey {
+    pub table_name: String,
+    pub field_name: String,
+    pub language: String,
+    pub record_id: String,
+    pub record_sub_id: Option<String>,
+}
+
+#[derive(Debug, Eq, PartialEq, Hash)]
+pub struct TranslationByValueKey {
+    pub table_name: String,
+    pub field_name: String,
+    pub language: String,
+    pub field_value: String,
+}
+
 #[derive(Debug, Serialize, Eq, PartialEq, Hash, Clone)]
 pub enum ObjectType {
     Agency,

@@ -20,6 +20,8 @@ pub struct Gtfs {
     pub shapes: HashMap<String, Vec<Shape>>,
     pub fare_attributes: HashMap<String, FareAttribute>,
     pub feed_info: Vec<FeedInfo>,
+    pub translations_by_id: HashMap<TranslationByIdKey, String>,
+    pub translations_by_value: HashMap<TranslationByValueKey, String>,
 }
 
 impl TryFrom<RawGtfs> for Gtfs {
@@ -27,6 +29,9 @@ impl TryFrom<RawGtfs> for Gtfs {
     fn try_from(raw: RawGtfs) -> Result<Gtfs, Error> {
         let stops = to_stop_map(raw.stops?);
         let trips = create_trips(raw.trips?, raw.stop_times?, &stops)?;
+        let (translations_by_id, translations_by_value) = create_translations(
+            raw.translations.unwrap_or(Ok(vec!()))?
+        )?;
 
         Ok(Gtfs {
             stops,
@@ -40,6 +45,8 @@ impl TryFrom<RawGtfs> for Gtfs {
             calendar_dates: to_calendar_dates(
                 raw.calendar_dates.unwrap_or_else(|| Ok(Vec::new()))?,
             ),
+            translations_by_id,
+            translations_by_value,
             read_duration: raw.read_duration,
         })
     }
@@ -252,4 +259,60 @@ fn create_trips(
             .sort_by(|a, b| a.stop_sequence.cmp(&b.stop_sequence));
     }
     Ok(trips)
+}
+
+fn create_translations(
+    raw_translations: Vec<Translation>
+) -> Result<(
+    HashMap<TranslationByIdKey, String>,
+    HashMap<TranslationByValueKey, String>
+), Error> {
+    let mut translations_by_id = HashMap::new();
+    let mut translations_by_value = HashMap::new();
+
+    for translation in raw_translations {
+        if translation.record_id.is_some() {
+            // Make sure it is not forbidden
+            if translation.field_value.is_some() ||
+                translation.table_name == "feed_info".to_string() {
+                return Err(Error::InvalidTranslation(
+                        "record_id was defined when it was forbidden".to_string()
+                ));
+            }
+
+            // Make sure record_sub_id is there if and only if it is required
+            if translation.table_name == "stop_times".to_string() &&
+                translation.record_sub_id.is_none() {
+                return Err(Error::InvalidTranslation(
+                        "record_sub_id was not set when it was required".to_string()
+                ));
+            }
+
+            translations_by_id.insert(TranslationByIdKey {
+                table_name: translation.table_name,
+                field_name: translation.field_name,
+                language: translation.language,
+                record_id: translation.record_id.unwrap(),
+                record_sub_id: translation.record_sub_id,
+            }, translation.translation);
+        } else if translation.field_value.is_some() {
+            // Make sure it is not forbidden
+            if translation.record_id.is_some() ||
+                translation.record_sub_id.is_some() ||
+                translation.table_name == "feed_info".to_string() {
+                return Err(Error::InvalidTranslation(
+                        "field_value was defined when it was forbidden".to_string()
+                ));
+            }
+
+            translations_by_value.insert(TranslationByValueKey {
+                table_name: translation.table_name,
+                field_name: translation.field_name,
+                language: translation.language,
+                field_value: translation.field_value.unwrap(),
+            }, translation.translation);
+        }
+    }
+
+    return Ok((translations_by_id, translations_by_value));
 }

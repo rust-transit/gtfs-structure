@@ -97,6 +97,15 @@ fn read_stop_times() {
 }
 
 #[test]
+fn read_frequencies() {
+    let gtfs = Gtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
+    let trip = &gtfs.trips.get("trip1").unwrap();
+    assert_eq!(1, trip.frequencies.len());
+    let frequency = &trip.frequencies[0];
+    assert_eq!(19800, frequency.start_time);
+}
+
+#[test]
 fn read_agencies() {
     let gtfs = Gtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
     let agencies = &gtfs.agencies;
@@ -235,7 +244,7 @@ fn display() {
 #[test]
 fn path_files() {
     let gtfs = RawGtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
-    assert_eq!(gtfs.files.len(), 10);
+    assert_eq!(gtfs.files.len(), 11);
 }
 
 #[test]

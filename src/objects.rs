@@ -518,6 +518,7 @@ pub struct Trip {
     pub block_id: Option<String>,
     pub wheelchair_accessible: Option<WheelChairAccessibleType>,
     pub bikes_allowed: Option<BikesAllowedType>,
+    pub frequencies: Vec<Frequency>,
 }
 
 impl Type for Trip {
@@ -640,6 +641,50 @@ pub enum PaymentMethod {
     Aboard,
     #[serde(rename = "1")]
     PreBoarding,
+}
+
+#[derive(Debug, Serialize, Deserialize, Default)]
+pub struct RawFrequency {
+    pub trip_id: String,
+    #[serde(
+        deserialize_with = "deserialize_time",
+        serialize_with = "serialize_time"
+    )]
+    pub start_time: u32,
+    #[serde(
+        deserialize_with = "deserialize_time",
+        serialize_with = "serialize_time"
+    )]
+    pub end_time: u32,
+    pub headway_secs: u32,
+    pub exact_times: Option<ExactTimes>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Copy, Clone, PartialEq)]
+pub enum ExactTimes {
+    #[serde(rename = "0")]
+    FrequencyBased,
+    #[serde(rename = "1")]
+    ScheduleBased,
+}
+
+#[derive(Debug, Default)]
+pub struct Frequency {
+    pub start_time: u32,
+    pub end_time: u32,
+    pub headway_secs: u32,
+    pub exact_times: Option<ExactTimes>,
+}
+
+impl Frequency {
+    pub fn from(frequency: &RawFrequency) -> Self {
+        Self {
+            start_time: frequency.start_time,
+            end_time: frequency.end_time,
+            headway_secs: frequency.headway_secs,
+            exact_times: frequency.exact_times,
+        }
+    }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -776,6 +821,21 @@ pub fn parse_time(s: &str) -> Result<u32, crate::Error> {
     } else {
         Ok(parse_time_impl(v).map_err(|_| crate::Error::InvalidTime(s.to_owned()))?)
     }
+}
+
+fn deserialize_time<'de, D>(deserializer: D) -> Result<u32, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+    parse_time(&s).map_err(de::Error::custom)
+}
+
+fn serialize_time<'ser, S>(time: &u32, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    serializer.serialize_str(format!("{}", time).as_str())
 }
 
 fn deserialize_optional_time<'de, D>(deserializer: D) -> Result<Option<u32>, D::Error>

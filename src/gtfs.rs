@@ -26,7 +26,8 @@ impl TryFrom<RawGtfs> for Gtfs {
     type Error = Error;
     fn try_from(raw: RawGtfs) -> Result<Gtfs, Error> {
         let stops = to_stop_map(raw.stops?);
-        let trips = create_trips(raw.trips?, raw.stop_times?, &stops)?;
+        let frequencies = raw.frequencies.unwrap_or_else(|| Ok(Vec::new()))?;
+        let trips = create_trips(raw.trips?, raw.stop_times?, frequencies, &stops, )?;
 
         Ok(Gtfs {
             stops,
@@ -222,6 +223,7 @@ fn to_calendar_dates(cd: Vec<CalendarDate>) -> HashMap<String, Vec<CalendarDate>
 fn create_trips(
     raw_trips: Vec<RawTrip>,
     raw_stop_times: Vec<RawStopTime>,
+    raw_frequencies: Vec<RawFrequency>,
     stops: &HashMap<String, Arc<Stop>>,
 ) -> Result<HashMap<String, Trip>, Error> {
     let mut trips = to_map(raw_trips.into_iter().map(|rt| Trip {
@@ -236,6 +238,7 @@ fn create_trips(
         block_id: rt.block_id,
         wheelchair_accessible: rt.wheelchair_accessible,
         bikes_allowed: rt.bikes_allowed,
+        frequencies: vec![],
     }));
     for s in raw_stop_times {
         let trip = &mut trips
@@ -251,5 +254,13 @@ fn create_trips(
         trip.stop_times
             .sort_by(|a, b| a.stop_sequence.cmp(&b.stop_sequence));
     }
+
+    for f in raw_frequencies {
+        let trip = &mut trips
+            .get_mut(&f.trip_id)
+            .ok_or(Error::ReferenceError(f.trip_id.to_string()))?;
+        trip.frequencies.push(Frequency::from(&f));
+    }
+
     Ok(trips)
 }

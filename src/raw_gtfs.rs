@@ -48,6 +48,7 @@ where
 
     let mut reader = csv::ReaderBuilder::new()
         .flexible(true)
+        .trim(csv::Trim::Fields)
         .from_reader(chained);
     // We store the headers to be able to return them in case of errors
     let headers = reader

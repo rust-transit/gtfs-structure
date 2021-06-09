@@ -1,0 +1,3 @@
+table_name,field_name,language,translation,field_value,record_id,record_sub_id
+stops,stop_name,nl,Stop Gebied,,stop1,
+stops,stop_name,fr,Arrêt Région,"Stop Area",,

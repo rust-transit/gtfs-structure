@@ -1,3 +1,4 @@
+use crate::Gtfs;
 use chrono::{Datelike, NaiveDate, Weekday};
 use rgb::RGB8;
 use serde::de::{self, Deserialize, Deserializer};
@@ -13,7 +14,41 @@ pub trait Type {
     fn object_type(&self) -> ObjectType;
 }
 
-#[derive(Debug, Serialize, Eq, PartialEq, Hash)]
+pub trait Translatable {
+    fn translate(&self, gtfs: &Gtfs, language: &str) -> Self;
+}
+
+#[derive(Derivative)]
+#[derivative(Default(bound = ""))]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+pub struct Translation {
+    pub table_name: String,
+    pub field_name: String,
+    pub language: String,
+    pub translation: String,
+    pub record_id: Option<String>,
+    pub record_sub_id: Option<String>,
+    pub field_value: Option<String>,
+}
+
+#[derive(Debug, Eq, PartialEq, Hash)]
+pub struct TranslationByIdKey {
+    pub table_name: String,
+    pub field_name: String,
+    pub language: String,
+    pub record_id: String,
+    pub record_sub_id: Option<String>,
+}
+
+#[derive(Debug, Eq, PartialEq, Hash)]
+pub struct TranslationByValueKey {
+    pub table_name: String,
+    pub field_name: String,
+    pub language: String,
+    pub field_value: String,
+}
+
+#[derive(Debug, Serialize, Eq, PartialEq, Hash, Clone)]
 pub enum ObjectType {
     Agency,
     Stop,
@@ -22,6 +57,8 @@ pub enum ObjectType {
     Calendar,
     Shape,
     Fare,
+    StopTime,
+    FeedInfo,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Serialize)]
@@ -312,6 +349,68 @@ impl Id for Stop {
     }
 }
 
+impl Translatable for Stop {
+    fn translate(&self, gtfs: &Gtfs, language: &str) -> Self {
+        Stop {
+            id: self.id.clone(),
+            code: self.code.as_ref().map(|code| 
+                gtfs.translate(
+                    "stops",
+                    "stop_code",
+                    language,
+                    &self.id,
+                    None,
+                    &code
+                )
+            ),
+            name: gtfs.translate(
+                "stops",
+                "stop_name",
+                language,
+                &self.id,
+                None,
+                &self.name
+            ),
+            description: gtfs.translate(
+                "stops",
+                "stop_desc",
+                language,
+                &self.id,
+                None,
+                &self.description
+            ),
+            location_type: self.location_type,
+            parent_station: self.parent_station.clone(),
+            zone_id: self.zone_id.clone(),
+            url: self.code.as_ref().map(|url|
+                gtfs.translate(
+                    "stops",
+                    "stop_url",
+                    language,
+                    &self.id,
+                    None,
+                    &url
+                )
+            ),
+            longitude: self.longitude,
+            latitude: self.latitude,
+            timezone: self.timezone.clone(),
+            wheelchair_boarding: self.wheelchair_boarding,
+            level_id: self.level_id.clone(),
+            platform_code: self.code.as_ref().map(|platform_code|
+                gtfs.translate(
+                    "stops",
+                    "platform_code",
+                    language,
+                    &self.id,
+                    None,
+                    &platform_code
+                )
+            ),
+        }
+    }
+}
+
 impl fmt::Display for Stop {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.name)
@@ -366,6 +465,25 @@ pub struct StopTime {
     pub continuous_drop_off: Option<ContinuousPickupDropOff>,
     pub shape_dist_traveled: Option<f32>,
     pub timepoint: bool,
+}
+
+impl Translatable for StopTime {
+    fn translate(&self, gtfs: &Gtfs, language: &str) -> Self {
+        StopTime {
+            arrival_time: self.arrival_time.clone(),
+            stop: Arc::new(self.stop.translate(gtfs, language)),
+            departure_time: self.departure_time.clone(),
+            pickup_type: self.pickup_type.clone(),
+            drop_off_type: self.drop_off_type.clone(),
+            stop_sequence: self.stop_sequence,
+            // Headsign can't be translated as we do not have a reference to this StopTime's Trip
+            stop_headsign: self.stop_headsign.clone(),
+            continuous_pickup: self.continuous_pickup.clone(),
+            continuous_drop_off: self.continuous_drop_off.clone(),
+            shape_dist_traveled: self.shape_dist_traveled,
+            timepoint: self.timepoint
+        }
+    }
 }
 
 impl StopTime {
@@ -427,6 +545,53 @@ impl Type for Route {
 impl Id for Route {
     fn id(&self) -> &str {
         &self.id
+    }
+}
+
+impl Translatable for Route {
+    fn translate(&self, gtfs: &Gtfs, language: &str) -> Route {
+        Route {
+            id: self.id.clone(),
+            short_name: gtfs.translate(
+                "routes",
+                "route_short_name",
+                language,
+                &self.id,
+                None,
+                &self.short_name
+            ),
+            long_name: gtfs.translate(
+                "routes",
+                "route_long_name",
+                language,
+                &self.id,
+                None,
+                &self.long_name
+            ),
+            desc: self.desc.as_ref().map(|desc| gtfs.translate(
+                    "routes",
+                    "route_desc",
+                    language,
+                    &self.id,
+                    None,
+                    &desc
+            )),
+            route_type: self.route_type.clone(),
+            url: self.url.as_ref().map(|url| gtfs.translate(
+                    "routes",
+                    "route_url",
+                    language,
+                    &self.id,
+                    None,
+                    &url
+            )),
+            agency_id: self.agency_id.clone(),
+            route_order: self.route_order.clone(),
+            route_color: self.route_color.clone(),
+            route_text_color: self.route_text_color.clone(),
+            continuous_pickup: self.continuous_pickup.clone(),
+            continuous_drop_off: self.continuous_drop_off.clone(),
+        }
     }
 }
 
@@ -529,6 +694,38 @@ impl Type for Trip {
 impl Id for Trip {
     fn id(&self) -> &str {
         &self.id
+    }
+}
+
+impl Translatable for Trip {
+    fn translate(&self, gtfs: &Gtfs, language: &str) -> Self {
+        Trip {
+            id: self.id.clone(),
+            service_id: self.service_id.clone(),
+            route_id: self.route_id.clone(),
+            stop_times: self.stop_times.iter().map(|stop_time| stop_time.translate(gtfs, language)).collect(),
+            shape_id: self.shape_id.clone(),
+            trip_headsign: self.trip_headsign.as_ref().map(|headsign| gtfs.translate(
+                "trips",
+                "trip_headsign",
+                language,
+                &self.id,
+                None,
+                &headsign
+            )),
+            trip_short_name: self.trip_short_name.as_ref().map(|short_name| gtfs.translate(
+                "trips",
+                "trip_short_name",
+                language,
+                &self.id,
+                None,
+                &short_name
+            )),
+            direction_id: self.direction_id.clone(),
+            block_id: self.block_id.clone(),
+            wheelchair_accessible: self.wheelchair_accessible.clone(),
+            bikes_allowed: self.bikes_allowed.clone(),
+        }
     }
 }
 

@@ -235,7 +235,7 @@ fn display() {
 #[test]
 fn path_files() {
     let gtfs = RawGtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
-    assert_eq!(gtfs.files.len(), 10);
+    assert_eq!(gtfs.files.len(), 11);
 }
 
 #[test]
@@ -329,4 +329,20 @@ fn sorted_shapes() {
             (11, 37.65863, -122.30839),
         ]
     );
+}
+
+#[test]
+fn read_translations() {
+    let gtfs = RawGtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
+    assert!(gtfs.translations.is_some());
+    let translations_res = gtfs.translations.unwrap();
+    assert!(translations_res.is_ok());
+}
+
+#[test]
+fn translations() {
+    let gtfs = Gtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
+    assert_eq!(gtfs.get_stop_translated("stop1", "nl").unwrap().name, "Stop Gebied");
+    assert_eq!(gtfs.get_stop_translated("stop1", "fr").unwrap().name, "Arrêt Région");
+    assert_eq!(gtfs.get_stop_translated("stop1", "en").unwrap().name, "Stop Area");
 }

@@ -21,6 +21,7 @@ pub struct RawGtfs {
     pub agencies: Result<Vec<Agency>, Error>,
     pub shapes: Option<Result<Vec<Shape>, Error>>,
     pub fare_attributes: Option<Result<Vec<FareAttribute>, Error>>,
+    pub frequencies: Option<Result<Vec<RawFrequency>, Error>>,
     pub feed_info: Option<Result<Vec<FeedInfo>, Error>>,
     pub stop_times: Result<Vec<RawStopTime>, Error>,
     pub files: Vec<String>,
@@ -173,6 +174,7 @@ impl RawGtfs {
         println!("  Stop times: {}", mandatory_file_summary(&self.stop_times));
         println!("  Shapes: {}", optional_file_summary(&self.shapes));
         println!("  Fares: {}", optional_file_summary(&self.fare_attributes));
+        println!("  Frequencies: {}", optional_file_summary(&self.frequencies));
         println!("  Feed info: {}", optional_file_summary(&self.feed_info));
     }
 
@@ -227,6 +229,7 @@ impl RawGtfs {
             agencies: read_objs_from_path(p.join("agency.txt")),
             shapes: read_objs_from_optional_path(&p, "shapes.txt"),
             fare_attributes: read_objs_from_optional_path(&p, "fare_attributes.txt"),
+            frequencies: read_objs_from_optional_path(&p, "frequencies.txt"),
             feed_info: read_objs_from_optional_path(&p, "feed_info.txt"),
             read_duration: Utc::now().signed_duration_since(now).num_milliseconds(),
             files,
@@ -278,6 +281,7 @@ impl RawGtfs {
                 "stop_times.txt",
                 "trips.txt",
                 "fare_attributes.txt",
+                "frequencies.txt",
                 "feed_info.txt",
                 "shapes.txt",
             ] {
@@ -298,6 +302,7 @@ impl RawGtfs {
             stop_times: read_file(&file_mapping, &mut archive, "stop_times.txt"),
             trips: read_file(&file_mapping, &mut archive, "trips.txt"),
             fare_attributes: read_optional_file(&file_mapping, &mut archive, "fare_attributes.txt"),
+            frequencies: read_optional_file(&file_mapping, &mut archive, "frequencies.txt"),
             feed_info: read_optional_file(&file_mapping, &mut archive, "feed_info.txt"),
             shapes: read_optional_file(&file_mapping, &mut archive, "shapes.txt"),
             read_duration: Utc::now().signed_duration_since(now).num_milliseconds(),

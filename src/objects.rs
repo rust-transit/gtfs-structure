@@ -156,6 +156,33 @@ pub enum ContinuousPickupDropOff {
     CoordinateWithDriver,
 }
 
+#[derive(Derivative)]
+#[derivative(Default)]
+#[derive(Debug, Serialize, Copy, Clone, PartialEq)]
+pub enum TimepointType {
+    #[serde(rename = "0")]
+    Approximate = 0,
+    #[derivative(Default)]
+    Exact = 1,
+}
+
+impl<'de> Deserialize<'de> for TimepointType {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s: String = String::deserialize(deserializer)?;
+        match s.as_str() {
+            "" | "1" => Ok(Self::Exact),
+            "0" => Ok(Self::Approximate),
+            v => Err(serde::de::Error::custom(format!(
+                "invalid value for timepoint: {}",
+                v
+            ))),
+        }
+    }
+}
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Calendar {
     #[serde(rename = "service_id")]
@@ -345,12 +372,8 @@ pub struct RawStopTime {
     pub continuous_pickup: Option<ContinuousPickupDropOff>,
     pub continuous_drop_off: Option<ContinuousPickupDropOff>,
     pub shape_dist_traveled: Option<f32>,
-    #[serde(
-        deserialize_with = "deserialize_bool",
-        serialize_with = "serialize_bool",
-        default = "bool_default_true"
-    )]
-    pub timepoint: bool,
+    #[serde(default)]
+    pub timepoint: TimepointType,
 }
 
 #[derive(Debug, Default)]
@@ -365,7 +388,7 @@ pub struct StopTime {
     pub continuous_pickup: Option<ContinuousPickupDropOff>,
     pub continuous_drop_off: Option<ContinuousPickupDropOff>,
     pub shape_dist_traveled: Option<f32>,
-    pub timepoint: bool,
+    pub timepoint: TimepointType,
 }
 
 impl StopTime {
@@ -938,10 +961,6 @@ where
             s
         ))),
     }
-}
-
-fn bool_default_true() -> bool {
-    true
 }
 
 fn serialize_bool<'ser, S>(value: &bool, serializer: S) -> Result<S::Ok, S::Error>

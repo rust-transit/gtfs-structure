@@ -94,6 +94,8 @@ fn read_stop_times() {
         stop_times[1].pickup_type.unwrap()
     );
     assert_eq!(None, stop_times[1].drop_off_type);
+    assert_eq!(TimepointType::Exact, stop_times[0].timepoint);
+    assert_eq!(TimepointType::Approximate, stop_times[1].timepoint);
 }
 
 #[test]
@@ -318,6 +320,10 @@ fn read_only_required_fields() {
     assert_eq!(feed.start_date, None);
     assert_eq!(feed.end_date, None);
     assert_eq!(shape.dist_traveled, None);
+    assert_eq!(
+        TimepointType::Exact,
+        gtfs.trips["trip1"].stop_times[0].timepoint
+    )
 }
 
 #[test]

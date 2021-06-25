@@ -204,7 +204,7 @@ fn to_shape_map(shapes: Vec<Shape>) -> HashMap<String, Vec<Shape>> {
         shape.push(s);
     }
     // we sort the shape by it's pt_sequence
-    for (_key, shapes) in &mut res {
+    for shapes in res.values_mut() {
         shapes.sort_by_key(|s| s.sequence);
     }
 
@@ -243,10 +243,10 @@ fn create_trips(
     for s in raw_stop_times {
         let trip = &mut trips
             .get_mut(&s.trip_id)
-            .ok_or(Error::ReferenceError(s.trip_id.to_string()))?;
+            .ok_or_else(|| Error::ReferenceError(s.trip_id.to_string()))?;
         let stop = stops
             .get(&s.stop_id)
-            .ok_or(Error::ReferenceError(s.stop_id.to_string()))?;
+            .ok_or_else(|| Error::ReferenceError(s.stop_id.to_string()))?;
         trip.stop_times.push(StopTime::from(&s, Arc::clone(&stop)));
     }
 
@@ -258,7 +258,7 @@ fn create_trips(
     for f in raw_frequencies {
         let trip = &mut trips
             .get_mut(&f.trip_id)
-            .ok_or(Error::ReferenceError(f.trip_id.to_string()))?;
+            .ok_or_else(|| Error::ReferenceError(f.trip_id.to_string()))?;
         trip.frequencies.push(Frequency::from(&f));
     }
 

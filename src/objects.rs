@@ -801,7 +801,7 @@ where
     NaiveDate::parse_from_str(&s, "%Y%m%d").map_err(serde::de::Error::custom)
 }
 
-fn serialize_date<'ser, S>(date: &NaiveDate, serializer: S) -> Result<S::Ok, S::Error>
+fn serialize_date<S>(date: &NaiveDate, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
@@ -834,7 +834,10 @@ where
 }
 
 fn parse_time_impl(v: Vec<&str>) -> Result<u32, std::num::ParseIntError> {
-    Ok(&v[0].parse()? * 3600u32 + &v[1].parse()? * 60u32 + &v[2].parse()?)
+    let hours = &v[0].parse()?;
+    let minutes = &v[1].parse()?;
+    let seconds = &v[2].parse()?;
+    Ok(hours * 3600u32 + minutes * 60u32 + seconds)
 }
 
 pub fn parse_time(s: &str) -> Result<u32, crate::Error> {
@@ -854,7 +857,7 @@ where
     parse_time(&s).map_err(de::Error::custom)
 }
 
-fn serialize_time<'ser, S>(time: &u32, serializer: S) -> Result<S::Ok, S::Error>
+fn serialize_time<S>(time: &u32, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
@@ -889,7 +892,7 @@ where
 {
     String::deserialize(de).and_then(|s| {
         let s = s.trim();
-        if s == "" {
+        if s.is_empty() {
             Ok(None)
         } else {
             s.parse().map(Some).map_err(de::Error::custom)
@@ -916,7 +919,7 @@ where
 {
     String::deserialize(de).and_then(|s| {
         let s = s.trim();
-        if s == "" {
+        if s.is_empty() {
             Ok(None)
         } else {
             parse_color(s).map(Some).map_err(de::Error::custom)
@@ -963,7 +966,7 @@ where
     }
 }
 
-fn serialize_bool<'ser, S>(value: &bool, serializer: S) -> Result<S::Ok, S::Error>
+fn serialize_bool<S>(value: &bool, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {

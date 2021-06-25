@@ -89,7 +89,7 @@ where
     let file_name = path
         .file_name()
         .and_then(|f| f.to_str())
-        .unwrap_or_else(|| "invalid_file_name")
+        .unwrap_or("invalid_file_name")
         .to_string();
     File::open(path)
         .map_err(|e| Error::MissingFile(format!("Could not find file: {}", e)))
@@ -122,7 +122,7 @@ where
         .map(|i| {
             read_objs(
                 archive.by_index(*i).map_err(|_| {
-                    Error::MissingFile(format!("Could not find file: {}", file_name.clone()))
+                    Error::MissingFile(format!("Could not find file: {}", file_name))
                 })?,
                 file_name,
             )
@@ -141,9 +141,9 @@ where
 {
     file_mapping.get(&file_name).map(|i| {
         read_objs(
-            archive.by_index(*i).map_err(|_| {
-                Error::MissingFile(format!("Could not find file: {}", file_name.clone()))
-            })?,
+            archive
+                .by_index(*i)
+                .map_err(|_| Error::MissingFile(format!("Could not find file: {}", file_name)))?,
             file_name,
         )
     })

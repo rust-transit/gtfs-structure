@@ -142,38 +142,33 @@ impl Gtfs {
     }
 
     pub fn get_trip<'a>(&'a self, id: &str) -> Result<&'a Trip, Error> {
-        match self.trips.get(id) {
-            Some(trip) => Ok(trip),
-            None => Err(Error::ReferenceError(id.to_owned())),
-        }
+        self.trips
+            .get(id)
+            .ok_or_else(|| Error::ReferenceError(id.to_owned()))
     }
 
     pub fn get_route<'a>(&'a self, id: &str) -> Result<&'a Route, Error> {
-        match self.routes.get(id) {
-            Some(route) => Ok(route),
-            None => Err(Error::ReferenceError(id.to_owned())),
-        }
+        self.routes
+            .get(id)
+            .ok_or_else(|| Error::ReferenceError(id.to_owned()))
     }
 
     pub fn get_calendar<'a>(&'a self, id: &str) -> Result<&'a Calendar, Error> {
-        match self.calendar.get(id) {
-            Some(calendar) => Ok(calendar),
-            None => Err(Error::ReferenceError(id.to_owned())),
-        }
+        self.calendar
+            .get(id)
+            .ok_or_else(|| Error::ReferenceError(id.to_owned()))
     }
 
     pub fn get_calendar_date<'a>(&'a self, id: &str) -> Result<&'a Vec<CalendarDate>, Error> {
-        match self.calendar_dates.get(id) {
-            Some(calendar_dates) => Ok(calendar_dates),
-            None => Err(Error::ReferenceError(id.to_owned())),
-        }
+        self.calendar_dates
+            .get(id)
+            .ok_or_else(|| Error::ReferenceError(id.to_owned()))
     }
 
     pub fn get_shape<'a>(&'a self, id: &str) -> Result<&'a Vec<Shape>, Error> {
-        match self.shapes.get(id) {
-            Some(shape) => Ok(shape),
-            None => Err(Error::ReferenceError(id.to_owned())),
-        }
+        self.shapes
+            .get(id)
+            .ok_or_else(|| Error::ReferenceError(id.to_owned()))
     }
 
     pub fn get_fare_attributes<'a>(&'a self, id: &str) -> Result<&'a FareAttribute, Error> {

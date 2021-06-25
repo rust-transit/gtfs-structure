@@ -27,7 +27,7 @@ impl TryFrom<RawGtfs> for Gtfs {
     fn try_from(raw: RawGtfs) -> Result<Gtfs, Error> {
         let stops = to_stop_map(raw.stops?);
         let frequencies = raw.frequencies.unwrap_or_else(|| Ok(Vec::new()))?;
-        let trips = create_trips(raw.trips?, raw.stop_times?, frequencies, &stops, )?;
+        let trips = create_trips(raw.trips?, raw.stop_times?, frequencies, &stops)?;
 
         Ok(Gtfs {
             stops,

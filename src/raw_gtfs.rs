@@ -175,7 +175,10 @@ impl RawGtfs {
         println!("  Stop times: {}", mandatory_file_summary(&self.stop_times));
         println!("  Shapes: {}", optional_file_summary(&self.shapes));
         println!("  Fares: {}", optional_file_summary(&self.fare_attributes));
-        println!("  Frequencies: {}", optional_file_summary(&self.frequencies));
+        println!(
+            "  Frequencies: {}",
+            optional_file_summary(&self.frequencies)
+        );
         println!("  Feed info: {}", optional_file_summary(&self.feed_info));
     }
 

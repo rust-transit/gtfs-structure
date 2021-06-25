@@ -24,8 +24,10 @@ pub enum ObjectType {
     Fare,
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Serialize)]
+#[derive(Derivative, Debug, Copy, Clone, PartialEq, Serialize)]
+#[derivative(Default(bound = ""))]
 pub enum LocationType {
+    #[derivative(Default)]
     StopPoint = 0,
     StopArea = 1,
     StationEntrance = 2,
@@ -49,17 +51,13 @@ impl<'de> Deserialize<'de> for LocationType {
     }
 }
 
-impl Default for LocationType {
-    fn default() -> LocationType {
-        LocationType::StopPoint
-    }
-}
-
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Derivative, Copy, Clone, PartialEq, Eq, Hash)]
+#[derivative(Default(bound = ""))]
 pub enum RouteType {
     Tramway,
     Subway,
     Rail,
+    #[derivative(Default)]
     Bus,
     Ferry,
     CableCar,
@@ -70,12 +68,6 @@ pub enum RouteType {
     Air,
     Taxi,
     Other(u16),
-}
-
-impl Default for RouteType {
-    fn default() -> RouteType {
-        RouteType::Bus
-    }
 }
 
 impl<'de> Deserialize<'de> for RouteType {
@@ -126,9 +118,8 @@ impl Serialize for RouteType {
     }
 }
 
-#[derive(Derivative)]
+#[derive(Debug, Derivative, Serialize, Deserialize, Copy, Clone, PartialEq)]
 #[derivative(Default(bound = ""))]
-#[derive(Debug, Serialize, Deserialize, Copy, Clone, PartialEq)]
 pub enum PickupDropOffType {
     #[derivative(Default)]
     #[serde(rename = "0")]
@@ -141,9 +132,8 @@ pub enum PickupDropOffType {
     CoordinateWithDriver,
 }
 
-#[derive(Derivative)]
+#[derive(Debug, Derivative, Serialize, Deserialize, Copy, Clone, PartialEq)]
 #[derivative(Default(bound = ""))]
-#[derive(Debug, Serialize, Deserialize, Copy, Clone, PartialEq)]
 pub enum ContinuousPickupDropOff {
     #[serde(rename = "0")]
     Continuous,
@@ -156,9 +146,8 @@ pub enum ContinuousPickupDropOff {
     CoordinateWithDriver,
 }
 
-#[derive(Derivative)]
+#[derive(Debug, Derivative, Serialize, Copy, Clone, PartialEq)]
 #[derivative(Default)]
-#[derive(Debug, Serialize, Copy, Clone, PartialEq)]
 pub enum TimepointType {
     #[serde(rename = "0")]
     Approximate = 0,
@@ -307,7 +296,7 @@ pub struct Stop {
     pub name: String,
     #[serde(default, rename = "stop_desc")]
     pub description: String,
-    #[serde(default = "default_location_type")]
+    #[serde(default)]
     pub location_type: LocationType,
     pub parent_station: Option<String>,
     pub zone_id: Option<String>,
@@ -710,8 +699,10 @@ impl Frequency {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Derivative, Copy, Clone, PartialEq)]
+#[derivative(Default(bound = ""))]
 pub enum Transfers {
+    #[derivative(Default)]
     Unlimited,
     NoTransfer,
     UniqueTransfer,
@@ -747,12 +738,6 @@ impl Serialize for Transfers {
             Transfers::Other(a) => serializer.serialize_u16(*a),
             Transfers::Unlimited => serializer.serialize_none(),
         }
-    }
-}
-
-impl Default for Transfers {
-    fn default() -> Transfers {
-        Transfers::Unlimited
     }
 }
 
@@ -945,10 +930,6 @@ where
     T: Deserialize<'de>,
 {
     Option::<T>::deserialize(de).map(|opt| opt.unwrap_or_else(Default::default))
-}
-
-fn default_location_type() -> LocationType {
-    LocationType::StopPoint
 }
 
 fn deserialize_bool<'de, D>(deserializer: D) -> Result<bool, D::Error>

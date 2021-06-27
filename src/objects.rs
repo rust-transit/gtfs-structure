@@ -825,7 +825,7 @@ fn parse_time_impl(v: Vec<&str>) -> Result<u32, std::num::ParseIntError> {
     Ok(hours * 3600u32 + minutes * 60u32 + seconds)
 }
 
-pub fn parse_time(s: &str) -> Result<u32, crate::Error> {
+fn parse_time(s: &str) -> Result<u32, crate::Error> {
     let v: Vec<&str> = s.trim_start().split(':').collect();
     if v.len() != 3 {
         Err(crate::Error::InvalidTime(s.to_owned()))
@@ -885,7 +885,7 @@ where
     })
 }
 
-pub fn parse_color(s: &str) -> Result<RGB8, crate::Error> {
+fn parse_color(s: &str) -> Result<RGB8, crate::Error> {
     if s.len() != 6 {
         return Err(crate::Error::InvalidColor(s.to_owned()));
     }
@@ -924,7 +924,7 @@ where
     }
 }
 
-pub fn de_with_empty_default<'de, T: Default, D>(de: D) -> Result<T, D::Error>
+fn de_with_empty_default<'de, T: Default, D>(de: D) -> Result<T, D::Error>
 where
     D: Deserializer<'de>,
     T: Deserialize<'de>,

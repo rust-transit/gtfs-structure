@@ -1,8 +1,8 @@
 # [GTFS](https://gtfs.org/) Model ![crates.io](https://img.shields.io/crates/v/gtfs-structures.svg) [![](https://docs.rs/gtfs-structures/badge.svg)](https://docs.rs/gtfs-structures)
 
-The [General Transit Feed Specification](https://gtfs.org/) (GTFS) is a commonly used model to represent transit data.
+The [General Transit Feed Specification](https://gtfs.org/) (GTFS) is a commonly used model to represent public transit data.
 
-This crates brings [serde](https://serde.rs) structures of this model.
+This crates brings [serde](https://serde.rs) structures of this model and helpers to read GTFS archives.
 
 ## Using
 

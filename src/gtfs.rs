@@ -7,23 +7,47 @@ use std::sync::Arc;
 
 /// Data structure with all the GTFS objects
 ///
-/// This structure is easier to use than the [RawGtfs] structure.
+/// This structure is easier to use than the [RawGtfs] structure as some relationships are parsed to be easier to use.
+///
+/// This is probably the entry point you want to use:
+/// ```
+/// # fn main() -> Result<(), gtfs_structures::error::Error> {
+/// let gtfs = gtfs_structures::Gtfs::new("fixtures/zips/gtfs.zip")?;
+/// assert_eq!(gtfs.stops.len(), 5);
+/// #     Ok(())
+/// # }
+/// ```
+///
+/// The [StopTime] are accessible from the [Trip]
 #[derive(Default)]
 pub struct Gtfs {
+    /// Time needed to read and parse the archive in milliseconds
     pub read_duration: i64,
+    /// All Calendar by `service_id`
     pub calendar: HashMap<String, Calendar>,
+    /// All calendar dates grouped by service_id
     pub calendar_dates: HashMap<String, Vec<CalendarDate>>,
+    /// All stop by `stop_id`. Stops are in an [Arc] because they are also referenced by each [StopTime]
     pub stops: HashMap<String, Arc<Stop>>,
+    /// All routes by `route_id`
     pub routes: HashMap<String, Route>,
+    /// All trips by `trip_id`
     pub trips: HashMap<String, Trip>,
+    /// All agencies. They can not be read by `agency_id`, as it is not a required field
     pub agencies: Vec<Agency>,
+    /// All shapes by shape_id
     pub shapes: HashMap<String, Vec<Shape>>,
+    /// All fare attributes by `fare_id`
     pub fare_attributes: HashMap<String, FareAttribute>,
+    /// All feed information. There is no identifier
     pub feed_info: Vec<FeedInfo>,
 }
 
 impl TryFrom<RawGtfs> for Gtfs {
     type Error = Error;
+    /// Tries to build a [Gtfs] from a [RawGtfs]
+    ///
+    /// It might fail if some mandatory files couldn’t be read or if there are references to other objects that are invalid.
     fn try_from(raw: RawGtfs) -> Result<Gtfs, Error> {
         let stops = to_stop_map(raw.stops?);
         let frequencies = raw.frequencies.unwrap_or_else(|| Ok(Vec::new()))?;
@@ -47,6 +71,7 @@ impl TryFrom<RawGtfs> for Gtfs {
 }
 
 impl Gtfs {
+    /// Prints on stdout some basic statistics about the GTFS file (numbers of elements for each object). Mostly to be sure that everything was read
     pub fn print_stats(&self) {
         println!("GTFS data:");
         println!("  Read in {} ms", self.read_duration);
@@ -59,9 +84,10 @@ impl Gtfs {
         println!("  Feed info: {}", self.feed_info.len());
     }
 
-    /// Reads from an url (if starts with http), or a local path (either a directory or zipped file)
+    /// Reads from an url (if starts with `"http"`), or a local path (either a directory or zipped file)
+    ///
     /// To read from an url, build with read-url feature
-    /// See also Gtfs::from_url and Gtfs::from_path if you don’t want the library to guess
+    /// See also [Gtfs::from_url] and [Gtfs::from_path] if you don’t want the library to guess
     pub fn new(gtfs: &str) -> Result<Gtfs, Error> {
         RawGtfs::new(gtfs).and_then(Gtfs::try_from)
     }
@@ -75,6 +101,7 @@ impl Gtfs {
     }
 
     /// Reads the GTFS from a remote url
+    ///
     /// The library must be built with the read-url feature
     #[cfg(feature = "read-url")]
     pub fn from_url<U: reqwest::IntoUrl>(url: U) -> Result<Gtfs, Error> {
@@ -82,16 +109,25 @@ impl Gtfs {
     }
 
     /// Asynchronously reads the GTFS from a remote url
+    ///
     /// The library must be built with the read-url feature
     #[cfg(feature = "read-url")]
     pub async fn from_url_async<U: reqwest::IntoUrl>(url: U) -> Result<Gtfs, Error> {
         RawGtfs::from_url_async(url).await.and_then(Gtfs::try_from)
     }
 
+    /// Reads for any object implementing [std::io::Read] and [std::io::Seek]
+    ///
+    /// Mostly an internal function that abstracts reading from an url or local file
     pub fn from_reader<T: std::io::Read + std::io::Seek>(reader: T) -> Result<Gtfs, Error> {
         RawGtfs::from_reader(reader).and_then(Gtfs::try_from)
     }
 
+    /// For a given a `service_id` and a starting date returns all the following day offset the vehicle runs
+    ///
+    /// For instance if the `start_date` is 2021-12-20, `[0, 4]` means that the vehicle will run the 20th and 24th
+    ///
+    /// It will consider use both [Calendar] and [CalendarDate] (both added and removed)
     pub fn trip_days(&self, service_id: &str, start_date: NaiveDate) -> Vec<u16> {
         let mut result = Vec::new();
 
@@ -134,6 +170,7 @@ impl Gtfs {
         result
     }
 
+    /// Gets a [Stop] by its `stop_id`
     pub fn get_stop<'a>(&'a self, id: &str) -> Result<&'a Stop, Error> {
         match self.stops.get(id) {
             Some(stop) => Ok(stop),
@@ -141,36 +178,42 @@ impl Gtfs {
         }
     }
 
+    /// Gets a [Trip] by its `trip_id`
     pub fn get_trip<'a>(&'a self, id: &str) -> Result<&'a Trip, Error> {
         self.trips
             .get(id)
             .ok_or_else(|| Error::ReferenceError(id.to_owned()))
     }
 
+    /// Gets a [Route] by its `route_id`
     pub fn get_route<'a>(&'a self, id: &str) -> Result<&'a Route, Error> {
         self.routes
             .get(id)
             .ok_or_else(|| Error::ReferenceError(id.to_owned()))
     }
 
+    /// Gets a [Calendar] by its `service_id`
     pub fn get_calendar<'a>(&'a self, id: &str) -> Result<&'a Calendar, Error> {
         self.calendar
             .get(id)
             .ok_or_else(|| Error::ReferenceError(id.to_owned()))
     }
 
+    /// Gets all [CalendarDate] of a `service_id`
     pub fn get_calendar_date<'a>(&'a self, id: &str) -> Result<&'a Vec<CalendarDate>, Error> {
         self.calendar_dates
             .get(id)
             .ok_or_else(|| Error::ReferenceError(id.to_owned()))
     }
 
+    /// Gets all [Shape] points of a `shape_id`
     pub fn get_shape<'a>(&'a self, id: &str) -> Result<&'a Vec<Shape>, Error> {
         self.shapes
             .get(id)
             .ok_or_else(|| Error::ReferenceError(id.to_owned()))
     }
 
+    /// Gets a [FareAttribute] by its `fare_id`
     pub fn get_fare_attributes<'a>(&'a self, id: &str) -> Result<&'a FareAttribute, Error> {
         self.fare_attributes
             .get(id)

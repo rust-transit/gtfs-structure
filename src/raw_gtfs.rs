@@ -10,6 +10,9 @@ use std::io::Read;
 use std::path::Path;
 
 /// Data structure that map the GTFS csv with little intelligence
+///
+/// This is used to analyze the GTFS and detect anomalies
+/// To manipulate the transit data, maybe [Gtfs] will be more convienient
 #[derive(Debug)]
 pub struct RawGtfs {
     pub read_duration: i64,
@@ -164,7 +167,7 @@ fn optional_file_summary<T>(objs: &Option<Result<Vec<T>, Error>>) -> String {
 }
 
 impl RawGtfs {
-    /// Prints on stdout some basic statistics about the GTFS file
+    /// Prints on stdout some basic statistics about the GTFS file (numbers of elements for each object). Mostly to be sure that everything was read
     pub fn print_stats(&self) {
         println!("GTFS data:");
         println!("  Read in {} ms", self.read_duration);
@@ -183,8 +186,9 @@ impl RawGtfs {
     }
 
     /// Reads from an url (if starts with http), or a local path (either a directory or zipped file)
+    ///
     /// To read from an url, build with read-url feature
-    /// See also RawGtfs::from_url and RawGtfs::from_path if you don’t want the library to guess
+    /// See also [RawGtfs::from_url] and [RawGtfs::from_path] if you don’t want the library to guess
     #[cfg(feature = "read-url")]
     pub fn new(gtfs: &str) -> Result<Self, Error> {
         if gtfs.starts_with("http") {
@@ -242,6 +246,7 @@ impl RawGtfs {
     }
 
     /// Reads the raw GTFS from a remote url
+    ///
     /// The library must be built with the read-url feature
     #[cfg(feature = "read-url")]
     pub fn from_url<U: reqwest::IntoUrl>(url: U) -> Result<Self, Error> {
@@ -253,6 +258,7 @@ impl RawGtfs {
     }
 
     /// Non-blocking read the raw GTFS from a remote url
+    ///
     /// The library must be built with the read-url feature
     #[cfg(feature = "read-url")]
     pub async fn from_url_async<U: reqwest::IntoUrl>(url: U) -> Result<Self, Error> {
@@ -262,6 +268,9 @@ impl RawGtfs {
         Self::from_reader(reader)
     }
 
+    /// Reads for any object implementing [std::io::Read] and [std::io::Seek]
+    ///
+    /// Mostly an internal function that abstracts reading from an url or local file
     pub fn from_reader<T: std::io::Read + std::io::Seek>(reader: T) -> Result<Self, Error> {
         let now = Utc::now();
         let mut hasher = Sha256::new();

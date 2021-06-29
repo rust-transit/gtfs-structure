@@ -12,22 +12,36 @@ use std::path::Path;
 /// Data structure that map the GTFS csv with little intelligence
 ///
 /// This is used to analyze the GTFS and detect anomalies
-/// To manipulate the transit data, maybe [Gtfs] will be more convienient
+/// To manipulate the transit data, maybe [crate::Gtfs] will be more convienient
 #[derive(Debug)]
 pub struct RawGtfs {
+    /// Time needed to read and parse the archive in milliseconds
     pub read_duration: i64,
+    /// All Calendar, None if the file was absent as it is not mandatory
     pub calendar: Option<Result<Vec<Calendar>, Error>>,
+    /// All Calendar dates, None if the file was absent as it is not mandatory
     pub calendar_dates: Option<Result<Vec<CalendarDate>, Error>>,
+    /// All Stops
     pub stops: Result<Vec<Stop>, Error>,
+    /// All Routes
     pub routes: Result<Vec<Route>, Error>,
+    /// All Trips
     pub trips: Result<Vec<RawTrip>, Error>,
+    /// All Agencies
     pub agencies: Result<Vec<Agency>, Error>,
+    /// All shapes points, None if the file was absent as it is not mandatory
     pub shapes: Option<Result<Vec<Shape>, Error>>,
+    /// All FareAttribates, None if the file was absent as it is not mandatory
     pub fare_attributes: Option<Result<Vec<FareAttribute>, Error>>,
+    /// All Frequencies, None if the file was absent as it is not mandatory
     pub frequencies: Option<Result<Vec<RawFrequency>, Error>>,
+    /// All FeedInfo, None if the file was absent as it is not mandatory
     pub feed_info: Option<Result<Vec<FeedInfo>, Error>>,
+    /// All StopTimes
     pub stop_times: Result<Vec<RawStopTime>, Error>,
+    /// All files that are present in the feed
     pub files: Vec<String>,
+    /// sha256 sum of the feed
     pub sha256: Option<String>,
 }
 

@@ -1,6 +1,7 @@
 //! The [General Transit Feed Specification](https://gtfs.org/) (GTFS) is a commonly used model to represent public transit data.
 //!
 //! This crates brings [serde](https://serde.rs) structures of this model and helpers to read GTFS files.
+#![warn(missing_docs)]
 
 #[macro_use]
 extern crate derivative;

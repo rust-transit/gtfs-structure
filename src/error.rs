@@ -1,3 +1,4 @@
+//! Module for the error management
 use thiserror::Error;
 
 /// Specific line from a CSV file that could not be read

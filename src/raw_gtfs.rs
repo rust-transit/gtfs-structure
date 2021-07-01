@@ -55,7 +55,7 @@ where
         .read_exact(&mut bom)
         .map_err(|e| Error::NamedFileIO {
             file_name: file_name.to_owned(),
-            source: e,
+            source: Box::new(e),
         })?;
 
     let chained = if bom != [0xefu8, 0xbbu8, 0xbfu8] {
@@ -108,9 +108,16 @@ where
         .and_then(|f| f.to_str())
         .unwrap_or("invalid_file_name")
         .to_string();
-    File::open(path)
-        .map_err(|e| Error::MissingFile(format!("Could not find file: {}", e)))
-        .and_then(|r| read_objs(r, &file_name))
+    if path.exists() {
+        File::open(path)
+            .map_err(|e| Error::NamedFileIO {
+                file_name: file_name.to_owned(),
+                source: Box::new(e),
+            })
+            .and_then(|r| read_objs(r, &file_name))
+    } else {
+        Err(Error::MissingFile(file_name))
+    }
 }
 
 fn read_objs_from_optional_path<O>(
@@ -134,16 +141,7 @@ where
     for<'de> O: Deserialize<'de>,
     T: std::io::Read + std::io::Seek,
 {
-    file_mapping
-        .get(&file_name)
-        .map(|i| {
-            read_objs(
-                archive.by_index(*i).map_err(|_| {
-                    Error::MissingFile(format!("Could not find file: {}", file_name))
-                })?,
-                file_name,
-            )
-        })
+    read_optional_file(file_mapping, archive, file_name)
         .unwrap_or_else(|| Err(Error::MissingFile(file_name.to_owned())))
 }
 
@@ -158,9 +156,10 @@ where
 {
     file_mapping.get(&file_name).map(|i| {
         read_objs(
-            archive
-                .by_index(*i)
-                .map_err(|_| Error::MissingFile(format!("Could not find file: {}", file_name)))?,
+            archive.by_index(*i).map_err(|e| Error::NamedFileIO {
+                file_name: file_name.to_owned(),
+                source: Box::new(e),
+            })?,
             file_name,
         )
     })

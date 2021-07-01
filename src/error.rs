@@ -38,7 +38,7 @@ pub enum Error {
         file_name: String,
         /// The inital error that caused the unability to read the file
         #[source]
-        source: std::io::Error,
+        source: Box<dyn std::error::Error>,
     },
     /// Impossible to fetch the remote archive by the URL
     #[cfg(feature = "read-url")]

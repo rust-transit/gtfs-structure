@@ -1,5 +1,6 @@
 use crate::objects::*;
 use crate::Error;
+use crate::GtfsReader;
 use chrono::Utc;
 use serde::Deserialize;
 use sha2::digest::Digest;
@@ -204,11 +205,7 @@ impl RawGtfs {
     /// See also [RawGtfs::from_url] and [RawGtfs::from_path] if you don’t want the library to guess
     #[cfg(feature = "read-url")]
     pub fn new(gtfs: &str) -> Result<Self, Error> {
-        if gtfs.starts_with("http") {
-            Self::from_url(gtfs)
-        } else {
-            Self::from_path(gtfs)
-        }
+        Self::new_params(gtfs, &GtfsReader::default())
     }
 
     #[cfg(not(feature = "read-url"))]
@@ -216,23 +213,39 @@ impl RawGtfs {
         Self::from_path(gtfs_source)
     }
 
+    #[cfg(feature = "read-url")]
+    pub(crate) fn new_params(gtfs: &str, params: &GtfsReader) -> Result<Self, Error> {
+        if gtfs.starts_with("http") {
+            Self::from_url_params(gtfs, params)
+        } else {
+            Self::from_path_params(gtfs, params)
+        }
+    }
+
     /// Reads the raw GTFS from a local zip archive or local directory
     pub fn from_path<P>(path: P) -> Result<Self, Error>
+    where
+        P: AsRef<Path> + std::fmt::Display,
+    {
+        Self::from_path_params(path, &GtfsReader::default())
+    }
+
+    pub(crate) fn from_path_params<P>(path: P, params: &GtfsReader) -> Result<Self, Error>
     where
         P: AsRef<Path> + std::fmt::Display,
     {
         let p = path.as_ref();
         if p.is_file() {
             let reader = File::open(p)?;
-            Self::from_reader(reader)
+            Self::from_reader_params(reader, params)
         } else if p.is_dir() {
-            Self::from_directory(p)
+            Self::from_directory(p, params)
         } else {
             Err(Error::NotFileNorDirectory(format!("{}", p.display())))
         }
     }
 
-    fn from_directory(p: &std::path::Path) -> Result<Self, Error> {
+    fn from_directory(p: &std::path::Path, params: &GtfsReader) -> Result<Self, Error> {
         let now = Utc::now();
         // Thoses files are not mandatory
         // We use None if they don’t exist, not an Error
@@ -246,7 +259,11 @@ impl RawGtfs {
             calendar_dates: read_objs_from_optional_path(&p, "calendar_dates.txt"),
             stops: read_objs_from_path(p.join("stops.txt")),
             routes: read_objs_from_path(p.join("routes.txt")),
-            stop_times: read_objs_from_path(p.join("stop_times.txt")),
+            stop_times: if params.read_stop_times {
+                read_objs_from_path(p.join("stop_times.txt"))
+            } else {
+                Ok(Vec::new())
+            },
             agencies: read_objs_from_path(p.join("agency.txt")),
             shapes: read_objs_from_optional_path(&p, "shapes.txt"),
             fare_attributes: read_objs_from_optional_path(&p, "fare_attributes.txt"),
@@ -263,11 +280,19 @@ impl RawGtfs {
     /// The library must be built with the read-url feature
     #[cfg(feature = "read-url")]
     pub fn from_url<U: reqwest::IntoUrl>(url: U) -> Result<Self, Error> {
+        Self::from_url_params(url, &GtfsReader::default())
+    }
+
+    #[cfg(feature = "read-url")]
+    pub(crate) fn from_url_params<U: reqwest::IntoUrl>(
+        url: U,
+        params: &GtfsReader,
+    ) -> Result<Self, Error> {
         let mut res = reqwest::blocking::get(url)?;
         let mut body = Vec::new();
         res.read_to_end(&mut body)?;
         let cursor = std::io::Cursor::new(body);
-        Self::from_reader(cursor)
+        Self::from_reader_params(cursor, params)
     }
 
     /// Non-blocking read the raw GTFS from a remote url
@@ -275,16 +300,31 @@ impl RawGtfs {
     /// The library must be built with the read-url feature
     #[cfg(feature = "read-url")]
     pub async fn from_url_async<U: reqwest::IntoUrl>(url: U) -> Result<Self, Error> {
+        Self::from_url_async_params(url, &GtfsReader::default()).await
+    }
+
+    #[cfg(feature = "read-url")]
+    pub(crate) async fn from_url_async_params<U: reqwest::IntoUrl>(
+        url: U,
+        params: &GtfsReader,
+    ) -> Result<Self, Error> {
         let res = reqwest::get(url).await?.bytes().await?;
 
         let reader = std::io::Cursor::new(res);
-        Self::from_reader(reader)
+        Self::from_reader_params(reader, params)
     }
 
     /// Reads for any object implementing [std::io::Read] and [std::io::Seek]
     ///
     /// Mostly an internal function that abstracts reading from an url or local file
     pub fn from_reader<T: std::io::Read + std::io::Seek>(reader: T) -> Result<Self, Error> {
+        Self::from_reader_params(reader, &GtfsReader::default())
+    }
+
+    pub(crate) fn from_reader_params<T: std::io::Read + std::io::Seek>(
+        reader: T,
+        params: &GtfsReader,
+    ) -> Result<Self, Error> {
         let now = Utc::now();
         let mut hasher = Sha256::new();
         let mut buf_reader = std::io::BufReader::new(reader);
@@ -325,7 +365,11 @@ impl RawGtfs {
             calendar_dates: read_optional_file(&file_mapping, &mut archive, "calendar_dates.txt"),
             routes: read_file(&file_mapping, &mut archive, "routes.txt"),
             stops: read_file(&file_mapping, &mut archive, "stops.txt"),
-            stop_times: read_file(&file_mapping, &mut archive, "stop_times.txt"),
+            stop_times: if params.read_stop_times {
+                read_file(&file_mapping, &mut archive, "stop_times.txt")
+            } else {
+                Ok(Vec::new())
+            },
             trips: read_file(&file_mapping, &mut archive, "trips.txt"),
             fare_attributes: read_optional_file(&file_mapping, &mut archive, "fare_attributes.txt"),
             frequencies: read_optional_file(&file_mapping, &mut archive, "frequencies.txt"),

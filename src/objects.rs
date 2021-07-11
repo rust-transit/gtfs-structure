@@ -153,43 +153,67 @@ impl Serialize for RouteType {
 }
 
 /// Describes if and how a traveller can board or alight the vehicle. See <https://gtfs.org/reference/static/#stop_timestxt> `pickup_type` and `dropoff_type`
-#[derive(Debug, Derivative, Serialize, Deserialize, Copy, Clone, PartialEq)]
+#[derive(Debug, Derivative, Serialize, Copy, Clone, PartialEq)]
 #[derivative(Default(bound = ""))]
 pub enum PickupDropOffType {
-    /// The vehicle always stop for pickup or drop off
+    /// Regularly scheduled pickup or drop off (default when empty).
     #[derivative(Default)]
-    #[serde(rename = "0")]
-    Regular,
-    /// Impossible to pickup or drop off at that stop
-    #[serde(rename = "1")]
-    NotAvailable,
-    /// Must phone agency to arrange pickup or drop off
-    #[serde(rename = "2")]
-    ArrangeByPhone,
-    /// Must coordinate with driver to arrange pickup or drop off
-    #[serde(rename = "3")]
-    CoordinateWithDriver,
+    Regular = 0,
+    /// No pickup or drop off available.
+    NotAvailable = 1,
+    /// Must phone agency to arrange pickup or drop off.
+    ArrangeByPhone = 2,
+    /// Must coordinate with driver to arrange pickup or drop off.
+    CoordinateWithDriver = 3,
+}
+
+impl<'de> Deserialize<'de> for PickupDropOffType {
+    fn deserialize<D>(deserializer: D) -> Result<PickupDropOffType, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s: String = String::deserialize(deserializer)?;
+        Ok(match s.as_str() {
+            "0" => PickupDropOffType::Regular,
+            "1" => PickupDropOffType::NotAvailable,
+            "2" => PickupDropOffType::ArrangeByPhone,
+            "3" => PickupDropOffType::CoordinateWithDriver,
+            _ => PickupDropOffType::Regular,
+        })
+    }
 }
 
 /// Indicates whether a rider can board the transit vehicle anywhere along the vehicle’s travel path
 ///
 /// Those values are only defined on <https://developers.google.com/transit/gtfs/reference#routestxt,> not on <https://gtfs.org/reference/static/#routestxt>
-#[derive(Debug, Derivative, Serialize, Deserialize, Copy, Clone, PartialEq)]
+#[derive(Debug, Derivative, Serialize, Copy, Clone, PartialEq)]
 #[derivative(Default(bound = ""))]
 pub enum ContinuousPickupDropOff {
-    /// Continuous stopping pickup or drop off
-    #[serde(rename = "0")]
-    Continuous,
-    /// No continuous stopping pickup or drop off
+    /// Continuous stopping pickup or drop off.
+    Continuous = 0,
+    /// No continuous stopping pickup or drop off (default when empty).
     #[derivative(Default)]
-    #[serde(rename = "1")]
-    NotAvailable,
-    /// Must phone an agency to arrange continuous stopping pickup or drop off
-    #[serde(rename = "2")]
-    ArrangeByPhone,
-    /// Must coordinate with a driver to arrange continuous stopping pickup or drop off
-    #[serde(rename = "3")]
-    CoordinateWithDriver,
+    NotAvailable = 1,
+    /// Must phone agency to arrange continuous stopping pickup or drop off.
+    ArrangeByPhone = 2,
+    /// Must coordinate with driver to arrange continuous stopping pickup or drop off.
+    CoordinateWithDriver = 3,
+}
+
+impl<'de> Deserialize<'de> for ContinuousPickupDropOff {
+    fn deserialize<D>(deserializer: D) -> Result<ContinuousPickupDropOff, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s: String = String::deserialize(deserializer)?;
+        Ok(match s.as_str() {
+            "0" => ContinuousPickupDropOff::Continuous,
+            "1" => ContinuousPickupDropOff::NotAvailable,
+            "2" => ContinuousPickupDropOff::ArrangeByPhone,
+            "3" => ContinuousPickupDropOff::CoordinateWithDriver,
+            _ => ContinuousPickupDropOff::NotAvailable,
+        })
+    }
 }
 
 /// Describes if the stop time is exact or not. See <https://gtfs.org/reference/static/#stop_timestxt> `timepoint`
@@ -449,13 +473,17 @@ pub struct RawStopTime {
     /// Text that appears on signage identifying the trip's destination to riders
     pub stop_headsign: Option<String>,
     /// Indicates pickup method
-    pub pickup_type: Option<PickupDropOffType>,
+    #[serde(default)]
+    pub pickup_type: PickupDropOffType,
     /// Indicates drop off method
-    pub drop_off_type: Option<PickupDropOffType>,
+    #[serde(default)]
+    pub drop_off_type: PickupDropOffType,
     /// Indicates whether a rider can board the transit vehicle anywhere along the vehicle’s travel path
-    pub continuous_pickup: Option<ContinuousPickupDropOff>,
+    #[serde(default)]
+    pub continuous_pickup: ContinuousPickupDropOff,
     /// Indicates whether a rider can alight from the transit vehicle at any point along the vehicle’s travel path
-    pub continuous_drop_off: Option<ContinuousPickupDropOff>,
+    #[serde(default)]
+    pub continuous_drop_off: ContinuousPickupDropOff,
     /// Actual distance traveled along the associated shape, from the first stop to the stop specified in this record. This field specifies how much of the shape to draw between any two stops during a trip
     pub shape_dist_traveled: Option<f32>,
     /// Indicates if arrival and departure times for a stop are strictly adhered to by the vehicle or if they are instead approximate and/or interpolated times
@@ -477,17 +505,17 @@ pub struct StopTime {
     /// and this departure needs to be interpolated
     pub departure_time: Option<u32>,
     /// Indicates pickup method
-    pub pickup_type: Option<PickupDropOffType>,
+    pub pickup_type: PickupDropOffType,
     /// Indicates drop off method
-    pub drop_off_type: Option<PickupDropOffType>,
+    pub drop_off_type: PickupDropOffType,
     /// Order of stops for a particular trip. The values must increase along the trip but do not need to be consecutive
     pub stop_sequence: u16,
     /// Text that appears on signage identifying the trip's destination to riders
     pub stop_headsign: Option<String>,
     /// Indicates whether a rider can board the transit vehicle anywhere along the vehicle’s travel path
-    pub continuous_pickup: Option<ContinuousPickupDropOff>,
+    pub continuous_pickup: ContinuousPickupDropOff,
     /// Indicates whether a rider can alight from the transit vehicle at any point along the vehicle’s travel path
-    pub continuous_drop_off: Option<ContinuousPickupDropOff>,
+    pub continuous_drop_off: ContinuousPickupDropOff,
     /// Actual distance traveled along the associated shape, from the first stop to the stop specified in this record. This field specifies how much of the shape to draw between any two stops during a trip
     pub shape_dist_traveled: Option<f32>,
     /// Indicates if arrival and departure times for a stop are strictly adhered to by the vehicle or if they are instead approximate and/or interpolated times
@@ -553,9 +581,11 @@ pub struct Route {
     )]
     pub route_text_color: Option<RGB8>,
     /// Indicates whether a rider can board the transit vehicle anywhere along the vehicle’s travel path
-    pub continuous_pickup: Option<ContinuousPickupDropOff>,
+    #[serde(default)]
+    pub continuous_pickup: ContinuousPickupDropOff,
     /// Indicates whether a rider can alight from the transit vehicle at any point along the vehicle’s travel path
-    pub continuous_drop_off: Option<ContinuousPickupDropOff>,
+    #[serde(default)]
+    pub continuous_drop_off: ContinuousPickupDropOff,
 }
 
 impl Type for Route {

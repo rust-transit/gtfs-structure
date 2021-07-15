@@ -45,6 +45,7 @@ extern crate serde_derive;
 
 pub mod error;
 mod gtfs;
+mod gtfs_reader;
 pub(crate) mod objects;
 mod raw_gtfs;
 
@@ -53,5 +54,6 @@ mod tests;
 
 pub use error::Error;
 pub use gtfs::Gtfs;
+pub use gtfs_reader::GtfsReader;
 pub use objects::*;
 pub use raw_gtfs::RawGtfs;

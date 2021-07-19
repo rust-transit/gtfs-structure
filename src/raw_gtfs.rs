@@ -62,12 +62,6 @@ impl RawGtfs {
     ///
     /// To read from an url, build with read-url feature
     /// See also [RawGtfs::from_url] and [RawGtfs::from_path] if you don’t want the library to guess
-    #[cfg(feature = "read-url")]
-    pub fn new(gtfs: &str) -> Result<Self, Error> {
-        GtfsReader::default().raw().read(gtfs)
-    }
-
-    #[cfg(not(feature = "read-url"))]
     pub fn new(gtfs: &str) -> Result<Self, Error> {
         GtfsReader::default().raw().read(gtfs)
     }

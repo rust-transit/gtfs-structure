@@ -136,14 +136,14 @@ impl RawGtfsReader {
         })
     }
 
-    /// Reads from an url (if starts with `"http"`), or a local path (either a directory or zipped file)
-    #[cfg(feature = "read-url")]
+    /// Reads from an url (if starts with `"http"`) if the feature `read-url` is activated,
+    /// or a local path (either a directory or zipped file)
     pub fn read(self, gtfs: &str) -> Result<RawGtfs, Error> {
+        #[cfg(feature = "read-url")]
         if gtfs.starts_with("http") {
-            self.read_from_url(gtfs)
-        } else {
-            self.read_from_path(gtfs)
+            return self.read_from_url(gtfs);
         }
+        self.read_from_path(gtfs)
     }
 
     /// Reads the GTFS from a remote url

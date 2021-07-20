@@ -9,13 +9,13 @@ use std::sync::Arc;
 ///
 /// This structure is easier to use than the [RawGtfs] structure as some relationships are parsed to be easier to use.
 ///
+/// If you want to configure the behaviour (e.g. skipping : [StopTime]), see [crate::GtfsReader] for more personalisation
+///
 /// This is probably the entry point you want to use:
 /// ```
-/// # fn main() -> Result<(), gtfs_structures::error::Error> {
 /// let gtfs = gtfs_structures::Gtfs::new("fixtures/zips/gtfs.zip")?;
 /// assert_eq!(gtfs.stops.len(), 5);
-/// #     Ok(())
-/// # }
+/// # Ok::<(), gtfs_structures::error::Error>(())
 /// ```
 ///
 /// The [StopTime] are accessible from the [Trip]

@@ -24,6 +24,10 @@ jobs:
         with:
           command: test
           args: --all-features
+      - uses: actions-rs/cargo@v1 # we also test without the default `read-url` feature
+        with:
+          command: test
+          args: --no-default-features
 
   lints:
     name: Lints

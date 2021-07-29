@@ -81,26 +81,11 @@ fn read_stop_times() {
     let gtfs = Gtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
     let stop_times = &gtfs.trips.get("trip1").unwrap().stop_times;
     assert_eq!(3, stop_times.len());
-    assert_eq!(
-        PickupDropOffType::Regular,
-        stop_times[0].pickup_type
-    );
-    assert_eq!(
-        PickupDropOffType::NotAvailable,
-        stop_times[0].drop_off_type
-    );
-    assert_eq!(
-        PickupDropOffType::ArrangeByPhone,
-        stop_times[1].pickup_type
-    );
-    assert_eq!(
-        PickupDropOffType::Regular,
-        stop_times[1].drop_off_type
-    );
-    assert_eq!(
-        PickupDropOffType::Regular,
-        stop_times[2].drop_off_type
-    );
+    assert_eq!(PickupDropOffType::Regular, stop_times[0].pickup_type);
+    assert_eq!(PickupDropOffType::NotAvailable, stop_times[0].drop_off_type);
+    assert_eq!(PickupDropOffType::ArrangeByPhone, stop_times[1].pickup_type);
+    assert_eq!(PickupDropOffType::Regular, stop_times[1].drop_off_type);
+    assert_eq!(PickupDropOffType::Regular, stop_times[2].drop_off_type);
     assert_eq!(TimepointType::Exact, stop_times[0].timepoint);
     assert_eq!(TimepointType::Approximate, stop_times[1].timepoint);
 }

@@ -129,10 +129,10 @@ impl RawGtfsReader {
             .filter_map(|d| d.ok().and_then(|p| p.path().to_str().map(|s| s.to_owned())))
             .collect();
 
-        Ok(RawGtfs {
+        let mut result = RawGtfs {
             trips: read_objs_from_path(p.join("trips.txt")),
-            calendar: read_objs_from_optional_path(&p, "calendar.txt"),
-            calendar_dates: read_objs_from_optional_path(&p, "calendar_dates.txt"),
+            calendar: read_objs_from_optional_path(p, "calendar.txt"),
+            calendar_dates: read_objs_from_optional_path(p, "calendar_dates.txt"),
             stops: read_objs_from_path(p.join("stops.txt")),
             routes: read_objs_from_path(p.join("routes.txt")),
             stop_times: if self.reader.read_stop_times {

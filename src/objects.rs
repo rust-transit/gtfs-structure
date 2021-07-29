@@ -39,20 +39,22 @@ pub enum ObjectType {
 }
 
 /// Describes the kind of [Stop]. See <https://gtfs.org/reference/static/#stopstxt> `location_type`
-#[derive(Derivative, Debug, Copy, Clone, PartialEq, Serialize)]
+#[derive(Derivative, Debug, Copy, Clone, PartialEq)]
 #[derivative(Default(bound = ""))]
 pub enum LocationType {
     /// Stop (or Platform). A location where passengers board or disembark from a transit vehicle. Is called a platform when defined within a parent_station
     #[derivative(Default)]
-    StopPoint = 0,
+    StopPoint,
     /// Station. A physical structure or area that contains one or more platform
-    StopArea = 1,
+    StopArea,
     /// A location where passengers can enter or exit a station from the street. If an entrance/exit belongs to multiple stations, it can be linked by pathways to both, but the data provider must pick one of them as parent
-    StationEntrance = 2,
+    StationEntrance,
     /// A location within a station, not matching any other [Stop::location_type], which can be used to link together pathways define in pathways.txt.
-    GenericNode = 3,
-    ///A specific location on a platform, where passengers can board and/or alight vehicles
-    BoardingArea = 4,
+    GenericNode,
+    /// A specific location on a platform, where passengers can board and/or alight vehicles
+    BoardingArea,
+    /// An unknown value
+    Unknown(u16),
 }
 
 impl<'de> Deserialize<'de> for LocationType {
@@ -62,11 +64,34 @@ impl<'de> Deserialize<'de> for LocationType {
     {
         let s: String = String::deserialize(deserializer)?;
         Ok(match s.as_str() {
+            "" | "0" => LocationType::StopPoint,
             "1" => LocationType::StopArea,
             "2" => LocationType::StationEntrance,
             "3" => LocationType::GenericNode,
             "4" => LocationType::BoardingArea,
-            _ => LocationType::StopPoint,
+            s => LocationType::Unknown(s.parse().map_err(|_| {
+                serde::de::Error::custom(format!(
+                    "invalid value for LocationType, must be an integer: {}",
+                    s
+                ))
+            })?),
+        })
+    }
+}
+
+impl Serialize for LocationType {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        // Note: for extended route type, we might loose the initial precise route type
+        serializer.serialize_u16(match self {
+            LocationType::StopPoint => 0,
+            LocationType::StopArea => 1,
+            LocationType::StationEntrance => 2,
+            LocationType::GenericNode => 3,
+            LocationType::BoardingArea => 4,
+            LocationType::Unknown(i) => *i,
         })
     }
 }

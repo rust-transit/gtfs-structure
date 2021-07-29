@@ -13,7 +13,8 @@ use std::path::Path;
 ///
 /// ```
 ///let gtfs = gtfs_structures::GtfsReader::default()
-///    .read_stop_times(false)
+///    .read_stop_times(false) // Won’t read the stop times to save time and memory
+///    .unkown_enum_as_default(false) // Won’t convert unknown enumerations into default (e.g. LocationType=42 considered as a stop point)
 ///    .read("fixtures/zips/gtfs.zip")?;
 ///assert_eq!(0, gtfs.trips.get("trip1").unwrap().stop_times.len());
 /// # Ok::<(), gtfs_structures::error::Error>(())
@@ -35,6 +36,9 @@ pub struct GtfsReader {
     /// [crate::objects::StopTime] are very large and not always needed. This allows to skip reading them
     #[derivative(Default(value = "true"))]
     pub read_stop_times: bool,
+    /// If a an enumeration has un unknown value, should we use the default value
+    #[derivative(Default(value = "false"))]
+    pub unkown_enum_as_default: bool,
 }
 
 impl GtfsReader {
@@ -44,6 +48,17 @@ impl GtfsReader {
     /// Returns Self and can be chained
     pub fn read_stop_times(mut self, read_stop_times: bool) -> Self {
         self.read_stop_times = read_stop_times;
+        self
+    }
+
+    /// If a an enumeration has un unknown value, should we use the default value (default: false)
+    ///
+    /// For instance, if [crate::objects::Stop] has a [crate::objects::LocationType] with a value 42 in the GTFS
+    /// when true, we will parse it as StopPoint
+    /// when false, we will parse it as Unknown(42)
+    /// Returns Self and can be chained
+    pub fn unkown_enum_as_default(mut self, unkown_enum_as_default: bool) -> Self {
+        self.unkown_enum_as_default = unkown_enum_as_default;
         self
     }
 
@@ -126,14 +141,19 @@ impl RawGtfsReader {
                 Ok(Vec::new())
             },
             agencies: read_objs_from_path(p.join("agency.txt")),
-            shapes: read_objs_from_optional_path(&p, "shapes.txt"),
-            fare_attributes: read_objs_from_optional_path(&p, "fare_attributes.txt"),
-            frequencies: read_objs_from_optional_path(&p, "frequencies.txt"),
-            feed_info: read_objs_from_optional_path(&p, "feed_info.txt"),
+            shapes: read_objs_from_optional_path(p, "shapes.txt"),
+            fare_attributes: read_objs_from_optional_path(p, "fare_attributes.txt"),
+            frequencies: read_objs_from_optional_path(p, "frequencies.txt"),
+            feed_info: read_objs_from_optional_path(p, "feed_info.txt"),
             read_duration: Utc::now().signed_duration_since(now).num_milliseconds(),
             files,
             sha256: None,
-        })
+        };
+
+        if self.reader.unkown_enum_as_default {
+            result.unknown_to_default();
+        }
+        Ok(result)
     }
 
     /// Reads from an url (if starts with `"http"`) if the feature `read-url` is activated,
@@ -218,7 +238,7 @@ impl RawGtfsReader {
             }
         }
 
-        Ok(RawGtfs {
+        let mut result = RawGtfs {
             agencies: read_file(&file_mapping, &mut archive, "agency.txt"),
             calendar: read_optional_file(&file_mapping, &mut archive, "calendar.txt"),
             calendar_dates: read_optional_file(&file_mapping, &mut archive, "calendar_dates.txt"),
@@ -237,7 +257,12 @@ impl RawGtfsReader {
             read_duration: Utc::now().signed_duration_since(now).num_milliseconds(),
             files,
             sha256: Some(format!("{:x}", hash)),
-        })
+        };
+
+        if self.reader.unkown_enum_as_default {
+            result.unknown_to_default();
+        }
+        Ok(result)
     }
 }
 

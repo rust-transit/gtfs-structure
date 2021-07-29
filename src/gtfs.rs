@@ -285,7 +285,7 @@ fn create_trips(
         let stop = stops
             .get(&s.stop_id)
             .ok_or_else(|| Error::ReferenceError(s.stop_id.to_string()))?;
-        trip.stop_times.push(StopTime::from(&s, Arc::clone(&stop)));
+        trip.stop_times.push(StopTime::from(&s, Arc::clone(stop)));
     }
 
     for trip in &mut trips.values_mut() {

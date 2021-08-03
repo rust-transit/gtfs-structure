@@ -54,7 +54,7 @@ pub enum LocationType {
     /// A specific location on a platform, where passengers can board and/or alight vehicles
     BoardingArea,
     /// An unknown value
-    Unknown(u16),
+    Unknown(i32),
 }
 
 impl<'de> Deserialize<'de> for LocationType {
@@ -85,7 +85,7 @@ impl Serialize for LocationType {
         S: Serializer,
     {
         // Note: for extended route type, we might loose the initial precise route type
-        serializer.serialize_u16(match self {
+        serializer.serialize_i32(match self {
             LocationType::StopPoint => 0,
             LocationType::StopArea => 1,
             LocationType::StationEntrance => 2,
@@ -126,7 +126,7 @@ pub enum RouteType {
     /// (extended) Taxi, Cab
     Taxi,
     /// (extended) any other value
-    Other(u16),
+    Other(i32),
 }
 
 impl<'de> Deserialize<'de> for RouteType {
@@ -134,7 +134,7 @@ impl<'de> Deserialize<'de> for RouteType {
     where
         D: Deserializer<'de>,
     {
-        let i = u16::deserialize(deserializer)?;
+        let i = i32::deserialize(deserializer)?;
 
         let hundreds = i / 100;
         Ok(match (i, hundreds) {
@@ -160,7 +160,7 @@ impl Serialize for RouteType {
         S: Serializer,
     {
         // Note: for extended route type, we might loose the initial precise route type
-        serializer.serialize_u16(match self {
+        serializer.serialize_i32(match self {
             RouteType::Tramway => 0,
             RouteType::Subway => 1,
             RouteType::Rail => 2,
@@ -191,7 +191,7 @@ pub enum PickupDropOffType {
     /// Must coordinate with driver to arrange pickup or drop off.
     CoordinateWithDriver,
     /// An unknown value not in the specification
-    Unknown(u16),
+    Unknown(i32),
 }
 
 impl<'de> Deserialize<'de> for PickupDropOffType {
@@ -221,7 +221,7 @@ impl Serialize for PickupDropOffType {
         S: Serializer,
     {
         // Note: for extended route type, we might loose the initial precise route type
-        serializer.serialize_u16(match self {
+        serializer.serialize_i32(match self {
             PickupDropOffType::Regular => 0,
             PickupDropOffType::NotAvailable => 1,
             PickupDropOffType::ArrangeByPhone => 2,
@@ -385,7 +385,7 @@ pub enum Availability {
     /// The service is not available
     NotAvailable,
     /// An unknown value not in the specification
-    Unknown(u16),
+    Unknown(i32),
 }
 
 impl<'de> Deserialize<'de> for Availability {
@@ -414,7 +414,7 @@ impl Serialize for Availability {
         S: Serializer,
     {
         // Note: for extended route type, we might loose the initial precise route type
-        serializer.serialize_u16(match self {
+        serializer.serialize_i32(match self {
             Availability::InformationNotAvailable => 0,
             Availability::Available => 1,
             Availability::NotAvailable => 2,
@@ -1016,7 +1016,7 @@ pub enum Transfers {
     ///Riders may transfer twice
     TwoTransfers,
     /// Other transfer values
-    Other(u16),
+    Other(i32),
 }
 
 impl<'de> Deserialize<'de> for Transfers {
@@ -1024,7 +1024,7 @@ impl<'de> Deserialize<'de> for Transfers {
     where
         D: Deserializer<'de>,
     {
-        let i = Option::<u16>::deserialize(deserializer)?;
+        let i = Option::<i32>::deserialize(deserializer)?;
         Ok(match i {
             Some(0) => Transfers::NoTransfer,
             Some(1) => Transfers::UniqueTransfer,
@@ -1041,10 +1041,10 @@ impl Serialize for Transfers {
         S: Serializer,
     {
         match self {
-            Transfers::NoTransfer => serializer.serialize_u16(0),
-            Transfers::UniqueTransfer => serializer.serialize_u16(1),
-            Transfers::TwoTransfers => serializer.serialize_u16(2),
-            Transfers::Other(a) => serializer.serialize_u16(*a),
+            Transfers::NoTransfer => serializer.serialize_i32(0),
+            Transfers::UniqueTransfer => serializer.serialize_i32(1),
+            Transfers::TwoTransfers => serializer.serialize_i32(2),
+            Transfers::Other(a) => serializer.serialize_i32(*a),
             Transfers::Unlimited => serializer.serialize_none(),
         }
     }

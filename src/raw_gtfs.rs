@@ -103,6 +103,9 @@ impl RawGtfs {
                 if let LocationType::Unknown(_) = stop.location_type {
                     stop.location_type = LocationType::default();
                 }
+                if let Availability::Unknown(_) = stop.wheelchair_boarding {
+                    stop.wheelchair_boarding = Availability::default();
+                }
             }
         }
         if let Ok(stop_times) = &mut self.stop_times {

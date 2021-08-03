@@ -374,19 +374,53 @@ impl fmt::Display for Calendar {
 }
 
 /// Generic enum to define if a service (like wheelchair boarding) is available
-#[derive(Serialize, Deserialize, Debug, Derivative, PartialEq, Eq, Hash, Clone, Copy)]
+#[derive(Debug, Derivative, PartialEq, Eq, Hash, Clone, Copy)]
 #[derivative(Default)]
 pub enum Availability {
     /// No information if the service is available
     #[derivative(Default)]
-    #[serde(rename = "0")]
     InformationNotAvailable,
     /// The service is available
-    #[serde(rename = "1")]
     Available,
     /// The service is not available
-    #[serde(rename = "2")]
     NotAvailable,
+    /// An unknown value not in the specification
+    Unknown(u16),
+}
+
+impl<'de> Deserialize<'de> for Availability {
+    fn deserialize<D>(deserializer: D) -> Result<Availability, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s: String = String::deserialize(deserializer)?;
+        Ok(match s.as_str() {
+            "" | "0" => Availability::InformationNotAvailable,
+            "1" => Availability::Available,
+            "2" => Availability::NotAvailable,
+            s => Availability::Unknown(s.parse().map_err(|_| {
+                serde::de::Error::custom(format!(
+                    "invalid value for Availability, must be an integer: {}",
+                    s
+                ))
+            })?),
+        })
+    }
+}
+
+impl Serialize for Availability {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        // Note: for extended route type, we might loose the initial precise route type
+        serializer.serialize_u16(match self {
+            Availability::InformationNotAvailable => 0,
+            Availability::Available => 1,
+            Availability::NotAvailable => 2,
+            Availability::Unknown(i) => *i,
+        })
+    }
 }
 
 impl Calendar {

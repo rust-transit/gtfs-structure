@@ -178,18 +178,20 @@ impl Serialize for RouteType {
 }
 
 /// Describes if and how a traveller can board or alight the vehicle. See <https://gtfs.org/reference/static/#stop_timestxt> `pickup_type` and `dropoff_type`
-#[derive(Debug, Derivative, Serialize, Copy, Clone, PartialEq)]
+#[derive(Debug, Derivative, Copy, Clone, PartialEq)]
 #[derivative(Default(bound = ""))]
 pub enum PickupDropOffType {
     /// Regularly scheduled pickup or drop off (default when empty).
     #[derivative(Default)]
-    Regular = 0,
+    Regular,
     /// No pickup or drop off available.
-    NotAvailable = 1,
+    NotAvailable,
     /// Must phone agency to arrange pickup or drop off.
-    ArrangeByPhone = 2,
+    ArrangeByPhone,
     /// Must coordinate with driver to arrange pickup or drop off.
-    CoordinateWithDriver = 3,
+    CoordinateWithDriver,
+    /// An unknown value not in the specification
+    Unknown(u16),
 }
 
 impl<'de> Deserialize<'de> for PickupDropOffType {
@@ -199,11 +201,32 @@ impl<'de> Deserialize<'de> for PickupDropOffType {
     {
         let s: String = String::deserialize(deserializer)?;
         Ok(match s.as_str() {
-            "0" => PickupDropOffType::Regular,
+            "" | "0" => PickupDropOffType::Regular,
             "1" => PickupDropOffType::NotAvailable,
             "2" => PickupDropOffType::ArrangeByPhone,
             "3" => PickupDropOffType::CoordinateWithDriver,
-            _ => PickupDropOffType::Regular,
+            s => PickupDropOffType::Unknown(s.parse().map_err(|_| {
+                serde::de::Error::custom(format!(
+                    "invalid value for PickupDropOffType, must be an integer: {}",
+                    s
+                ))
+            })?),
+        })
+    }
+}
+
+impl Serialize for PickupDropOffType {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        // Note: for extended route type, we might loose the initial precise route type
+        serializer.serialize_u16(match self {
+            PickupDropOffType::Regular => 0,
+            PickupDropOffType::NotAvailable => 1,
+            PickupDropOffType::ArrangeByPhone => 2,
+            PickupDropOffType::CoordinateWithDriver => 3,
+            PickupDropOffType::Unknown(i) => *i,
         })
     }
 }

@@ -105,6 +105,16 @@ impl RawGtfs {
                 }
             }
         }
+        if let Ok(stop_times) = &mut self.stop_times {
+            for stop_time in stop_times.iter_mut() {
+                if let PickupDropOffType::Unknown(_) = stop_time.pickup_type {
+                    stop_time.pickup_type = PickupDropOffType::default();
+                }
+                if let PickupDropOffType::Unknown(_) = stop_time.drop_off_type {
+                    stop_time.drop_off_type = PickupDropOffType::default();
+                }
+            }
+        }
     }
 }
 

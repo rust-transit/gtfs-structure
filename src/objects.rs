@@ -234,18 +234,36 @@ impl Serialize for PickupDropOffType {
 /// Indicates whether a rider can board the transit vehicle anywhere along the vehicle’s travel path
 ///
 /// Those values are only defined on <https://developers.google.com/transit/gtfs/reference#routestxt,> not on <https://gtfs.org/reference/static/#routestxt>
-#[derive(Debug, Derivative, Serialize, Copy, Clone, PartialEq)]
+#[derive(Debug, Derivative, Copy, Clone, PartialEq)]
 #[derivative(Default(bound = ""))]
 pub enum ContinuousPickupDropOff {
     /// Continuous stopping pickup or drop off.
-    Continuous = 0,
+    Continuous,
     /// No continuous stopping pickup or drop off (default when empty).
     #[derivative(Default)]
-    NotAvailable = 1,
+    NotAvailable,
     /// Must phone agency to arrange continuous stopping pickup or drop off.
-    ArrangeByPhone = 2,
+    ArrangeByPhone,
     /// Must coordinate with driver to arrange continuous stopping pickup or drop off.
-    CoordinateWithDriver = 3,
+    CoordinateWithDriver,
+    /// An unknown value not in the specification
+    Unknown(i32),
+}
+
+impl Serialize for ContinuousPickupDropOff {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        // Note: for extended route type, we might loose the initial precise route type
+        serializer.serialize_i32(match self {
+            ContinuousPickupDropOff::Continuous => 0,
+            ContinuousPickupDropOff::NotAvailable => 1,
+            ContinuousPickupDropOff::ArrangeByPhone => 2,
+            ContinuousPickupDropOff::CoordinateWithDriver => 3,
+            ContinuousPickupDropOff::Unknown(i) => *i,
+        })
+    }
 }
 
 impl<'de> Deserialize<'de> for ContinuousPickupDropOff {
@@ -256,10 +274,15 @@ impl<'de> Deserialize<'de> for ContinuousPickupDropOff {
         let s: String = String::deserialize(deserializer)?;
         Ok(match s.as_str() {
             "0" => ContinuousPickupDropOff::Continuous,
-            "1" => ContinuousPickupDropOff::NotAvailable,
+            "" | "1" => ContinuousPickupDropOff::NotAvailable,
             "2" => ContinuousPickupDropOff::ArrangeByPhone,
             "3" => ContinuousPickupDropOff::CoordinateWithDriver,
-            _ => ContinuousPickupDropOff::NotAvailable,
+            s => ContinuousPickupDropOff::Unknown(s.parse().map_err(|_| {
+                serde::de::Error::custom(format!(
+                    "invalid value for ContinuousPickupDropOff, must be an integer: {}",
+                    s
+                ))
+            })?),
         })
     }
 }

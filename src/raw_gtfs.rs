@@ -116,6 +116,12 @@ impl RawGtfs {
                 if let PickupDropOffType::Unknown(_) = stop_time.drop_off_type {
                     stop_time.drop_off_type = PickupDropOffType::default();
                 }
+                if let ContinuousPickupDropOff::Unknown(_) = stop_time.continuous_pickup {
+                    stop_time.continuous_pickup = ContinuousPickupDropOff::default();
+                }
+                if let ContinuousPickupDropOff::Unknown(_) = stop_time.continuous_drop_off {
+                    stop_time.continuous_drop_off = ContinuousPickupDropOff::default();
+                }
             }
         }
         if let Ok(trips) = &mut self.trips {

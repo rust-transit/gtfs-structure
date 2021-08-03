@@ -85,7 +85,10 @@ fn read_stop_times() {
     assert_eq!(PickupDropOffType::NotAvailable, stop_times[0].drop_off_type);
     assert_eq!(PickupDropOffType::ArrangeByPhone, stop_times[1].pickup_type);
     assert_eq!(PickupDropOffType::Regular, stop_times[1].drop_off_type);
-    assert_eq!(PickupDropOffType::Regular, stop_times[2].drop_off_type);
+    assert_eq!(
+        PickupDropOffType::Unknown(-999),
+        stop_times[2].drop_off_type
+    );
     assert_eq!(TimepointType::Exact, stop_times[0].timepoint);
     assert_eq!(TimepointType::Approximate, stop_times[1].timepoint);
 }

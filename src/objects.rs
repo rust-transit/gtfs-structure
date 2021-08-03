@@ -703,20 +703,6 @@ pub enum DirectionType {
     Inbound,
 }
 
-/// Is the [Trip] wheelchair accessible. See <https://gtfs.org/reference/static/#tripstxt> `wheelchair_boarding`
-#[derive(Debug, Deserialize, Serialize, Copy, Clone, PartialEq)]
-pub enum WheelChairAccessibleType {
-    /// No accessibility information for the trip
-    #[serde(rename = "0")]
-    NoAccessibilityInfo,
-    /// Vehicle being used on this particular trip can accommodate at least one rider in a wheelchair
-    #[serde(rename = "1")]
-    AtLeastOneWheelChair,
-    /// No riders in wheelchairs can be accommodated on this trip
-    #[serde(rename = "2")]
-    NotWheelChairAccessible,
-}
-
 /// Is the [Trip] accessible with a bike. See <https://gtfs.org/reference/static/#tripstxt> `bikes_allowed`
 #[derive(Debug, Deserialize, Serialize, Copy, Clone, PartialEq)]
 pub enum BikesAllowedType {
@@ -752,7 +738,8 @@ pub struct RawTrip {
     /// Identifies the block to which the trip belongs. A block consists of a single trip or many sequential trips made using the same vehicle, defined by shared service days and block_id. A block_id can have trips with different service days, making distinct blocks
     pub block_id: Option<String>,
     /// Indicates wheelchair accessibility
-    pub wheelchair_accessible: Option<WheelChairAccessibleType>,
+    #[serde(default)]
+    pub wheelchair_accessible: Availability,
     /// Indicates whether bikes are allowed
     pub bikes_allowed: Option<BikesAllowedType>,
 }
@@ -801,7 +788,7 @@ pub struct Trip {
     /// Identifies the block to which the trip belongs. A block consists of a single trip or many sequential trips made using the same vehicle, defined by shared service days and block_id. A block_id can have trips with different service days, making distinct blocks
     pub block_id: Option<String>,
     /// Indicates wheelchair accessibility
-    pub wheelchair_accessible: Option<WheelChairAccessibleType>,
+    pub wheelchair_accessible: Availability,
     /// Indicates whether bikes are allowed
     pub bikes_allowed: Option<BikesAllowedType>,
     /// During which periods the trip runs by frequency and not by fixed timetable

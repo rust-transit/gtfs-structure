@@ -118,6 +118,13 @@ impl RawGtfs {
                 }
             }
         }
+        if let Ok(trips) = &mut self.trips {
+            for trip in trips.iter_mut() {
+                if let Availability::Unknown(_) = trip.wheelchair_accessible {
+                    trip.wheelchair_accessible = Availability::default();
+                }
+            }
+        }
     }
 }
 

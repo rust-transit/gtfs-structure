@@ -989,14 +989,31 @@ pub struct RawFrequency {
 }
 
 /// Defines if the [Frequency] is exact (the vehicle runs exactly every n minutes) or not
-#[derive(Debug, Deserialize, Serialize, Copy, Clone, PartialEq)]
+#[derive(Debug, Serialize, Copy, Clone, PartialEq)]
 pub enum ExactTimes {
     /// Frequency-based trips
-    #[serde(rename = "0")]
-    FrequencyBased,
+    FrequencyBased = 0,
     /// Schedule-based trips with the exact same headway throughout the day.
-    #[serde(rename = "1")]
-    ScheduleBased,
+    ScheduleBased = 1,
+}
+
+impl<'de> Deserialize<'de> for ExactTimes {
+    fn deserialize<D>(deserializer: D) -> Result<ExactTimes, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s: String = String::deserialize(deserializer)?;
+        Ok(match s.as_str() {
+            "" | "0" => ExactTimes::FrequencyBased,
+            "1" => ExactTimes::ScheduleBased,
+            &_ => {
+                return Err(serde::de::Error::custom(format!(
+                    "Invalid value `{}`, expected 0 or 1",
+                    s
+                )))
+            }
+        })
+    }
 }
 
 /// Timetables can be defined by the frequency of their vehicles. See <<https://gtfs.org/reference/static/#frequenciestxt>>

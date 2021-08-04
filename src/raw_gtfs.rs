@@ -129,6 +129,9 @@ impl RawGtfs {
                 if let Availability::Unknown(_) = trip.wheelchair_accessible {
                     trip.wheelchair_accessible = Availability::default();
                 }
+                if let BikesAllowedType::Unknown(_) = trip.bikes_allowed {
+                    trip.bikes_allowed = BikesAllowedType::default();
+                }
             }
         }
     }

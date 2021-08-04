@@ -726,17 +726,53 @@ pub enum DirectionType {
 }
 
 /// Is the [Trip] accessible with a bike. See <https://gtfs.org/reference/static/#tripstxt> `bikes_allowed`
-#[derive(Debug, Deserialize, Serialize, Copy, Clone, PartialEq)]
+#[derive(Debug, Derivative, Copy, Clone, PartialEq)]
+#[derivative(Default())]
 pub enum BikesAllowedType {
     /// No bike information for the trip
-    #[serde(rename = "0")]
+    #[derivative(Default)]
     NoBikeInfo,
     /// Vehicle being used on this particular trip can accommodate at least one bicycle
-    #[serde(rename = "1")]
     AtLeastOneBike,
     /// No bicycles are allowed on this trip
-    #[serde(rename = "2")]
     NoBikesAllowed,
+    /// An unknown value not in the specification
+    Unknown(i32),
+}
+
+impl<'de> Deserialize<'de> for BikesAllowedType {
+    fn deserialize<D>(deserializer: D) -> Result<BikesAllowedType, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s: String = String::deserialize(deserializer)?;
+        Ok(match s.as_str() {
+            "" | "0" => BikesAllowedType::NoBikeInfo,
+            "1" => BikesAllowedType::AtLeastOneBike,
+            "2" => BikesAllowedType::NoBikesAllowed,
+            s => BikesAllowedType::Unknown(s.parse().map_err(|_| {
+                serde::de::Error::custom(format!(
+                    "invalid value for BikeAllowedType, must be an integer: {}",
+                    s
+                ))
+            })?),
+        })
+    }
+}
+
+impl Serialize for BikesAllowedType {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        // Note: for extended route type, we might loose the initial precise route type
+        serializer.serialize_i32(match self {
+            BikesAllowedType::NoBikeInfo => 0,
+            BikesAllowedType::AtLeastOneBike => 1,
+            BikesAllowedType::NoBikesAllowed => 2,
+            BikesAllowedType::Unknown(i) => *i,
+        })
+    }
 }
 
 /// A [Trip] where the relationships with other objects have not been checked
@@ -763,7 +799,8 @@ pub struct RawTrip {
     #[serde(default)]
     pub wheelchair_accessible: Availability,
     /// Indicates whether bikes are allowed
-    pub bikes_allowed: Option<BikesAllowedType>,
+    #[serde(default)]
+    pub bikes_allowed: BikesAllowedType,
 }
 
 impl Type for RawTrip {
@@ -812,7 +849,7 @@ pub struct Trip {
     /// Indicates wheelchair accessibility
     pub wheelchair_accessible: Availability,
     /// Indicates whether bikes are allowed
-    pub bikes_allowed: Option<BikesAllowedType>,
+    pub bikes_allowed: BikesAllowedType,
     /// During which periods the trip runs by frequency and not by fixed timetable
     pub frequencies: Vec<Frequency>,
 }

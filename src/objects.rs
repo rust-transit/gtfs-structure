@@ -292,7 +292,6 @@ impl<'de> Deserialize<'de> for ContinuousPickupDropOff {
 #[derivative(Default)]
 pub enum TimepointType {
     /// Times are considered approximate
-    #[serde(rename = "0")]
     Approximate = 0,
     /// Times are considered exact
     #[derivative(Default)]

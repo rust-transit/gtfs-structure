@@ -43,11 +43,13 @@ extern crate derivative;
 #[macro_use]
 extern crate serde_derive;
 
+mod enums;
 pub mod error;
 mod gtfs;
 mod gtfs_reader;
 pub(crate) mod objects;
 mod raw_gtfs;
+mod serde_helpers;
 
 #[cfg(test)]
 mod tests;

@@ -96,6 +96,45 @@ impl RawGtfs {
     pub fn from_reader<T: std::io::Read + std::io::Seek>(reader: T) -> Result<Self, Error> {
         GtfsReader::default().raw().read_from_reader(reader)
     }
+
+    pub(crate) fn unknown_to_default(&mut self) {
+        if let Ok(stops) = &mut self.stops {
+            for stop in stops.iter_mut() {
+                if let LocationType::Unknown(_) = stop.location_type {
+                    stop.location_type = LocationType::default();
+                }
+                if let Availability::Unknown(_) = stop.wheelchair_boarding {
+                    stop.wheelchair_boarding = Availability::default();
+                }
+            }
+        }
+        if let Ok(stop_times) = &mut self.stop_times {
+            for stop_time in stop_times.iter_mut() {
+                if let PickupDropOffType::Unknown(_) = stop_time.pickup_type {
+                    stop_time.pickup_type = PickupDropOffType::default();
+                }
+                if let PickupDropOffType::Unknown(_) = stop_time.drop_off_type {
+                    stop_time.drop_off_type = PickupDropOffType::default();
+                }
+                if let ContinuousPickupDropOff::Unknown(_) = stop_time.continuous_pickup {
+                    stop_time.continuous_pickup = ContinuousPickupDropOff::default();
+                }
+                if let ContinuousPickupDropOff::Unknown(_) = stop_time.continuous_drop_off {
+                    stop_time.continuous_drop_off = ContinuousPickupDropOff::default();
+                }
+            }
+        }
+        if let Ok(trips) = &mut self.trips {
+            for trip in trips.iter_mut() {
+                if let Availability::Unknown(_) = trip.wheelchair_accessible {
+                    trip.wheelchair_accessible = Availability::default();
+                }
+                if let BikesAllowedType::Unknown(_) = trip.bikes_allowed {
+                    trip.bikes_allowed = BikesAllowedType::default();
+                }
+            }
+        }
+    }
 }
 
 fn mandatory_file_summary<T>(objs: &Result<Vec<T>, Error>) -> String {

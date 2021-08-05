@@ -39,20 +39,22 @@ pub enum ObjectType {
 }
 
 /// Describes the kind of [Stop]. See <https://gtfs.org/reference/static/#stopstxt> `location_type`
-#[derive(Derivative, Debug, Copy, Clone, PartialEq, Serialize)]
+#[derive(Derivative, Debug, Copy, Clone, PartialEq)]
 #[derivative(Default(bound = ""))]
 pub enum LocationType {
     /// Stop (or Platform). A location where passengers board or disembark from a transit vehicle. Is called a platform when defined within a parent_station
     #[derivative(Default)]
-    StopPoint = 0,
+    StopPoint,
     /// Station. A physical structure or area that contains one or more platform
-    StopArea = 1,
+    StopArea,
     /// A location where passengers can enter or exit a station from the street. If an entrance/exit belongs to multiple stations, it can be linked by pathways to both, but the data provider must pick one of them as parent
-    StationEntrance = 2,
+    StationEntrance,
     /// A location within a station, not matching any other [Stop::location_type], which can be used to link together pathways define in pathways.txt.
-    GenericNode = 3,
-    ///A specific location on a platform, where passengers can board and/or alight vehicles
-    BoardingArea = 4,
+    GenericNode,
+    /// A specific location on a platform, where passengers can board and/or alight vehicles
+    BoardingArea,
+    /// An unknown value
+    Unknown(i32),
 }
 
 impl<'de> Deserialize<'de> for LocationType {
@@ -62,11 +64,34 @@ impl<'de> Deserialize<'de> for LocationType {
     {
         let s: String = String::deserialize(deserializer)?;
         Ok(match s.as_str() {
+            "" | "0" => LocationType::StopPoint,
             "1" => LocationType::StopArea,
             "2" => LocationType::StationEntrance,
             "3" => LocationType::GenericNode,
             "4" => LocationType::BoardingArea,
-            _ => LocationType::StopPoint,
+            s => LocationType::Unknown(s.parse().map_err(|_| {
+                serde::de::Error::custom(format!(
+                    "invalid value for LocationType, must be an integer: {}",
+                    s
+                ))
+            })?),
+        })
+    }
+}
+
+impl Serialize for LocationType {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        // Note: for extended route type, we might loose the initial precise route type
+        serializer.serialize_i32(match self {
+            LocationType::StopPoint => 0,
+            LocationType::StopArea => 1,
+            LocationType::StationEntrance => 2,
+            LocationType::GenericNode => 3,
+            LocationType::BoardingArea => 4,
+            LocationType::Unknown(i) => *i,
         })
     }
 }
@@ -101,7 +126,7 @@ pub enum RouteType {
     /// (extended) Taxi, Cab
     Taxi,
     /// (extended) any other value
-    Other(u16),
+    Other(i32),
 }
 
 impl<'de> Deserialize<'de> for RouteType {
@@ -109,7 +134,7 @@ impl<'de> Deserialize<'de> for RouteType {
     where
         D: Deserializer<'de>,
     {
-        let i = u16::deserialize(deserializer)?;
+        let i = i32::deserialize(deserializer)?;
 
         let hundreds = i / 100;
         Ok(match (i, hundreds) {
@@ -135,7 +160,7 @@ impl Serialize for RouteType {
         S: Serializer,
     {
         // Note: for extended route type, we might loose the initial precise route type
-        serializer.serialize_u16(match self {
+        serializer.serialize_i32(match self {
             RouteType::Tramway => 0,
             RouteType::Subway => 1,
             RouteType::Rail => 2,
@@ -153,18 +178,20 @@ impl Serialize for RouteType {
 }
 
 /// Describes if and how a traveller can board or alight the vehicle. See <https://gtfs.org/reference/static/#stop_timestxt> `pickup_type` and `dropoff_type`
-#[derive(Debug, Derivative, Serialize, Copy, Clone, PartialEq)]
+#[derive(Debug, Derivative, Copy, Clone, PartialEq)]
 #[derivative(Default(bound = ""))]
 pub enum PickupDropOffType {
     /// Regularly scheduled pickup or drop off (default when empty).
     #[derivative(Default)]
-    Regular = 0,
+    Regular,
     /// No pickup or drop off available.
-    NotAvailable = 1,
+    NotAvailable,
     /// Must phone agency to arrange pickup or drop off.
-    ArrangeByPhone = 2,
+    ArrangeByPhone,
     /// Must coordinate with driver to arrange pickup or drop off.
-    CoordinateWithDriver = 3,
+    CoordinateWithDriver,
+    /// An unknown value not in the specification
+    Unknown(i32),
 }
 
 impl<'de> Deserialize<'de> for PickupDropOffType {
@@ -174,11 +201,32 @@ impl<'de> Deserialize<'de> for PickupDropOffType {
     {
         let s: String = String::deserialize(deserializer)?;
         Ok(match s.as_str() {
-            "0" => PickupDropOffType::Regular,
+            "" | "0" => PickupDropOffType::Regular,
             "1" => PickupDropOffType::NotAvailable,
             "2" => PickupDropOffType::ArrangeByPhone,
             "3" => PickupDropOffType::CoordinateWithDriver,
-            _ => PickupDropOffType::Regular,
+            s => PickupDropOffType::Unknown(s.parse().map_err(|_| {
+                serde::de::Error::custom(format!(
+                    "invalid value for PickupDropOffType, must be an integer: {}",
+                    s
+                ))
+            })?),
+        })
+    }
+}
+
+impl Serialize for PickupDropOffType {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        // Note: for extended route type, we might loose the initial precise route type
+        serializer.serialize_i32(match self {
+            PickupDropOffType::Regular => 0,
+            PickupDropOffType::NotAvailable => 1,
+            PickupDropOffType::ArrangeByPhone => 2,
+            PickupDropOffType::CoordinateWithDriver => 3,
+            PickupDropOffType::Unknown(i) => *i,
         })
     }
 }
@@ -186,18 +234,36 @@ impl<'de> Deserialize<'de> for PickupDropOffType {
 /// Indicates whether a rider can board the transit vehicle anywhere along the vehicle’s travel path
 ///
 /// Those values are only defined on <https://developers.google.com/transit/gtfs/reference#routestxt,> not on <https://gtfs.org/reference/static/#routestxt>
-#[derive(Debug, Derivative, Serialize, Copy, Clone, PartialEq)]
+#[derive(Debug, Derivative, Copy, Clone, PartialEq)]
 #[derivative(Default(bound = ""))]
 pub enum ContinuousPickupDropOff {
     /// Continuous stopping pickup or drop off.
-    Continuous = 0,
+    Continuous,
     /// No continuous stopping pickup or drop off (default when empty).
     #[derivative(Default)]
-    NotAvailable = 1,
+    NotAvailable,
     /// Must phone agency to arrange continuous stopping pickup or drop off.
-    ArrangeByPhone = 2,
+    ArrangeByPhone,
     /// Must coordinate with driver to arrange continuous stopping pickup or drop off.
-    CoordinateWithDriver = 3,
+    CoordinateWithDriver,
+    /// An unknown value not in the specification
+    Unknown(i32),
+}
+
+impl Serialize for ContinuousPickupDropOff {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        // Note: for extended route type, we might loose the initial precise route type
+        serializer.serialize_i32(match self {
+            ContinuousPickupDropOff::Continuous => 0,
+            ContinuousPickupDropOff::NotAvailable => 1,
+            ContinuousPickupDropOff::ArrangeByPhone => 2,
+            ContinuousPickupDropOff::CoordinateWithDriver => 3,
+            ContinuousPickupDropOff::Unknown(i) => *i,
+        })
+    }
 }
 
 impl<'de> Deserialize<'de> for ContinuousPickupDropOff {
@@ -208,10 +274,15 @@ impl<'de> Deserialize<'de> for ContinuousPickupDropOff {
         let s: String = String::deserialize(deserializer)?;
         Ok(match s.as_str() {
             "0" => ContinuousPickupDropOff::Continuous,
-            "1" => ContinuousPickupDropOff::NotAvailable,
+            "" | "1" => ContinuousPickupDropOff::NotAvailable,
             "2" => ContinuousPickupDropOff::ArrangeByPhone,
             "3" => ContinuousPickupDropOff::CoordinateWithDriver,
-            _ => ContinuousPickupDropOff::NotAvailable,
+            s => ContinuousPickupDropOff::Unknown(s.parse().map_err(|_| {
+                serde::de::Error::custom(format!(
+                    "invalid value for ContinuousPickupDropOff, must be an integer: {}",
+                    s
+                ))
+            })?),
         })
     }
 }
@@ -221,7 +292,6 @@ impl<'de> Deserialize<'de> for ContinuousPickupDropOff {
 #[derivative(Default)]
 pub enum TimepointType {
     /// Times are considered approximate
-    #[serde(rename = "0")]
     Approximate = 0,
     /// Times are considered exact
     #[derivative(Default)]
@@ -326,19 +396,53 @@ impl fmt::Display for Calendar {
 }
 
 /// Generic enum to define if a service (like wheelchair boarding) is available
-#[derive(Serialize, Deserialize, Debug, Derivative, PartialEq, Eq, Hash, Clone, Copy)]
+#[derive(Debug, Derivative, PartialEq, Eq, Hash, Clone, Copy)]
 #[derivative(Default)]
 pub enum Availability {
     /// No information if the service is available
     #[derivative(Default)]
-    #[serde(rename = "0")]
     InformationNotAvailable,
     /// The service is available
-    #[serde(rename = "1")]
     Available,
     /// The service is not available
-    #[serde(rename = "2")]
     NotAvailable,
+    /// An unknown value not in the specification
+    Unknown(i32),
+}
+
+impl<'de> Deserialize<'de> for Availability {
+    fn deserialize<D>(deserializer: D) -> Result<Availability, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s: String = String::deserialize(deserializer)?;
+        Ok(match s.as_str() {
+            "" | "0" => Availability::InformationNotAvailable,
+            "1" => Availability::Available,
+            "2" => Availability::NotAvailable,
+            s => Availability::Unknown(s.parse().map_err(|_| {
+                serde::de::Error::custom(format!(
+                    "invalid value for Availability, must be an integer: {}",
+                    s
+                ))
+            })?),
+        })
+    }
+}
+
+impl Serialize for Availability {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        // Note: for extended route type, we might loose the initial precise route type
+        serializer.serialize_i32(match self {
+            Availability::InformationNotAvailable => 0,
+            Availability::Available => 1,
+            Availability::NotAvailable => 2,
+            Availability::Unknown(i) => *i,
+        })
+    }
 }
 
 impl Calendar {
@@ -621,32 +725,54 @@ pub enum DirectionType {
     Inbound,
 }
 
-/// Is the [Trip] wheelchair accessible. See <https://gtfs.org/reference/static/#tripstxt> `wheelchair_boarding`
-#[derive(Debug, Deserialize, Serialize, Copy, Clone, PartialEq)]
-pub enum WheelChairAccessibleType {
-    /// No accessibility information for the trip
-    #[serde(rename = "0")]
-    NoAccessibilityInfo,
-    /// Vehicle being used on this particular trip can accommodate at least one rider in a wheelchair
-    #[serde(rename = "1")]
-    AtLeastOneWheelChair,
-    /// No riders in wheelchairs can be accommodated on this trip
-    #[serde(rename = "2")]
-    NotWheelChairAccessible,
-}
-
 /// Is the [Trip] accessible with a bike. See <https://gtfs.org/reference/static/#tripstxt> `bikes_allowed`
-#[derive(Debug, Deserialize, Serialize, Copy, Clone, PartialEq)]
+#[derive(Debug, Derivative, Copy, Clone, PartialEq)]
+#[derivative(Default())]
 pub enum BikesAllowedType {
     /// No bike information for the trip
-    #[serde(rename = "0")]
+    #[derivative(Default)]
     NoBikeInfo,
     /// Vehicle being used on this particular trip can accommodate at least one bicycle
-    #[serde(rename = "1")]
     AtLeastOneBike,
     /// No bicycles are allowed on this trip
-    #[serde(rename = "2")]
     NoBikesAllowed,
+    /// An unknown value not in the specification
+    Unknown(i32),
+}
+
+impl<'de> Deserialize<'de> for BikesAllowedType {
+    fn deserialize<D>(deserializer: D) -> Result<BikesAllowedType, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s: String = String::deserialize(deserializer)?;
+        Ok(match s.as_str() {
+            "" | "0" => BikesAllowedType::NoBikeInfo,
+            "1" => BikesAllowedType::AtLeastOneBike,
+            "2" => BikesAllowedType::NoBikesAllowed,
+            s => BikesAllowedType::Unknown(s.parse().map_err(|_| {
+                serde::de::Error::custom(format!(
+                    "invalid value for BikeAllowedType, must be an integer: {}",
+                    s
+                ))
+            })?),
+        })
+    }
+}
+
+impl Serialize for BikesAllowedType {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        // Note: for extended route type, we might loose the initial precise route type
+        serializer.serialize_i32(match self {
+            BikesAllowedType::NoBikeInfo => 0,
+            BikesAllowedType::AtLeastOneBike => 1,
+            BikesAllowedType::NoBikesAllowed => 2,
+            BikesAllowedType::Unknown(i) => *i,
+        })
+    }
 }
 
 /// A [Trip] where the relationships with other objects have not been checked
@@ -670,9 +796,11 @@ pub struct RawTrip {
     /// Identifies the block to which the trip belongs. A block consists of a single trip or many sequential trips made using the same vehicle, defined by shared service days and block_id. A block_id can have trips with different service days, making distinct blocks
     pub block_id: Option<String>,
     /// Indicates wheelchair accessibility
-    pub wheelchair_accessible: Option<WheelChairAccessibleType>,
+    #[serde(default)]
+    pub wheelchair_accessible: Availability,
     /// Indicates whether bikes are allowed
-    pub bikes_allowed: Option<BikesAllowedType>,
+    #[serde(default)]
+    pub bikes_allowed: BikesAllowedType,
 }
 
 impl Type for RawTrip {
@@ -719,9 +847,9 @@ pub struct Trip {
     /// Identifies the block to which the trip belongs. A block consists of a single trip or many sequential trips made using the same vehicle, defined by shared service days and block_id. A block_id can have trips with different service days, making distinct blocks
     pub block_id: Option<String>,
     /// Indicates wheelchair accessibility
-    pub wheelchair_accessible: Option<WheelChairAccessibleType>,
+    pub wheelchair_accessible: Availability,
     /// Indicates whether bikes are allowed
-    pub bikes_allowed: Option<BikesAllowedType>,
+    pub bikes_allowed: BikesAllowedType,
     /// During which periods the trip runs by frequency and not by fixed timetable
     pub frequencies: Vec<Frequency>,
 }
@@ -898,14 +1026,31 @@ pub struct RawFrequency {
 }
 
 /// Defines if the [Frequency] is exact (the vehicle runs exactly every n minutes) or not
-#[derive(Debug, Deserialize, Serialize, Copy, Clone, PartialEq)]
+#[derive(Debug, Serialize, Copy, Clone, PartialEq)]
 pub enum ExactTimes {
     /// Frequency-based trips
-    #[serde(rename = "0")]
-    FrequencyBased,
+    FrequencyBased = 0,
     /// Schedule-based trips with the exact same headway throughout the day.
-    #[serde(rename = "1")]
-    ScheduleBased,
+    ScheduleBased = 1,
+}
+
+impl<'de> Deserialize<'de> for ExactTimes {
+    fn deserialize<D>(deserializer: D) -> Result<ExactTimes, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s: String = String::deserialize(deserializer)?;
+        Ok(match s.as_str() {
+            "" | "0" => ExactTimes::FrequencyBased,
+            "1" => ExactTimes::ScheduleBased,
+            &_ => {
+                return Err(serde::de::Error::custom(format!(
+                    "Invalid value `{}`, expected 0 or 1",
+                    s
+                )))
+            }
+        })
+    }
 }
 
 /// Timetables can be defined by the frequency of their vehicles. See <<https://gtfs.org/reference/static/#frequenciestxt>>
@@ -947,7 +1092,7 @@ pub enum Transfers {
     ///Riders may transfer twice
     TwoTransfers,
     /// Other transfer values
-    Other(u16),
+    Other(i32),
 }
 
 impl<'de> Deserialize<'de> for Transfers {
@@ -955,7 +1100,7 @@ impl<'de> Deserialize<'de> for Transfers {
     where
         D: Deserializer<'de>,
     {
-        let i = Option::<u16>::deserialize(deserializer)?;
+        let i = Option::<i32>::deserialize(deserializer)?;
         Ok(match i {
             Some(0) => Transfers::NoTransfer,
             Some(1) => Transfers::UniqueTransfer,
@@ -972,10 +1117,10 @@ impl Serialize for Transfers {
         S: Serializer,
     {
         match self {
-            Transfers::NoTransfer => serializer.serialize_u16(0),
-            Transfers::UniqueTransfer => serializer.serialize_u16(1),
-            Transfers::TwoTransfers => serializer.serialize_u16(2),
-            Transfers::Other(a) => serializer.serialize_u16(*a),
+            Transfers::NoTransfer => serializer.serialize_i32(0),
+            Transfers::UniqueTransfer => serializer.serialize_i32(1),
+            Transfers::TwoTransfers => serializer.serialize_i32(2),
+            Transfers::Other(a) => serializer.serialize_i32(*a),
             Transfers::Unlimited => serializer.serialize_none(),
         }
     }

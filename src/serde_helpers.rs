@@ -1,4 +1,4 @@
-use chrono::{Datelike, NaiveDate};
+use chrono::NaiveDate;
 use rgb::RGB8;
 use serde::de::{self, Deserialize, Deserializer};
 use serde::ser::Serializer;
@@ -15,7 +15,7 @@ pub fn serialize_date<S>(date: &NaiveDate, serializer: S) -> Result<S::Ok, S::Er
 where
     S: Serializer,
 {
-    serializer.serialize_str(format!("{}{}{}", date.year(), date.month(), date.day()).as_str())
+    serializer.serialize_str(&date.format("%Y%m%d").to_string())
 }
 
 pub fn deserialize_option_date<'de, D>(deserializer: D) -> Result<Option<NaiveDate>, D::Error>
@@ -37,9 +37,7 @@ where
 {
     match date {
         None => serializer.serialize_none(),
-        Some(d) => {
-            serializer.serialize_str(format!("{}{}{}", d.year(), d.month(), d.day()).as_str())
-        }
+        Some(d) => serialize_date(d, serializer),
     }
 }
 
@@ -55,7 +53,7 @@ pub fn parse_time(s: &str) -> Result<u32, crate::Error> {
     if v.len() != 3 {
         Err(crate::Error::InvalidTime(s.to_owned()))
     } else {
-        Ok(parse_time_impl(v).map_err(|_| crate::Error::InvalidTime(s.to_owned()))?)
+        parse_time_impl(v).map_err(|_| crate::Error::InvalidTime(s.to_owned()))
     }
 }
 
@@ -82,7 +80,7 @@ where
 
     match s {
         None => Ok(None),
-        Some(t) => Ok(Some(parse_time(&t).map_err(de::Error::custom)?)),
+        Some(t) => parse_time(&t).map(Some).map_err(de::Error::custom),
     }
 }
 
@@ -92,7 +90,7 @@ where
 {
     match time {
         None => serializer.serialize_none(),
-        Some(t) => serializer.serialize_str(format!("{}", t).as_str()),
+        Some(t) => serialize_time(t, serializer),
     }
 }
 

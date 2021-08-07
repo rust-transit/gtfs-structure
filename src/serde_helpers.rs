@@ -1,4 +1,4 @@
-use chrono::{Datelike, NaiveDate};
+use chrono::NaiveDate;
 use rgb::RGB8;
 use serde::de::{self, Deserialize, Deserializer};
 use serde::ser::Serializer;
@@ -15,7 +15,7 @@ pub fn serialize_date<S>(date: &NaiveDate, serializer: S) -> Result<S::Ok, S::Er
 where
     S: Serializer,
 {
-    serializer.serialize_str(format!("{}{}{}", date.year(), date.month(), date.day()).as_str())
+    serializer.serialize_str(&date.format("%Y%m%d").to_string())
 }
 
 pub fn deserialize_option_date<'de, D>(deserializer: D) -> Result<Option<NaiveDate>, D::Error>
@@ -37,9 +37,7 @@ where
 {
     match date {
         None => serializer.serialize_none(),
-        Some(d) => {
-            serializer.serialize_str(format!("{}{}{}", d.year(), d.month(), d.day()).as_str())
-        }
+        Some(d) => serialize_date(d, serializer),
     }
 }
 
@@ -55,7 +53,7 @@ pub fn parse_time(s: &str) -> Result<u32, crate::Error> {
     if v.len() != 3 {
         Err(crate::Error::InvalidTime(s.to_owned()))
     } else {
-        Ok(parse_time_impl(v).map_err(|_| crate::Error::InvalidTime(s.to_owned()))?)
+        parse_time_impl(v).map_err(|_| crate::Error::InvalidTime(s.to_owned()))
     }
 }
 
@@ -71,7 +69,15 @@ pub fn serialize_time<S>(time: &u32, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
-    serializer.serialize_str(format!("{}", time).as_str())
+    serializer.serialize_str(
+        format!(
+            "{:02}:{:02}:{:02}",
+            time / 3600,
+            time % 3600 / 60,
+            time % 60
+        )
+        .as_str(),
+    )
 }
 
 pub fn deserialize_optional_time<'de, D>(deserializer: D) -> Result<Option<u32>, D::Error>
@@ -82,7 +88,7 @@ where
 
     match s {
         None => Ok(None),
-        Some(t) => Ok(Some(parse_time(&t).map_err(de::Error::custom)?)),
+        Some(t) => parse_time(&t).map(Some).map_err(de::Error::custom),
     }
 }
 
@@ -92,7 +98,7 @@ where
 {
     match time {
         None => serializer.serialize_none(),
-        Some(t) => serializer.serialize_str(format!("{}", t).as_str()),
+        Some(t) => serialize_time(t, serializer),
     }
 }
 
@@ -176,9 +182,29 @@ pub fn serialize_bool<S>(value: &bool, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
-    if *value {
-        serializer.serialize_u8(1)
-    } else {
-        serializer.serialize_u8(0)
+    serializer.serialize_u8(if *value { 1 } else { 0 })
+}
+
+#[test]
+fn test_serialize_time() {
+    #[derive(Serialize, Deserialize)]
+    struct Test {
+        #[serde(
+            deserialize_with = "deserialize_time",
+            serialize_with = "serialize_time"
+        )]
+        time: u32,
     }
+    let data_in = "time\n01:01:01\n";
+    let parsed: Test = csv::Reader::from_reader(data_in.as_bytes())
+        .deserialize()
+        .next()
+        .unwrap()
+        .unwrap();
+    assert_eq!(3600 + 60 + 1, parsed.time);
+
+    let mut wtr = csv::Writer::from_writer(vec![]);
+    wtr.serialize(parsed).unwrap();
+    let data_out = String::from_utf8(wtr.into_inner().unwrap()).unwrap();
+    assert_eq!(data_in, data_out);
 }

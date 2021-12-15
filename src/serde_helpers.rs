@@ -42,10 +42,10 @@ where
 }
 
 pub fn parse_time_impl(v: Vec<&str>) -> Result<u32, std::num::ParseIntError> {
-    let hours = &v[0].parse()?;
-    let minutes = &v[1].parse()?;
-    let seconds = &v[2].parse()?;
-    Ok(hours * 3600u32 + minutes * 60u32 + seconds)
+    let hours: u32 = v[0].parse()?;
+    let minutes: u32 = v[1].parse()?;
+    let seconds: u32 = v[2].parse()?;
+    Ok(hours * 3600 + minutes * 60 + seconds)
 }
 
 pub fn parse_time(s: &str) -> Result<u32, crate::Error> {
@@ -160,7 +160,7 @@ where
     D: Deserializer<'de>,
     T: Deserialize<'de>,
 {
-    Option::<T>::deserialize(de).map(|opt| opt.unwrap_or_else(Default::default))
+    Option::<T>::deserialize(de).map(|opt| opt.unwrap_or_default())
 }
 
 pub fn deserialize_bool<'de, D>(deserializer: D) -> Result<bool, D::Error>

@@ -160,7 +160,7 @@ where
     D: Deserializer<'de>,
     T: Deserialize<'de>,
 {
-    Option::<T>::deserialize(de).map(|opt| opt.unwrap_or_else(Default::default))
+    Option::<T>::deserialize(de).map(|opt| opt.unwrap_or_default())
 }
 
 pub fn deserialize_bool<'de, D>(deserializer: D) -> Result<bool, D::Error>

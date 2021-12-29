@@ -3,6 +3,7 @@ use serde::Deserialize;
 use sha2::{Digest, Sha256};
 
 use crate::{Error, Gtfs, RawGtfs};
+use rayon::prelude::*;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::fs::File;
@@ -268,7 +269,7 @@ impl RawGtfsReader {
 
 fn read_objs<T, O>(mut reader: T, file_name: &str) -> Result<Vec<O>, Error>
 where
-    for<'de> O: Deserialize<'de>,
+    for<'de> O: Deserialize<'de> + Send,
     T: std::io::Read,
 {
     let mut bom = [0; 3];
@@ -299,7 +300,7 @@ where
         })?
         .clone();
 
-    reader
+    let v = reader
         .records()
         .map(|rec| {
             rec.map_err(|e| Error::CSVError {
@@ -307,15 +308,17 @@ where
                 source: e,
                 line_in_error: None,
             })
-            .and_then(|r| {
-                r.deserialize(Some(&headers)).map_err(|e| Error::CSVError {
-                    file_name: file_name.to_owned(),
-                    source: e,
-                    line_in_error: Some(crate::error::LineError {
-                        headers: headers.into_iter().map(|s| s.to_owned()).collect(),
-                        values: r.into_iter().map(|s| s.to_owned()).collect(),
-                    }),
-                })
+        })
+        .collect::<Result<Vec<_>, Error>>()?;
+    v.par_iter()
+        .map(|r| {
+            r.deserialize(Some(&headers)).map_err(|e| Error::CSVError {
+                file_name: file_name.to_owned(),
+                source: e,
+                line_in_error: Some(crate::error::LineError {
+                    headers: headers.into_iter().map(|s| s.to_owned()).collect(),
+                    values: r.into_iter().map(|s| s.to_owned()).collect(),
+                }),
             })
         })
         .collect()
@@ -323,7 +326,7 @@ where
 
 fn read_objs_from_path<O>(path: std::path::PathBuf) -> Result<Vec<O>, Error>
 where
-    for<'de> O: Deserialize<'de>,
+    for<'de> O: Deserialize<'de> + Send,
 {
     let file_name = path
         .file_name()
@@ -347,7 +350,7 @@ fn read_objs_from_optional_path<O>(
     file_name: &str,
 ) -> Option<Result<Vec<O>, Error>>
 where
-    for<'de> O: Deserialize<'de>,
+    for<'de> O: Deserialize<'de> + Send,
 {
     File::open(dir_path.join(file_name))
         .ok()
@@ -360,7 +363,7 @@ fn read_file<O, T>(
     file_name: &str,
 ) -> Result<Vec<O>, Error>
 where
-    for<'de> O: Deserialize<'de>,
+    for<'de> O: Deserialize<'de> + Send,
     T: std::io::Read + std::io::Seek,
 {
     read_optional_file(file_mapping, archive, file_name)
@@ -373,7 +376,7 @@ fn read_optional_file<O, T>(
     file_name: &str,
 ) -> Option<Result<Vec<O>, Error>>
 where
-    for<'de> O: Deserialize<'de>,
+    for<'de> O: Deserialize<'de> + Send,
     T: std::io::Read + std::io::Seek,
 {
     file_mapping.get(&file_name).map(|i| {

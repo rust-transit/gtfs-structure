@@ -299,25 +299,26 @@ where
         })?
         .clone();
 
-    let mut res = Vec::new();
-    for rec in reader.records() {
-        let r = rec.map_err(|e| Error::CSVError {
-            file_name: file_name.to_owned(),
-            source: e,
-            line_in_error: None,
-        })?;
-        let o = r.deserialize(Some(&headers)).map_err(|e| Error::CSVError {
-            file_name: file_name.to_owned(),
-            source: e,
-            line_in_error: Some(crate::error::LineError {
-                headers: headers.into_iter().map(|s| s.to_owned()).collect(),
-                values: r.into_iter().map(|s| s.to_owned()).collect(),
-            }),
-        })?;
-        res.push(o);
-    }
-
-    Ok(res)
+    reader
+        .records()
+        .map(|rec| {
+            rec.map_err(|e| Error::CSVError {
+                file_name: file_name.to_owned(),
+                source: e,
+                line_in_error: None,
+            })
+            .and_then(|r| {
+                r.deserialize(Some(&headers)).map_err(|e| Error::CSVError {
+                    file_name: file_name.to_owned(),
+                    source: e,
+                    line_in_error: Some(crate::error::LineError {
+                        headers: headers.into_iter().map(|s| s.to_owned()).collect(),
+                        values: r.into_iter().map(|s| s.to_owned()).collect(),
+                    }),
+                })
+            })
+        })
+        .collect()
 }
 
 fn read_objs_from_path<O>(path: std::path::PathBuf) -> Result<Vec<O>, Error>

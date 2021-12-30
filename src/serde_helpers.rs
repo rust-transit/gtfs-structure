@@ -49,7 +49,7 @@ pub fn parse_time_impl(v: Vec<&str>) -> Result<u32, std::num::ParseIntError> {
 }
 
 pub fn parse_time(s: &str) -> Result<u32, crate::Error> {
-    let v: Vec<&str> = s.trim_start().split(':').collect();
+    let v: Vec<&str> = s.split(':').collect();
     if v.len() != 3 {
         Err(crate::Error::InvalidTime(s.to_owned()))
     } else {
@@ -107,7 +107,6 @@ where
     D: Deserializer<'de>,
 {
     String::deserialize(de).and_then(|s| {
-        let s = s.trim();
         if s.is_empty() {
             Ok(None)
         } else {
@@ -134,11 +133,10 @@ where
     D: Deserializer<'de>,
 {
     String::deserialize(de).and_then(|s| {
-        let s = s.trim();
         if s.is_empty() {
             Ok(None)
         } else {
-            parse_color(s).map(Some).map_err(de::Error::custom)
+            parse_color(&s).map(Some).map_err(de::Error::custom)
         }
     })
 }

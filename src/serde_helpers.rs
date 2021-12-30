@@ -1,4 +1,8 @@
 use chrono::NaiveDate;
+use nom::{
+    character::complete::{char, digit1},
+    sequence::tuple,
+};
 use rgb::RGB8;
 use serde::de::{self, Deserialize, Deserializer};
 use serde::ser::Serializer;
@@ -41,20 +45,19 @@ where
     }
 }
 
-pub fn parse_time_impl(v: Vec<&str>) -> Result<u32, std::num::ParseIntError> {
-    let hours: u32 = v[0].parse()?;
-    let minutes: u32 = v[1].parse()?;
-    let seconds: u32 = v[2].parse()?;
-    Ok(hours * 3600 + minutes * 60 + seconds)
+fn parse_time_impl(h: &str, m: &str, s: &str) -> Result<u32, std::num::ParseIntError> {
+    Ok(h.parse::<u32>()? * 3600 + m.parse::<u32>()? * 60 + s.parse::<u32>()?)
 }
 
-pub fn parse_time(s: &str) -> Result<u32, crate::Error> {
-    let v: Vec<&str> = s.split(':').collect();
-    if v.len() != 3 {
-        Err(crate::Error::InvalidTime(s.to_owned()))
-    } else {
-        parse_time_impl(v).map_err(|_| crate::Error::InvalidTime(s.to_owned()))
-    }
+fn parse_time(s: &str) -> Result<u32, crate::Error> {
+    // Parsing the times in stop_times.txt is a significant bottleneck
+    // Using nom to parse the times result in an improvement of about 3% in performance
+    let mut parser = tuple::<&str, _, (_, _), _>((digit1, char(':'), digit1, char(':'), digit1));
+    parser(s)
+        .map_err(|_| crate::Error::InvalidTime(s.to_owned()))
+        .and_then(|(_, (h, _, m, _, s))| {
+            parse_time_impl(h, m, s).map_err(|_| crate::Error::InvalidTime(s.to_owned()))
+        })
 }
 
 pub fn deserialize_time<'de, D>(deserializer: D) -> Result<u32, D::Error>

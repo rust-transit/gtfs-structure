@@ -279,7 +279,7 @@ fn create_trips(
         frequencies: vec![],
     }));
     for s in raw_stop_times {
-        let trip = &mut trips
+        let trip = trips
             .get_mut(&s.trip_id)
             .ok_or_else(|| Error::ReferenceError(s.trip_id.to_string()))?;
         let stop = stops
@@ -288,7 +288,7 @@ fn create_trips(
         trip.stop_times.push(StopTime::from(&s, Arc::clone(stop)));
     }
 
-    for trip in &mut trips.values_mut() {
+    for trip in trips.values_mut() {
         trip.stop_times
             .sort_by(|a, b| a.stop_sequence.cmp(&b.stop_sequence));
     }

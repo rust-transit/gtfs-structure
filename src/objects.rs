@@ -3,6 +3,7 @@ use crate::serde_helpers::*;
 use chrono::{Datelike, NaiveDate, Weekday};
 use rgb::RGB8;
 
+use smol_str::SmolStr;
 use std::fmt;
 use std::sync::Arc;
 
@@ -25,7 +26,7 @@ pub trait Type {
 pub struct Calendar {
     /// Unique technical identifier (not for the traveller) of this calendar
     #[serde(rename = "service_id")]
-    pub id: String,
+    pub id: SmolStr,
     /// Does the service run on mondays
     #[serde(
         deserialize_with = "deserialize_bool",
@@ -119,7 +120,7 @@ impl Calendar {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct CalendarDate {
     /// Identifier of the service that is modified at this date
-    pub service_id: String,
+    pub service_id: SmolStr,
     #[serde(
         deserialize_with = "deserialize_date",
         serialize_with = "serialize_date"
@@ -135,7 +136,7 @@ pub struct CalendarDate {
 pub struct Stop {
     /// Unique technical identifier (not for the traveller) of the stop
     #[serde(rename = "stop_id")]
-    pub id: String,
+    pub id: SmolStr,
     /// Short text or a number that identifies the location for riders
     #[serde(rename = "stop_code")]
     pub code: Option<String>,
@@ -197,7 +198,7 @@ impl fmt::Display for Stop {
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct RawStopTime {
     /// [Trip] to which this stop time belongs to
-    pub trip_id: String,
+    pub trip_id: smol_str::SmolStr,
     /// Arrival time of the stop time.
     /// It's an option since the intermediate stops can have have no arrival
     /// and this arrival needs to be interpolated
@@ -215,7 +216,7 @@ pub struct RawStopTime {
     )]
     pub departure_time: Option<u32>,
     /// Identifier of the [Stop] where the vehicle stops
-    pub stop_id: String,
+    pub stop_id: smol_str::SmolStr,
     /// Order of stops for a particular trip. The values must increase along the trip but do not need to be consecutive
     pub stop_sequence: u16,
     /// Text that appears on signage identifying the trip's destination to riders
@@ -294,7 +295,7 @@ impl StopTime {
 pub struct Route {
     /// Unique technical (not for the traveller) identifier for the route
     #[serde(rename = "route_id")]
-    pub id: String,
+    pub id: SmolStr,
     /// Short name of a route. This will often be a short, abstract identifier like "32", "100X", or "Green" that riders use to identify a route, but which doesn't give any indication of what places the route serves
     #[serde(rename = "route_short_name")]
     pub short_name: String,
@@ -363,13 +364,13 @@ impl fmt::Display for Route {
 pub struct RawTrip {
     /// Unique technical (not for the traveller) identifier for the Trip
     #[serde(rename = "trip_id")]
-    pub id: String,
+    pub id: SmolStr,
     /// References the [Calendar] on which this trip runs
-    pub service_id: String,
+    pub service_id: SmolStr,
     /// References along which [Route] this trip runs
-    pub route_id: String,
+    pub route_id: SmolStr,
     /// Shape of the trip
-    pub shape_id: Option<String>,
+    pub shape_id: Option<SmolStr>,
     /// Text that appears on signage identifying the trip's destination to riders
     pub trip_headsign: Option<String>,
     /// Public facing text used to identify the trip to riders, for instance, to identify train numbers for commuter rail trips
@@ -412,15 +413,15 @@ impl fmt::Display for RawTrip {
 #[derive(Debug, Default)]
 pub struct Trip {
     /// Unique technical identifier (not for the traveller) for the Trip
-    pub id: String,
+    pub id: SmolStr,
     /// References the [Calendar] on which this trip runs
-    pub service_id: String,
+    pub service_id: SmolStr,
     /// References along which [Route] this trip runs
-    pub route_id: String,
+    pub route_id: SmolStr,
     /// All the [StopTime] that define the trip
     pub stop_times: Vec<StopTime>,
     /// Text that appears on signage identifying the trip's destination to riders
-    pub shape_id: Option<String>,
+    pub shape_id: Option<SmolStr>,
     /// Text that appears on signage identifying the trip's destination to riders
     pub trip_headsign: Option<String>,
     /// Public facing text used to identify the trip to riders, for instance, to identify train numbers for commuter rail trips
@@ -514,7 +515,7 @@ impl fmt::Display for Agency {
 pub struct Shape {
     /// Unique technical (not for the traveller) identifier for the Shape
     #[serde(rename = "shape_id")]
-    pub id: String,
+    pub id: SmolStr,
     #[serde(rename = "shape_pt_lat", default)]
     /// Latitude of a shape point
     pub latitude: f64,
@@ -546,7 +547,7 @@ impl Id for Shape {
 pub struct FareAttribute {
     /// Unique technical (not for the traveller) identifier for the FareAttribute
     #[serde(rename = "fare_id")]
-    pub id: String,
+    pub id: SmolStr,
     /// Fare price, in the unit specified by [FareAttribute::currency]
     pub price: String,
     /// Currency used to pay the fare.
@@ -578,7 +579,7 @@ impl Type for FareAttribute {
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct RawFrequency {
     /// References the [Trip] that uses frequency
-    pub trip_id: String,
+    pub trip_id: SmolStr,
     /// Time at which the first vehicle departs from the first stop of the trip
     #[serde(
         deserialize_with = "deserialize_time",

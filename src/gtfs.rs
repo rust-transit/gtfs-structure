@@ -5,6 +5,7 @@ use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
 use std::sync::Arc;
 
+type Map<O> = HashMap<smol_str::SmolStr, O>;
 /// Data structure with all the GTFS objects
 ///
 /// This structure is easier to use than the [RawGtfs] structure as some relationships are parsed to be easier to use.
@@ -24,21 +25,21 @@ pub struct Gtfs {
     /// Time needed to read and parse the archive in milliseconds
     pub read_duration: i64,
     /// All Calendar by `service_id`
-    pub calendar: HashMap<String, Calendar>,
+    pub calendar: Map<Calendar>,
     /// All calendar dates grouped by service_id
-    pub calendar_dates: HashMap<String, Vec<CalendarDate>>,
+    pub calendar_dates: Map<Vec<CalendarDate>>,
     /// All stop by `stop_id`. Stops are in an [Arc] because they are also referenced by each [StopTime]
-    pub stops: HashMap<String, Arc<Stop>>,
+    pub stops: Map<Arc<Stop>>,
     /// All routes by `route_id`
-    pub routes: HashMap<String, Route>,
+    pub routes: Map<Route>,
     /// All trips by `trip_id`
-    pub trips: HashMap<String, Trip>,
+    pub trips: Map<Trip>,
     /// All agencies. They can not be read by `agency_id`, as it is not a required field
     pub agencies: Vec<Agency>,
     /// All shapes by shape_id
-    pub shapes: HashMap<String, Vec<Shape>>,
+    pub shapes: Map<Vec<Shape>>,
     /// All fare attributes by `fare_id`
-    pub fare_attributes: HashMap<String, FareAttribute>,
+    pub fare_attributes: Map<FareAttribute>,
     /// All feed information. There is no identifier
     pub feed_info: Vec<FeedInfo>,
 }
@@ -221,24 +222,24 @@ impl Gtfs {
     }
 }
 
-fn to_map<O: Id>(elements: impl IntoIterator<Item = O>) -> HashMap<String, O> {
+fn to_map<O: Id>(elements: impl IntoIterator<Item = O>) -> Map<O> {
     elements
         .into_iter()
-        .map(|e| (e.id().to_owned(), e))
+        .map(|e| (smol_str::SmolStr::new(e.id()), e))
         .collect()
 }
 
-fn to_stop_map(stops: Vec<Stop>) -> HashMap<String, Arc<Stop>> {
+fn to_stop_map(stops: Vec<Stop>) -> Map<Arc<Stop>> {
     stops
         .into_iter()
         .map(|s| (s.id.clone(), Arc::new(s)))
         .collect()
 }
 
-fn to_shape_map(shapes: Vec<Shape>) -> HashMap<String, Vec<Shape>> {
-    let mut res = HashMap::default();
+fn to_shape_map(shapes: Vec<Shape>) -> Map<Vec<Shape>> {
+    let mut res = Map::default();
     for s in shapes {
-        let shape = res.entry(s.id.to_owned()).or_insert_with(Vec::new);
+        let shape = res.entry(s.id.clone()).or_insert_with(Vec::new);
         shape.push(s);
     }
     // we sort the shape by it's pt_sequence
@@ -249,10 +250,10 @@ fn to_shape_map(shapes: Vec<Shape>) -> HashMap<String, Vec<Shape>> {
     res
 }
 
-fn to_calendar_dates(cd: Vec<CalendarDate>) -> HashMap<String, Vec<CalendarDate>> {
-    let mut res = HashMap::default();
+fn to_calendar_dates(cd: Vec<CalendarDate>) -> Map<Vec<CalendarDate>> {
+    let mut res = Map::default();
     for c in cd {
-        let cal = res.entry(c.service_id.to_owned()).or_insert_with(Vec::new);
+        let cal = res.entry(c.service_id.clone()).or_insert_with(Vec::new);
         cal.push(c);
     }
     res
@@ -262,8 +263,8 @@ fn create_trips(
     raw_trips: Vec<RawTrip>,
     raw_stop_times: Vec<RawStopTime>,
     raw_frequencies: Vec<RawFrequency>,
-    stops: &HashMap<String, Arc<Stop>>,
-) -> Result<HashMap<String, Trip>, Error> {
+    stops: &Map<Arc<Stop>>,
+) -> Result<Map<Trip>, Error> {
     let mut trips = to_map(raw_trips.into_iter().map(|rt| Trip {
         id: rt.id,
         service_id: rt.service_id,
@@ -280,10 +281,10 @@ fn create_trips(
     }));
     for s in raw_stop_times {
         let trip = trips
-            .get_mut(&s.trip_id)
+            .get_mut(s.trip_id.as_str())
             .ok_or_else(|| Error::ReferenceError(s.trip_id.to_string()))?;
         let stop = stops
-            .get(&s.stop_id)
+            .get(s.stop_id.as_str())
             .ok_or_else(|| Error::ReferenceError(s.stop_id.to_string()))?;
         trip.stop_times.push(StopTime::from(&s, Arc::clone(stop)));
     }
@@ -295,7 +296,7 @@ fn create_trips(
 
     for f in raw_frequencies {
         let trip = &mut trips
-            .get_mut(&f.trip_id)
+            .get_mut(f.trip_id.as_str())
             .ok_or_else(|| Error::ReferenceError(f.trip_id.to_string()))?;
         trip.frequencies.push(Frequency::from(&f));
     }

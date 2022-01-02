@@ -14,10 +14,22 @@ pub trait Id {
     fn id(&self) -> &str;
 }
 
+impl<T: Id> Id for Arc<T> {
+    fn id(&self) -> &str {
+        self.as_ref().id()
+    }
+}
+
 /// Trait to introspect what is the object’s type (stop, route…)
 pub trait Type {
     /// What is the type of the object
     fn object_type(&self) -> ObjectType;
+}
+
+impl<T: Type> Type for Arc<T> {
+    fn object_type(&self) -> ObjectType {
+        self.as_ref().object_type()
+    }
 }
 
 /// A calender describes on which days the vehicle runs. See <https://gtfs.org/reference/static/#calendartxt>

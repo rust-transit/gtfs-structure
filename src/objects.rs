@@ -26,6 +26,12 @@ pub trait Type {
     fn object_type(&self) -> ObjectType;
 }
 
+impl<T: Type> Type for Arc<T> {
+    fn object_type(&self) -> ObjectType {
+        self.as_ref().object_type()
+    }
+}
+
 /// A calender describes on which days the vehicle runs. See <https://gtfs.org/reference/static/#calendartxt>
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Calendar {

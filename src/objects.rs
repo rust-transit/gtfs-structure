@@ -14,6 +14,12 @@ pub trait Id {
     fn id(&self) -> &str;
 }
 
+impl<T: Id> Id for Arc<T> {
+    fn id(&self) -> &str {
+        self.as_ref().id()
+    }
+}
+
 /// Trait to introspect what is the object’s type (stop, route…)
 pub trait Type {
     /// What is the type of the object

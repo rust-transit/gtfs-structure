@@ -7,8 +7,8 @@ pub fn deserialize_date<'de, D>(deserializer: D) -> Result<NaiveDate, D::Error>
 where
     D: Deserializer<'de>,
 {
-    let s = String::deserialize(deserializer)?;
-    NaiveDate::parse_from_str(&s, "%Y%m%d").map_err(serde::de::Error::custom)
+    let s: &str = Deserialize::deserialize(deserializer)?;
+    NaiveDate::parse_from_str(s, "%Y%m%d").map_err(serde::de::Error::custom)
 }
 
 pub fn serialize_date<S>(date: &NaiveDate, serializer: S) -> Result<S::Ok, S::Error>
@@ -22,8 +22,8 @@ pub fn deserialize_option_date<'de, D>(deserializer: D) -> Result<Option<NaiveDa
 where
     D: Deserializer<'de>,
 {
-    let s = Option::<String>::deserialize(deserializer)?
-        .map(|s| NaiveDate::parse_from_str(&s, "%Y%m%d").map_err(serde::de::Error::custom));
+    let s = Option::<&str>::deserialize(deserializer)?
+        .map(|s| NaiveDate::parse_from_str(s, "%Y%m%d").map_err(serde::de::Error::custom));
     match s {
         Some(Ok(s)) => Ok(Some(s)),
         Some(Err(e)) => Err(e),
@@ -169,8 +169,8 @@ pub fn deserialize_bool<'de, D>(deserializer: D) -> Result<bool, D::Error>
 where
     D: Deserializer<'de>,
 {
-    let s = String::deserialize(deserializer)?;
-    match &*s {
+    let s: &str = Deserialize::deserialize(deserializer)?;
+    match s {
         "0" => Ok(false),
         "1" => Ok(true),
         &_ => Err(serde::de::Error::custom(format!(

@@ -299,25 +299,29 @@ where
         })?
         .clone();
 
-    let mut res = Vec::new();
-    for rec in reader.records() {
-        let r = rec.map_err(|e| Error::CSVError {
-            file_name: file_name.to_owned(),
-            source: e,
-            line_in_error: None,
-        })?;
-        let o = r.deserialize(Some(&headers)).map_err(|e| Error::CSVError {
-            file_name: file_name.to_owned(),
-            source: e,
-            line_in_error: Some(crate::error::LineError {
-                headers: headers.into_iter().map(|s| s.to_owned()).collect(),
-                values: r.into_iter().map(|s| s.to_owned()).collect(),
-            }),
-        })?;
-        res.push(o);
-    }
+    // Pre-allocate a StringRecord for performance reasons
+    let mut rec = csv::StringRecord::new();
+    let mut objs = Vec::new();
 
-    Ok(res)
+    // Read each record into the pre-allocated StringRecord one at a time
+    while reader.read_record(&mut rec).map_err(|e| Error::CSVError {
+        file_name: file_name.to_owned(),
+        source: e,
+        line_in_error: None,
+    })? {
+        let obj = rec
+            .deserialize(Some(&headers))
+            .map_err(|e| Error::CSVError {
+                file_name: file_name.to_owned(),
+                source: e,
+                line_in_error: Some(crate::error::LineError {
+                    headers: headers.into_iter().map(String::from).collect(),
+                    values: rec.into_iter().map(String::from).collect(),
+                }),
+            })?;
+        objs.push(obj);
+    }
+    Ok(objs)
 }
 
 fn read_objs_from_path<O>(path: std::path::PathBuf) -> Result<Vec<O>, Error>

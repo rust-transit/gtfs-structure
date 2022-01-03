@@ -92,7 +92,7 @@ where
 
     match s {
         None => Ok(None),
-        Some(t) => parse_time(&t).map(Some).map_err(de::Error::custom),
+        Some(t) => parse_time(t).map(Some).map_err(de::Error::custom),
     }
 }
 

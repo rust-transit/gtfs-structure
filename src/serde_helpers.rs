@@ -111,7 +111,6 @@ where
     D: Deserializer<'de>,
 {
     String::deserialize(de).and_then(|s| {
-        let s = s.trim();
         if s.is_empty() {
             Ok(None)
         } else {
@@ -138,11 +137,10 @@ where
     D: Deserializer<'de>,
 {
     String::deserialize(de).and_then(|s| {
-        let s = s.trim();
         if s.is_empty() {
             Ok(None)
         } else {
-            parse_color(s).map(Some).map_err(de::Error::custom)
+            parse_color(&s).map(Some).map_err(de::Error::custom)
         }
     })
 }

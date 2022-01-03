@@ -41,19 +41,23 @@ where
     }
 }
 
-pub fn parse_time_impl(v: Vec<&str>) -> Result<u32, std::num::ParseIntError> {
-    let hours: u32 = v[0].parse()?;
-    let minutes: u32 = v[1].parse()?;
-    let seconds: u32 = v[2].parse()?;
+pub fn parse_time_impl(h: &str, m: &str, s: &str) -> Result<u32, std::num::ParseIntError> {
+    let hours: u32 = h.parse()?;
+    let minutes: u32 = m.parse()?;
+    let seconds: u32 = s.parse()?;
     Ok(hours * 3600 + minutes * 60 + seconds)
 }
 
 pub fn parse_time(s: &str) -> Result<u32, crate::Error> {
-    let v: Vec<&str> = s.trim_start().split(':').collect();
-    if v.len() != 3 {
+    let len = s.len();
+
+    if s.len() < 7 || s.len() > 8 {
         Err(crate::Error::InvalidTime(s.to_owned()))
     } else {
-        parse_time_impl(v).map_err(|_| crate::Error::InvalidTime(s.to_owned()))
+        let sec = &s[len - 2..];
+        let min = &s[len - 5..len - 3];
+        let hour = &s[..len - 6];
+        parse_time_impl(hour, min, sec).map_err(|_| crate::Error::InvalidTime(s.to_owned()))
     }
 }
 

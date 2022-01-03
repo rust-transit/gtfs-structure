@@ -65,8 +65,8 @@ pub fn deserialize_time<'de, D>(deserializer: D) -> Result<u32, D::Error>
 where
     D: Deserializer<'de>,
 {
-    let s = String::deserialize(deserializer)?;
-    parse_time(&s).map_err(de::Error::custom)
+    let s: &str = Deserialize::deserialize(deserializer)?;
+    parse_time(s).map_err(de::Error::custom)
 }
 
 pub fn serialize_time<S>(time: &u32, serializer: S) -> Result<S::Ok, S::Error>
@@ -88,7 +88,7 @@ pub fn deserialize_optional_time<'de, D>(deserializer: D) -> Result<Option<u32>,
 where
     D: Deserializer<'de>,
 {
-    let s = Option::<String>::deserialize(deserializer)?;
+    let s: Option<&str> = Deserialize::deserialize(deserializer)?;
 
     match s {
         None => Ok(None),

@@ -39,6 +39,12 @@ pub struct GtfsReader {
     /// If a an enumeration has un unknown value, should we use the default value
     #[derivative(Default(value = "false"))]
     pub unkown_enum_as_default: bool,
+    /// Avoid trimming the fields
+    ///
+    /// It is quite time consumming
+    /// If performance is an issue, and if your data is high quality, you can switch it off
+    #[derivative(Default(value = "true"))]
+    pub trim_fields: bool,
 }
 
 impl GtfsReader {
@@ -59,6 +65,15 @@ impl GtfsReader {
     /// Returns Self and can be chained
     pub fn unkown_enum_as_default(mut self, unkown_enum_as_default: bool) -> Self {
         self.unkown_enum_as_default = unkown_enum_as_default;
+        self
+    }
+
+    /// Should the fields be trimmed (default: true)
+    ///
+    /// It is quite time consumming
+    /// If performance is an issue, and if your data is high quality, you can set it to false
+    pub fn trim_fields(mut self, trim_fields: bool) -> Self {
+        self.trim_fields = trim_fields;
         self
     }
 
@@ -294,7 +309,11 @@ impl RawGtfsReader {
 
         let mut reader = csv::ReaderBuilder::new()
             .flexible(true)
-            .trim(csv::Trim::Fields)
+            .trim(if self.reader.trim_fields {
+                csv::Trim::Fields
+            } else {
+                csv::Trim::None
+            })
             .from_reader(chained);
         // We store the headers to be able to return them in case of errors
         let headers = reader

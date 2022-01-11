@@ -7,8 +7,8 @@ pub fn deserialize_date<'de, D>(deserializer: D) -> Result<NaiveDate, D::Error>
 where
     D: Deserializer<'de>,
 {
-    let s = String::deserialize(deserializer)?;
-    NaiveDate::parse_from_str(&s, "%Y%m%d").map_err(serde::de::Error::custom)
+    let s: &str = Deserialize::deserialize(deserializer)?;
+    NaiveDate::parse_from_str(s, "%Y%m%d").map_err(serde::de::Error::custom)
 }
 
 pub fn serialize_date<S>(date: &NaiveDate, serializer: S) -> Result<S::Ok, S::Error>
@@ -22,8 +22,8 @@ pub fn deserialize_option_date<'de, D>(deserializer: D) -> Result<Option<NaiveDa
 where
     D: Deserializer<'de>,
 {
-    let s = Option::<String>::deserialize(deserializer)?
-        .map(|s| NaiveDate::parse_from_str(&s, "%Y%m%d").map_err(serde::de::Error::custom));
+    let s = Option::<&str>::deserialize(deserializer)?
+        .map(|s| NaiveDate::parse_from_str(s, "%Y%m%d").map_err(serde::de::Error::custom));
     match s {
         Some(Ok(s)) => Ok(Some(s)),
         Some(Err(e)) => Err(e),
@@ -41,19 +41,23 @@ where
     }
 }
 
-pub fn parse_time_impl(v: Vec<&str>) -> Result<u32, std::num::ParseIntError> {
-    let hours: u32 = v[0].parse()?;
-    let minutes: u32 = v[1].parse()?;
-    let seconds: u32 = v[2].parse()?;
+pub fn parse_time_impl(h: &str, m: &str, s: &str) -> Result<u32, std::num::ParseIntError> {
+    let hours: u32 = h.parse()?;
+    let minutes: u32 = m.parse()?;
+    let seconds: u32 = s.parse()?;
     Ok(hours * 3600 + minutes * 60 + seconds)
 }
 
 pub fn parse_time(s: &str) -> Result<u32, crate::Error> {
-    let v: Vec<&str> = s.trim_start().split(':').collect();
-    if v.len() != 3 {
+    let len = s.len();
+
+    if s.len() < 7 || s.len() > 8 {
         Err(crate::Error::InvalidTime(s.to_owned()))
     } else {
-        parse_time_impl(v).map_err(|_| crate::Error::InvalidTime(s.to_owned()))
+        let sec = &s[len - 2..];
+        let min = &s[len - 5..len - 3];
+        let hour = &s[..len - 6];
+        parse_time_impl(hour, min, sec).map_err(|_| crate::Error::InvalidTime(s.to_owned()))
     }
 }
 
@@ -61,8 +65,8 @@ pub fn deserialize_time<'de, D>(deserializer: D) -> Result<u32, D::Error>
 where
     D: Deserializer<'de>,
 {
-    let s = String::deserialize(deserializer)?;
-    parse_time(&s).map_err(de::Error::custom)
+    let s: &str = Deserialize::deserialize(deserializer)?;
+    parse_time(s).map_err(de::Error::custom)
 }
 
 pub fn serialize_time<S>(time: &u32, serializer: S) -> Result<S::Ok, S::Error>
@@ -84,11 +88,11 @@ pub fn deserialize_optional_time<'de, D>(deserializer: D) -> Result<Option<u32>,
 where
     D: Deserializer<'de>,
 {
-    let s = Option::<String>::deserialize(deserializer)?;
+    let s: Option<&str> = Deserialize::deserialize(deserializer)?;
 
     match s {
         None => Ok(None),
-        Some(t) => parse_time(&t).map(Some).map_err(de::Error::custom),
+        Some(t) => parse_time(t).map(Some).map_err(de::Error::custom),
     }
 }
 
@@ -107,7 +111,6 @@ where
     D: Deserializer<'de>,
 {
     String::deserialize(de).and_then(|s| {
-        let s = s.trim();
         if s.is_empty() {
             Ok(None)
         } else {
@@ -134,11 +137,10 @@ where
     D: Deserializer<'de>,
 {
     String::deserialize(de).and_then(|s| {
-        let s = s.trim();
         if s.is_empty() {
             Ok(None)
         } else {
-            parse_color(s).map(Some).map_err(de::Error::custom)
+            parse_color(&s).map(Some).map_err(de::Error::custom)
         }
     })
 }
@@ -167,8 +169,8 @@ pub fn deserialize_bool<'de, D>(deserializer: D) -> Result<bool, D::Error>
 where
     D: Deserializer<'de>,
 {
-    let s = String::deserialize(deserializer)?;
-    match &*s {
+    let s: &str = Deserialize::deserialize(deserializer)?;
+    match s {
         "0" => Ok(false),
         "1" => Ok(true),
         &_ => Err(serde::de::Error::custom(format!(

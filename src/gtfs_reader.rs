@@ -39,6 +39,12 @@ pub struct GtfsReader {
     /// If a an enumeration has un unknown value, should we use the default value
     #[derivative(Default(value = "false"))]
     pub unkown_enum_as_default: bool,
+    /// Avoid trimming the fields
+    ///
+    /// It is quite time consumming
+    /// If performance is an issue, and if your data is high quality, you can switch it off
+    #[derivative(Default(value = "true"))]
+    pub trim_fields: bool,
 }
 
 impl GtfsReader {
@@ -59,6 +65,15 @@ impl GtfsReader {
     /// Returns Self and can be chained
     pub fn unkown_enum_as_default(mut self, unkown_enum_as_default: bool) -> Self {
         self.unkown_enum_as_default = unkown_enum_as_default;
+        self
+    }
+
+    /// Should the fields be trimmed (default: true)
+    ///
+    /// It is quite time consumming
+    /// If performance is an issue, and if your data is high quality, you can set it to false
+    pub fn trim_fields(mut self, trim_fields: bool) -> Self {
+        self.trim_fields = trim_fields;
         self
     }
 
@@ -130,21 +145,21 @@ impl RawGtfsReader {
             .collect();
 
         let mut result = RawGtfs {
-            trips: read_objs_from_path(p.join("trips.txt")),
-            calendar: read_objs_from_optional_path(p, "calendar.txt"),
-            calendar_dates: read_objs_from_optional_path(p, "calendar_dates.txt"),
-            stops: read_objs_from_path(p.join("stops.txt")),
-            routes: read_objs_from_path(p.join("routes.txt")),
+            trips: self.read_objs_from_path(p.join("trips.txt")),
+            calendar: self.read_objs_from_optional_path(p, "calendar.txt"),
+            calendar_dates: self.read_objs_from_optional_path(p, "calendar_dates.txt"),
+            stops: self.read_objs_from_path(p.join("stops.txt")),
+            routes: self.read_objs_from_path(p.join("routes.txt")),
             stop_times: if self.reader.read_stop_times {
-                read_objs_from_path(p.join("stop_times.txt"))
+                self.read_objs_from_path(p.join("stop_times.txt"))
             } else {
                 Ok(Vec::new())
             },
-            agencies: read_objs_from_path(p.join("agency.txt")),
-            shapes: read_objs_from_optional_path(p, "shapes.txt"),
-            fare_attributes: read_objs_from_optional_path(p, "fare_attributes.txt"),
-            frequencies: read_objs_from_optional_path(p, "frequencies.txt"),
-            feed_info: read_objs_from_optional_path(p, "feed_info.txt"),
+            agencies: self.read_objs_from_path(p.join("agency.txt")),
+            shapes: self.read_objs_from_optional_path(p, "shapes.txt"),
+            fare_attributes: self.read_objs_from_optional_path(p, "fare_attributes.txt"),
+            frequencies: self.read_objs_from_optional_path(p, "frequencies.txt"),
+            feed_info: self.read_objs_from_optional_path(p, "feed_info.txt"),
             read_duration: Utc::now().signed_duration_since(now).num_milliseconds(),
             files,
             sha256: None,
@@ -239,21 +254,29 @@ impl RawGtfsReader {
         }
 
         let mut result = RawGtfs {
-            agencies: read_file(&file_mapping, &mut archive, "agency.txt"),
-            calendar: read_optional_file(&file_mapping, &mut archive, "calendar.txt"),
-            calendar_dates: read_optional_file(&file_mapping, &mut archive, "calendar_dates.txt"),
-            routes: read_file(&file_mapping, &mut archive, "routes.txt"),
-            stops: read_file(&file_mapping, &mut archive, "stops.txt"),
+            agencies: self.read_file(&file_mapping, &mut archive, "agency.txt"),
+            calendar: self.read_optional_file(&file_mapping, &mut archive, "calendar.txt"),
+            calendar_dates: self.read_optional_file(
+                &file_mapping,
+                &mut archive,
+                "calendar_dates.txt",
+            ),
+            routes: self.read_file(&file_mapping, &mut archive, "routes.txt"),
+            stops: self.read_file(&file_mapping, &mut archive, "stops.txt"),
             stop_times: if self.reader.read_stop_times {
-                read_file(&file_mapping, &mut archive, "stop_times.txt")
+                self.read_file(&file_mapping, &mut archive, "stop_times.txt")
             } else {
                 Ok(Vec::new())
             },
-            trips: read_file(&file_mapping, &mut archive, "trips.txt"),
-            fare_attributes: read_optional_file(&file_mapping, &mut archive, "fare_attributes.txt"),
-            frequencies: read_optional_file(&file_mapping, &mut archive, "frequencies.txt"),
-            feed_info: read_optional_file(&file_mapping, &mut archive, "feed_info.txt"),
-            shapes: read_optional_file(&file_mapping, &mut archive, "shapes.txt"),
+            trips: self.read_file(&file_mapping, &mut archive, "trips.txt"),
+            fare_attributes: self.read_optional_file(
+                &file_mapping,
+                &mut archive,
+                "fare_attributes.txt",
+            ),
+            frequencies: self.read_optional_file(&file_mapping, &mut archive, "frequencies.txt"),
+            feed_info: self.read_optional_file(&file_mapping, &mut archive, "feed_info.txt"),
+            shapes: self.read_optional_file(&file_mapping, &mut archive, "shapes.txt"),
             read_duration: Utc::now().signed_duration_since(now).num_milliseconds(),
             files,
             sha256: Some(format!("{:x}", hash)),
@@ -264,124 +287,135 @@ impl RawGtfsReader {
         }
         Ok(result)
     }
-}
 
-fn read_objs<T, O>(mut reader: T, file_name: &str) -> Result<Vec<O>, Error>
-where
-    for<'de> O: Deserialize<'de>,
-    T: std::io::Read,
-{
-    let mut bom = [0; 3];
-    reader
-        .read_exact(&mut bom)
-        .map_err(|e| Error::NamedFileIO {
-            file_name: file_name.to_owned(),
-            source: Box::new(e),
-        })?;
-
-    let chained = if bom != [0xefu8, 0xbbu8, 0xbfu8] {
-        bom.chain(reader)
-    } else {
-        [].chain(reader)
-    };
-
-    let mut reader = csv::ReaderBuilder::new()
-        .flexible(true)
-        .trim(csv::Trim::Fields)
-        .from_reader(chained);
-    // We store the headers to be able to return them in case of errors
-    let headers = reader
-        .headers()
-        .map_err(|e| Error::CSVError {
-            file_name: file_name.to_owned(),
-            source: e,
-            line_in_error: None,
-        })?
-        .clone();
-
-    let mut res = Vec::new();
-    for rec in reader.records() {
-        let r = rec.map_err(|e| Error::CSVError {
-            file_name: file_name.to_owned(),
-            source: e,
-            line_in_error: None,
-        })?;
-        let o = r.deserialize(Some(&headers)).map_err(|e| Error::CSVError {
-            file_name: file_name.to_owned(),
-            source: e,
-            line_in_error: Some(crate::error::LineError {
-                headers: headers.into_iter().map(|s| s.to_owned()).collect(),
-                values: r.into_iter().map(|s| s.to_owned()).collect(),
-            }),
-        })?;
-        res.push(o);
-    }
-
-    Ok(res)
-}
-
-fn read_objs_from_path<O>(path: std::path::PathBuf) -> Result<Vec<O>, Error>
-where
-    for<'de> O: Deserialize<'de>,
-{
-    let file_name = path
-        .file_name()
-        .and_then(|f| f.to_str())
-        .unwrap_or("invalid_file_name")
-        .to_string();
-    if path.exists() {
-        File::open(path)
+    fn read_objs<T, O>(&self, mut reader: T, file_name: &str) -> Result<Vec<O>, Error>
+    where
+        for<'de> O: Deserialize<'de>,
+        T: std::io::Read,
+    {
+        let mut bom = [0; 3];
+        reader
+            .read_exact(&mut bom)
             .map_err(|e| Error::NamedFileIO {
                 file_name: file_name.to_owned(),
                 source: Box::new(e),
+            })?;
+
+        let chained = if bom != [0xefu8, 0xbbu8, 0xbfu8] {
+            bom.chain(reader)
+        } else {
+            [].chain(reader)
+        };
+
+        let mut reader = csv::ReaderBuilder::new()
+            .flexible(true)
+            .trim(if self.reader.trim_fields {
+                csv::Trim::Fields
+            } else {
+                csv::Trim::None
             })
-            .and_then(|r| read_objs(r, &file_name))
-    } else {
-        Err(Error::MissingFile(file_name))
-    }
-}
-
-fn read_objs_from_optional_path<O>(
-    dir_path: &std::path::Path,
-    file_name: &str,
-) -> Option<Result<Vec<O>, Error>>
-where
-    for<'de> O: Deserialize<'de>,
-{
-    File::open(dir_path.join(file_name))
-        .ok()
-        .map(|r| read_objs(r, file_name))
-}
-
-fn read_file<O, T>(
-    file_mapping: &HashMap<&&str, usize>,
-    archive: &mut zip::ZipArchive<T>,
-    file_name: &str,
-) -> Result<Vec<O>, Error>
-where
-    for<'de> O: Deserialize<'de>,
-    T: std::io::Read + std::io::Seek,
-{
-    read_optional_file(file_mapping, archive, file_name)
-        .unwrap_or_else(|| Err(Error::MissingFile(file_name.to_owned())))
-}
-
-fn read_optional_file<O, T>(
-    file_mapping: &HashMap<&&str, usize>,
-    archive: &mut zip::ZipArchive<T>,
-    file_name: &str,
-) -> Option<Result<Vec<O>, Error>>
-where
-    for<'de> O: Deserialize<'de>,
-    T: std::io::Read + std::io::Seek,
-{
-    file_mapping.get(&file_name).map(|i| {
-        read_objs(
-            archive.by_index(*i).map_err(|e| Error::NamedFileIO {
+            .from_reader(chained);
+        // We store the headers to be able to return them in case of errors
+        let headers = reader
+            .headers()
+            .map_err(|e| Error::CSVError {
                 file_name: file_name.to_owned(),
-                source: Box::new(e),
-            })?,
-            file_name,
-        )
-    })
+                source: e,
+                line_in_error: None,
+            })?
+            .clone();
+
+        // Pre-allocate a StringRecord for performance reasons
+        let mut rec = csv::StringRecord::new();
+        let mut objs = Vec::new();
+
+        // Read each record into the pre-allocated StringRecord one at a time
+        while reader.read_record(&mut rec).map_err(|e| Error::CSVError {
+            file_name: file_name.to_owned(),
+            source: e,
+            line_in_error: None,
+        })? {
+            let obj = rec
+                .deserialize(Some(&headers))
+                .map_err(|e| Error::CSVError {
+                    file_name: file_name.to_owned(),
+                    source: e,
+                    line_in_error: Some(crate::error::LineError {
+                        headers: headers.into_iter().map(String::from).collect(),
+                        values: rec.into_iter().map(String::from).collect(),
+                    }),
+                })?;
+            objs.push(obj);
+        }
+        Ok(objs)
+    }
+
+    fn read_objs_from_path<O>(&self, path: std::path::PathBuf) -> Result<Vec<O>, Error>
+    where
+        for<'de> O: Deserialize<'de>,
+    {
+        let file_name = path
+            .file_name()
+            .and_then(|f| f.to_str())
+            .unwrap_or("invalid_file_name")
+            .to_string();
+        if path.exists() {
+            File::open(path)
+                .map_err(|e| Error::NamedFileIO {
+                    file_name: file_name.to_owned(),
+                    source: Box::new(e),
+                })
+                .and_then(|r| self.read_objs(r, &file_name))
+        } else {
+            Err(Error::MissingFile(file_name))
+        }
+    }
+
+    fn read_objs_from_optional_path<O>(
+        &self,
+        dir_path: &std::path::Path,
+        file_name: &str,
+    ) -> Option<Result<Vec<O>, Error>>
+    where
+        for<'de> O: Deserialize<'de>,
+    {
+        File::open(dir_path.join(file_name))
+            .ok()
+            .map(|r| self.read_objs(r, file_name))
+    }
+
+    fn read_file<O, T>(
+        &self,
+        file_mapping: &HashMap<&&str, usize>,
+        archive: &mut zip::ZipArchive<T>,
+        file_name: &str,
+    ) -> Result<Vec<O>, Error>
+    where
+        for<'de> O: Deserialize<'de>,
+        T: std::io::Read + std::io::Seek,
+    {
+        self.read_optional_file(file_mapping, archive, file_name)
+            .unwrap_or_else(|| Err(Error::MissingFile(file_name.to_owned())))
+    }
+
+    fn read_optional_file<O, T>(
+        &self,
+        file_mapping: &HashMap<&&str, usize>,
+        archive: &mut zip::ZipArchive<T>,
+        file_name: &str,
+    ) -> Option<Result<Vec<O>, Error>>
+    where
+        for<'de> O: Deserialize<'de>,
+        T: std::io::Read + std::io::Seek,
+    {
+        file_mapping.get(&file_name).map(|i| {
+            self.read_objs(
+                archive.by_index(*i).map_err(|e| Error::NamedFileIO {
+                    file_name: file_name.to_owned(),
+                    source: Box::new(e),
+                })?,
+                file_name,
+            )
+        })
+    }
 }

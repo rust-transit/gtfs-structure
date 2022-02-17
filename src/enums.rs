@@ -505,7 +505,7 @@ impl Serialize for Transfers {
         }
     }
 }
-/// Defines the type of a [Transfer]
+/// Defines the type of a [StopTransfer]
 #[derive(Debug, Serialize, Deserialize, Derivative, Copy, Clone, PartialEq)]
 #[derivative(Default)]
 pub enum TransferType {

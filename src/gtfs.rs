@@ -49,7 +49,7 @@ impl TryFrom<RawGtfs> for Gtfs {
     ///
     /// It might fail if some mandatory files couldn’t be read or if there are references to other objects that are invalid.
     fn try_from(raw: RawGtfs) -> Result<Gtfs, Error> {
-        let stops = to_stop_map(raw.stops?);
+        let stops = to_stop_map(raw.stops?, raw.transfers.unwrap_or(Ok(Vec::new()))?);
         let frequencies = raw.frequencies.unwrap_or_else(|| Ok(Vec::new()))?;
         let trips = create_trips(raw.trips?, raw.stop_times?, frequencies, &stops)?;
 
@@ -228,10 +228,23 @@ fn to_map<O: Id>(elements: impl IntoIterator<Item = O>) -> HashMap<String, O> {
         .collect()
 }
 
-fn to_stop_map(stops: Vec<Stop>) -> HashMap<String, Arc<Stop>> {
-    stops
+fn to_stop_map(stops: Vec<Stop>, raw_transfers: Vec<RawTransfer>) -> HashMap<String, Arc<Stop>> {
+    let mut stop_map: HashMap<String, Stop> = stops
         .into_iter()
-        .map(|s| (s.id.clone(), Arc::new(s)))
+        .map(|s| (s.id.clone(), s))
+        .collect();
+    
+    for transfer in raw_transfers {
+        stop_map
+            .entry(transfer.from_stop_id.clone())
+            .and_modify(|stop| 
+                stop.transfers.push(StopTransfer::from(transfer))
+            );
+    }
+
+    stop_map
+        .into_iter()
+        .map(|(i,s)| (i, Arc::new(s)))
         .collect()
 }
 

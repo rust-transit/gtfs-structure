@@ -505,3 +505,21 @@ impl Serialize for Transfers {
         }
     }
 }
+/// Defines the type of a [Transfer]
+#[derive(Debug, Serialize, Deserialize, Derivative, Copy, Clone, PartialEq)]
+#[derivative(Default)]
+pub enum TransferType {
+    /// Recommended transfer point between routes
+    #[serde(rename = "0")]
+    #[derivative(Default)]
+    Recommended,
+    /// Departing vehicle waits for arriving one
+    #[serde(rename = "1")]
+    Timed,
+    /// Transfer requires a minimum amount of time between arrival and departure to ensure a connection.
+    #[serde(rename = "2")]
+    MinTime,
+    /// Transfer is not possible at this location
+    #[serde(rename = "3")]
+    Impossible
+}

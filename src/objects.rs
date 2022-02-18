@@ -186,8 +186,8 @@ pub struct Stop {
     /// Platform identifier for a platform stop (a stop belonging to a station)
     pub platform_code: Option<String>,
     /// Transfers from this Stop
-    #[serde(default)]
-    pub transfers: Vec<StopTransfer>
+    #[serde(skip)]
+    pub transfers: Vec<StopTransfer>,
 }
 
 impl Type for Stop {
@@ -637,7 +637,6 @@ impl Frequency {
     }
 }
 
-
 /// Transfer information between stops before merged into [Stop]
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct RawTransfer {
@@ -648,10 +647,10 @@ pub struct RawTransfer {
     /// Type of the transfer
     pub transfer_type: TransferType,
     /// Minimum time needed to make the transfer in seconds
-    pub min_transfer_time: Option<u32>
+    pub min_transfer_time: Option<u32>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Default, Clone)]
+#[derive(Debug, Default, Clone)]
 /// Transfer information between stops
 pub struct StopTransfer {
     /// Stop which to transfer to
@@ -659,7 +658,7 @@ pub struct StopTransfer {
     /// Type of the transfer
     pub transfer_type: TransferType,
     /// Minimum time needed to make the transfer in seconds
-    pub min_transfer_time: Option<u32>
+    pub min_transfer_time: Option<u32>,
 }
 
 impl StopTransfer {
@@ -668,11 +667,10 @@ impl StopTransfer {
         Self {
             to_stop_id: transfer.to_stop_id,
             transfer_type: transfer.transfer_type,
-            min_transfer_time: transfer.min_transfer_time
+            min_transfer_time: transfer.min_transfer_time,
         }
     }
 }
-
 
 /// Meta-data about the feed. See <https://gtfs.org/reference/static/#feed_infotxt>
 #[derive(Debug, Serialize, Deserialize)]

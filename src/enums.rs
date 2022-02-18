@@ -521,5 +521,5 @@ pub enum TransferType {
     MinTime,
     /// Transfer is not possible at this location
     #[serde(rename = "3")]
-    Impossible
+    Impossible,
 }

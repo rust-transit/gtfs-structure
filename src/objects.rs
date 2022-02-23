@@ -661,9 +661,9 @@ pub struct StopTransfer {
     pub min_transfer_time: Option<u32>,
 }
 
-impl StopTransfer {
+impl From<RawTransfer> for StopTransfer {
     /// Converts from a [RawTransfer] to a [StopTransfer]
-    pub fn from(transfer: RawTransfer) -> Self {
+    fn from(transfer: RawTransfer) -> Self {
         Self {
             to_stop_id: transfer.to_stop_id,
             transfer_type: transfer.transfer_type,

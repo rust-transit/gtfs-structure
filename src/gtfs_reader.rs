@@ -159,6 +159,7 @@ impl RawGtfsReader {
             shapes: self.read_objs_from_optional_path(p, "shapes.txt"),
             fare_attributes: self.read_objs_from_optional_path(p, "fare_attributes.txt"),
             frequencies: self.read_objs_from_optional_path(p, "frequencies.txt"),
+            transfers: self.read_objs_from_optional_path(p, "transfers.txt"),
             feed_info: self.read_objs_from_optional_path(p, "feed_info.txt"),
             read_duration: Utc::now().signed_duration_since(now).num_milliseconds(),
             files,
@@ -242,6 +243,7 @@ impl RawGtfsReader {
                 "trips.txt",
                 "fare_attributes.txt",
                 "frequencies.txt",
+                "transfers.txt",
                 "feed_info.txt",
                 "shapes.txt",
             ] {
@@ -275,6 +277,7 @@ impl RawGtfsReader {
                 "fare_attributes.txt",
             ),
             frequencies: self.read_optional_file(&file_mapping, &mut archive, "frequencies.txt"),
+            transfers: self.read_optional_file(&file_mapping, &mut archive, "transfers.txt"),
             feed_info: self.read_optional_file(&file_mapping, &mut archive, "feed_info.txt"),
             shapes: self.read_optional_file(&file_mapping, &mut archive, "shapes.txt"),
             read_duration: Utc::now().signed_duration_since(now).num_milliseconds(),

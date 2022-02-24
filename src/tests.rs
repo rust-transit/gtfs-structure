@@ -144,6 +144,38 @@ fn read_fare_attributes() {
 }
 
 #[test]
+fn read_transfers() {
+    let gtfs = Gtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
+    assert_eq!(1, gtfs.get_stop("stop3").unwrap().transfers.len());
+    assert_eq!(1, gtfs.get_stop("stop1").unwrap().transfers.len());
+
+    assert_eq!(
+        "stop5",
+        gtfs.get_stop("stop3").unwrap().transfers[0].to_stop_id
+    );
+    assert_eq!(
+        "stop2",
+        gtfs.get_stop("stop1").unwrap().transfers[0].to_stop_id
+    );
+    assert_eq!(
+        TransferType::Recommended,
+        gtfs.get_stop("stop3").unwrap().transfers[0].transfer_type
+    );
+    assert_eq!(
+        TransferType::Impossible,
+        gtfs.get_stop("stop1").unwrap().transfers[0].transfer_type
+    );
+    assert_eq!(
+        Some(60),
+        gtfs.get_stop("stop3").unwrap().transfers[0].min_transfer_time
+    );
+    assert_eq!(
+        None,
+        gtfs.get_stop("stop1").unwrap().transfers[0].min_transfer_time
+    );
+}
+
+#[test]
 fn read_feed_info() {
     let gtfs = Gtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
     let feed = &gtfs.feed_info;
@@ -241,7 +273,7 @@ fn display() {
 #[test]
 fn path_files() {
     let gtfs = RawGtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
-    assert_eq!(gtfs.files.len(), 11);
+    assert_eq!(gtfs.files.len(), 12);
 }
 
 #[test]

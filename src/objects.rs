@@ -185,6 +185,9 @@ pub struct Stop {
     pub level_id: Option<String>,
     /// Platform identifier for a platform stop (a stop belonging to a station)
     pub platform_code: Option<String>,
+    /// Transfers from this Stop
+    #[serde(skip)]
+    pub transfers: Vec<StopTransfer>,
 }
 
 impl Type for Stop {
@@ -630,6 +633,41 @@ impl Frequency {
             end_time: frequency.end_time,
             headway_secs: frequency.headway_secs,
             exact_times: frequency.exact_times,
+        }
+    }
+}
+
+/// Transfer information between stops before merged into [Stop]
+#[derive(Debug, Serialize, Deserialize, Default)]
+pub struct RawTransfer {
+    /// Stop from which to leave
+    pub from_stop_id: String,
+    /// Stop which to transfer to
+    pub to_stop_id: String,
+    /// Type of the transfer
+    pub transfer_type: TransferType,
+    /// Minimum time needed to make the transfer in seconds
+    pub min_transfer_time: Option<u32>,
+}
+
+#[derive(Debug, Default, Clone)]
+/// Transfer information between stops
+pub struct StopTransfer {
+    /// Stop which to transfer to
+    pub to_stop_id: String,
+    /// Type of the transfer
+    pub transfer_type: TransferType,
+    /// Minimum time needed to make the transfer in seconds
+    pub min_transfer_time: Option<u32>,
+}
+
+impl From<RawTransfer> for StopTransfer {
+    /// Converts from a [RawTransfer] to a [StopTransfer]
+    fn from(transfer: RawTransfer) -> Self {
+        Self {
+            to_stop_id: transfer.to_stop_id,
+            transfer_type: transfer.transfer_type,
+            min_transfer_time: transfer.min_transfer_time,
         }
     }
 }

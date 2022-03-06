@@ -49,7 +49,7 @@ impl TryFrom<RawGtfs> for Gtfs {
     ///
     /// It might fail if some mandatory files couldn’t be read or if there are references to other objects that are invalid.
     fn try_from(raw: RawGtfs) -> Result<Gtfs, Error> {
-        let stops = to_stop_map(raw.stops?, raw.transfers.unwrap_or(Ok(Vec::new()))?)?;
+        let stops = to_stop_map(raw.stops?, raw.transfers.unwrap_or_else(|| Ok(Vec::new()))?)?;
         let frequencies = raw.frequencies.unwrap_or_else(|| Ok(Vec::new()))?;
         let trips = create_trips(raw.trips?, raw.stop_times?, frequencies, &stops)?;
 
@@ -238,7 +238,7 @@ fn to_stop_map(
     for transfer in raw_transfers {
         stop_map
             .get(&transfer.to_stop_id)
-            .ok_or(Error::ReferenceError(transfer.to_stop_id.to_string()))?;
+            .ok_or_else(|| Error::ReferenceError(transfer.to_stop_id.to_string()))?;
         stop_map
             .entry(transfer.from_stop_id.clone())
             .and_modify(|stop| stop.transfers.push(StopTransfer::from(transfer)));

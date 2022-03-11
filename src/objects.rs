@@ -331,18 +331,18 @@ pub struct Route {
     pub route_order: Option<u32>,
     /// Route color designation that matches public facing material
     #[serde(
-        deserialize_with = "de_with_optional_color",
-        serialize_with = "serialize_optional_color",
-        default
+        deserialize_with = "deserialize_color",
+        serialize_with = "serialize_color",
+        default = "default_route_color"
     )]
-    pub route_color: Option<RGB8>,
+    pub route_color: RGB8,
     /// Legible color to use for text drawn against a background of [Route::route_color]
     #[serde(
-        deserialize_with = "de_with_optional_color",
-        serialize_with = "serialize_optional_color",
+        deserialize_with = "deserialize_color",
+        serialize_with = "serialize_color",
         default
     )]
-    pub route_text_color: Option<RGB8>,
+    pub route_text_color: RGB8,
     /// Indicates whether a rider can board the transit vehicle anywhere along the vehicle’s travel path
     #[serde(default)]
     pub continuous_pickup: ContinuousPickupDropOff,

@@ -199,6 +199,12 @@ fn trip_days() {
 }
 
 #[test]
+fn trip_clone() {
+    let gtfs = Gtfs::from_path("fixtures/basic/").unwrap();
+    let _: Trip = gtfs.trips.get("trip1").unwrap().clone();
+}
+
+#[test]
 fn read_from_gtfs() {
     let gtfs = Gtfs::from_path("fixtures/zips/gtfs.zip").unwrap();
     assert_eq!(1, gtfs.calendar.len());

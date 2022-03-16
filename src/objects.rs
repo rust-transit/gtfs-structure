@@ -188,6 +188,9 @@ pub struct Stop {
     /// Transfers from this Stop
     #[serde(skip)]
     pub transfers: Vec<StopTransfer>,
+    /// Pathways from this stop
+    #[serde(skip)]
+    pub pathways: Vec<Pathway>,
 }
 
 impl Type for Stop {
@@ -716,5 +719,87 @@ pub struct FeedInfo {
 impl fmt::Display for FeedInfo {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.name)
+    }
+}
+
+/// A graph representation to describe subway or train, with nodes (the locations) and edges (the pathways).
+#[derive(Debug, Serialize, Deserialize, Default)]
+pub struct RawPathway {
+    /// Uniquely identifies the pathway
+    #[serde(rename = "pathway_id")]
+    pub id: String,
+    /// Location at which the pathway begins
+    pub from_stop_id: String,
+    /// Location at which the pathway ends
+    pub to_stop_id: String,
+    /// Type of pathway between the specified (from_stop_id, to_stop_id) pair
+    pub mode: PathwayMode,
+    /// Indicates in which direction the pathway can be used
+    pub is_bidirectional: PathwayDirectionType,
+    /// Horizontal length in meters of the pathway from the origin location to the destination location
+    pub length: Option<f32>,
+    /// Average time in seconds needed to walk through the pathway from the origin location to the destination location
+    pub traversal_time: Option<u32>,
+    /// Number of stairs of the pathway
+    pub stair_count: Option<u32>,
+    /// Maximum slope ratio of the pathway
+    pub max_slope: Option<f32>,
+    /// Minimum width of the pathway in meters
+    pub min_width: Option<f32>,
+    /// String of text from physical signage visible to transit riders
+    pub signposted_as: Option<String>,
+    /// Same than the signposted_as field, but when the pathways is used backward
+    pub reversed_signposted_as: Option<String>,
+}
+
+/// Pathway going from a stop to another.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct Pathway {
+    /// Uniquely identifies the pathway
+    pub id: String,
+    /// Location at which the pathway ends
+    pub to_stop_id: String,
+    /// Type of pathway between the specified (from_stop_id, to_stop_id) pair
+    pub mode: PathwayMode,
+    /// Indicates in which direction the pathway can be used
+    pub is_bidirectional: PathwayDirectionType,
+    /// Horizontal length in meters of the pathway from the origin location to the destination location
+    pub length: Option<f32>,
+    /// Average time in seconds needed to walk through the pathway from the origin location to the destination location
+    pub traversal_time: Option<u32>,
+    /// Number of stairs of the pathway
+    pub stair_count: Option<u32>,
+    /// Maximum slope ratio of the pathway
+    pub max_slope: Option<f32>,
+    /// Minimum width of the pathway in meters
+    pub min_width: Option<f32>,
+    /// String of text from physical signage visible to transit riders
+    pub signposted_as: Option<String>,
+    /// Same than the signposted_as field, but when the pathways is used backward
+    pub reversed_signposted_as: Option<String>,
+}
+
+impl Id for Pathway {
+    fn id(&self) -> &str {
+        &self.id
+    }
+}
+
+impl From<RawPathway> for Pathway {
+    /// Converts from a [RawPathway] to a [Pathway]
+    fn from(raw: RawPathway) -> Self {
+        Self {
+            id: raw.id,
+            to_stop_id: raw.to_stop_id,
+            mode: raw.mode,
+            is_bidirectional: raw.is_bidirectional,
+            length: raw.length,
+            max_slope: raw.max_slope,
+            min_width: raw.min_width,
+            reversed_signposted_as: raw.reversed_signposted_as,
+            signposted_as: raw.signposted_as,
+            stair_count: raw.stair_count,
+            traversal_time: raw.traversal_time,
+        }
     }
 }

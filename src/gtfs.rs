@@ -49,7 +49,11 @@ impl TryFrom<RawGtfs> for Gtfs {
     ///
     /// It might fail if some mandatory files couldn’t be read or if there are references to other objects that are invalid.
     fn try_from(raw: RawGtfs) -> Result<Gtfs, Error> {
-        let stops = to_stop_map(raw.stops?, raw.transfers.unwrap_or_else(|| Ok(Vec::new()))?)?;
+        let stops = to_stop_map(
+            raw.stops?,
+            raw.transfers.unwrap_or_else(|| Ok(Vec::new()))?,
+            raw.pathways.unwrap_or(Ok(Vec::new()))?,
+        )?;
         let frequencies = raw.frequencies.unwrap_or_else(|| Ok(Vec::new()))?;
         let trips = create_trips(raw.trips?, raw.stop_times?, frequencies, &stops)?;
 
@@ -231,6 +235,7 @@ fn to_map<O: Id>(elements: impl IntoIterator<Item = O>) -> HashMap<String, O> {
 fn to_stop_map(
     stops: Vec<Stop>,
     raw_transfers: Vec<RawTransfer>,
+    raw_pathways: Vec<RawPathway>,
 ) -> Result<HashMap<String, Arc<Stop>>, Error> {
     let mut stop_map: HashMap<String, Stop> =
         stops.into_iter().map(|s| (s.id.clone(), s)).collect();
@@ -242,6 +247,15 @@ fn to_stop_map(
         stop_map
             .entry(transfer.from_stop_id.clone())
             .and_modify(|stop| stop.transfers.push(StopTransfer::from(transfer)));
+    }
+
+    for pathway in raw_pathways {
+        stop_map
+            .get(&pathway.to_stop_id)
+            .ok_or_else(|| Error::ReferenceError(pathway.to_stop_id.to_string()))?;
+        stop_map
+            .entry(pathway.from_stop_id.clone())
+            .and_modify(|stop| stop.pathways.push(Pathway::from(pathway)));
     }
 
     let res = stop_map

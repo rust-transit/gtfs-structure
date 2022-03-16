@@ -56,12 +56,9 @@ fn read_routes() {
     let gtfs = Gtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
     assert_eq!(2, gtfs.routes.len());
     assert_eq!(RouteType::Bus, gtfs.get_route("1").unwrap().route_type);
+    assert_eq!(RGB8::new(0, 0, 0), gtfs.get_route("1").unwrap().route_color);
     assert_eq!(
-        Some(RGB8::new(0, 0, 0)),
-        gtfs.get_route("1").unwrap().route_color
-    );
-    assert_eq!(
-        Some(RGB8::new(255, 255, 255)),
+        RGB8::new(255, 255, 255),
         gtfs.get_route("1").unwrap().route_text_color
     );
     assert_eq!(
@@ -347,8 +344,8 @@ fn read_only_required_fields() {
     let fare_attribute = gtfs.fare_attributes.get("50").unwrap();
     let feed = &gtfs.feed_info[0];
     let shape = &gtfs.shapes.get("A_shp").unwrap()[0];
-    assert_eq!(route.route_color, None);
-    assert_eq!(route.route_text_color, None);
+    assert_eq!(route.route_color, RGB8::new(255, 255, 255));
+    assert_eq!(route.route_text_color, RGB8::new(0, 0, 0));
     assert_eq!(fare_attribute.transfer_duration, None);
     assert_eq!(feed.start_date, None);
     assert_eq!(feed.end_date, None);

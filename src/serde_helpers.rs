@@ -132,29 +132,22 @@ pub fn parse_color(s: &str) -> Result<RGB8, crate::Error> {
     Ok(RGB8::new(r, g, b))
 }
 
-pub fn de_with_optional_color<'de, D>(de: D) -> Result<Option<RGB8>, D::Error>
+pub fn deserialize_color<'de, D>(de: D) -> Result<RGB8, D::Error>
 where
     D: Deserializer<'de>,
 {
-    String::deserialize(de).and_then(|s| {
-        if s.is_empty() {
-            Ok(None)
-        } else {
-            parse_color(&s).map(Some).map_err(de::Error::custom)
-        }
-    })
+    String::deserialize(de).and_then(|s| parse_color(&s).map_err(de::Error::custom))
 }
 
-pub fn serialize_optional_color<S>(color: &Option<RGB8>, serializer: S) -> Result<S::Ok, S::Error>
+pub fn serialize_color<S>(color: &RGB8, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
-    match color {
-        None => serializer.serialize_none(),
-        Some(RGB8 { r, g, b }) => {
-            serializer.serialize_str(format!("{:02X}{:02X}{:02X}", r, g, b).as_str())
-        }
-    }
+    serializer.serialize_str(format!("{:02X}{:02X}{:02X}", color.r, color.g, color.b).as_str())
+}
+
+pub fn default_route_color() -> RGB8 {
+    RGB8::new(255, 255, 255)
 }
 
 pub fn de_with_empty_default<'de, T: Default, D>(de: D) -> Result<T, D::Error>

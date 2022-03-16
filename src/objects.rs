@@ -255,7 +255,7 @@ pub struct RawStopTime {
 }
 
 /// The moment where a vehicle, running on [Trip] stops at a [Stop]. See <https://gtfs.org/reference/static/#stopstxt>
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct StopTime {
     /// Arrival time of the stop time.
     /// It's an option since the intermediate stops can have have no arrival
@@ -424,7 +424,7 @@ impl fmt::Display for RawTrip {
 }
 
 /// A Trip is a vehicle that follows a sequence of [StopTime] on certain days. See <https://gtfs.org/reference/static/#tripstxt>
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct Trip {
     /// Unique technical identifier (not for the traveller) for the Trip
     pub id: String,
@@ -613,7 +613,7 @@ pub struct RawFrequency {
 }
 
 /// Timetables can be defined by the frequency of their vehicles. See <<https://gtfs.org/reference/static/#frequenciestxt>>
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct Frequency {
     /// Time at which the first vehicle departs from the first stop of the trip
     pub start_time: u32,

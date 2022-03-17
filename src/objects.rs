@@ -326,23 +326,25 @@ pub struct Route {
     pub url: Option<String>,
     /// Agency for the specified route
     pub agency_id: Option<String>,
-    #[serde(rename = "route_sort_order")]
     /// Orders the routes in a way which is ideal for presentation to customers. Routes with smaller route_sort_order values should be displayed first.
-    pub route_order: Option<u32>,
+    #[serde(rename = "route_sort_order")]
+    pub order: Option<u32>,
     /// Route color designation that matches public facing material
     #[serde(
         deserialize_with = "deserialize_color",
         serialize_with = "serialize_color",
+        rename = "route_color",
         default = "default_route_color"
     )]
-    pub route_color: RGB8,
+    pub color: RGB8,
     /// Legible color to use for text drawn against a background of [Route::route_color]
     #[serde(
         deserialize_with = "deserialize_color",
         serialize_with = "serialize_color",
+        rename = "route_text_color",
         default
     )]
-    pub route_text_color: RGB8,
+    pub text_color: RGB8,
     /// Indicates whether a rider can board the transit vehicle anywhere along the vehicle’s travel path
     #[serde(default)]
     pub continuous_pickup: ContinuousPickupDropOff,

@@ -31,6 +31,8 @@ pub struct RawGtfs {
     pub frequencies: Option<Result<Vec<RawFrequency>, Error>>,
     /// All Transfers, None if the file was absent as it is not mandatory
     pub transfers: Option<Result<Vec<RawTransfer>, Error>>,
+    /// All Pathways, None if the file was absent as it is not mandatory
+    pub pathways: Option<Result<Vec<RawPathway>, Error>>,
     /// All FeedInfo, None if the file was absent as it is not mandatory
     pub feed_info: Option<Result<Vec<FeedInfo>, Error>>,
     /// All StopTimes
@@ -57,7 +59,8 @@ impl RawGtfs {
             "  Frequencies: {}",
             optional_file_summary(&self.frequencies)
         );
-        println!("  Transfers {}", optional_file_summary(&self.transfers));
+        println!("  Transfers: {}", optional_file_summary(&self.transfers));
+        println!("  Pathways: {}", optional_file_summary(&self.pathways));
         println!("  Feed info: {}", optional_file_summary(&self.feed_info));
     }
 

@@ -174,6 +174,22 @@ fn read_transfers() {
 }
 
 #[test]
+fn read_pathways() {
+    let gtfs = Gtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
+
+    let pathways = &gtfs.get_stop("stop1").unwrap().pathways;
+
+    assert_eq!(1, pathways.len());
+    assert_eq!("stop3", pathways[0].to_stop_id);
+    assert_eq!(PathwayMode::Walkway, pathways[0].mode);
+    assert_eq!(
+        PathwayDirectionType::Unidirectional,
+        pathways[0].is_bidirectional
+    );
+    assert_eq!(None, pathways[0].min_width);
+}
+
+#[test]
 fn read_feed_info() {
     let gtfs = Gtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
     let feed = &gtfs.feed_info;
@@ -277,7 +293,7 @@ fn display() {
 #[test]
 fn path_files() {
     let gtfs = RawGtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
-    assert_eq!(gtfs.files.len(), 12);
+    assert_eq!(gtfs.files.len(), 13);
 }
 
 #[test]

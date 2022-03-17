@@ -523,3 +523,46 @@ pub enum TransferType {
     #[serde(rename = "3")]
     Impossible,
 }
+
+/// Type of pathway between [from_stop] and [to_stop]
+#[derive(Debug, Serialize, Deserialize, Derivative, Copy, Clone, PartialEq)]
+#[derivative(Default)]
+pub enum PathwayMode {
+    /// A walkway
+    #[serde(rename = "1")]
+    #[derivative(Default)]
+    Walkway,
+    /// Stairs
+    #[serde(rename = "2")]
+    Stairs,
+    /// Moving sidewalk / travelator
+    #[serde(rename = "3")]
+    MovingSidewalk,
+    /// Escalator
+    #[serde(rename = "4")]
+    Escalator,
+    /// Elevator
+    #[serde(rename = "5")]
+    Elevator,
+    /// A pathway that crosses into an area of the station where a
+    /// proof of payment is required (usually via a physical payment gate)
+    #[serde(rename = "6")]
+    FareGate,
+    /// Indicates a pathway exiting an area where proof-of-payment is required
+    /// into an area where proof-of-payment is no longer required.
+    #[serde(rename = "7")]
+    ExitGate,
+}
+
+/// Indicates in which direction the pathway can be used
+#[derive(Debug, Serialize, Deserialize, Derivative, Copy, Clone, PartialEq)]
+#[derivative(Default)]
+pub enum PathwayDirectionType {
+    /// Unidirectional pathway, it can only be used from [from_stop_id] to [to_stop_id].
+    #[serde(rename = "0")]
+    #[derivative(Default)]
+    Unidirectional,
+    /// Bidirectional pathway, it can be used in the two directions.
+    #[serde(rename = "1")]
+    Bidirectional,
+}

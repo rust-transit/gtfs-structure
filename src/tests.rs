@@ -61,6 +61,7 @@ fn read_routes() {
         RGB8::new(255, 255, 255),
         gtfs.get_route("1").unwrap().text_color
     );
+    assert_eq!(Some(1), gtfs.get_route("1").unwrap().order);
     assert_eq!(
         RouteType::Other(42),
         gtfs.get_route("invalid_type").unwrap().route_type

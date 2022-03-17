@@ -326,9 +326,9 @@ pub struct Route {
     pub url: Option<String>,
     /// Agency for the specified route
     pub agency_id: Option<String>,
-    #[serde(rename = "route_sort_order")]
     /// Orders the routes in a way which is ideal for presentation to customers. Routes with smaller route_sort_order values should be displayed first.
-    pub route_order: Option<u32>,
+    #[serde(rename = "route_sort_order")]
+    pub order: Option<u32>,
     /// Route color designation that matches public facing material
     #[serde(
         deserialize_with = "deserialize_color",

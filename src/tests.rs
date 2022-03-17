@@ -348,7 +348,7 @@ fn read_interpolated_stops() {
     assert_eq!(1, gtfs.feed_info.len());
     // the second stop have no departure/arrival, it should not cause any problems
     assert_eq!(
-        gtfs.trips["trip1"].stop_times[1].stop.name,
+        gtfs.stops.get(gtfs.trips["trip1"].stop_times[1].stop).expect("no stop").name,
         "Stop Point child of 1"
     );
     assert!(gtfs.trips["trip1"].stop_times[1].arrival_time.is_none());

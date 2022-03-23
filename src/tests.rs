@@ -54,12 +54,21 @@ fn read_stop() {
 #[test]
 fn read_routes() {
     let gtfs = Gtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
-    assert_eq!(2, gtfs.routes.len());
+    assert_eq!(3, gtfs.routes.len());
     assert_eq!(RouteType::Bus, gtfs.get_route("1").unwrap().route_type);
     assert_eq!(RGB8::new(0, 0, 0), gtfs.get_route("1").unwrap().color);
     assert_eq!(
         RGB8::new(255, 255, 255),
         gtfs.get_route("1").unwrap().text_color
+    );
+    assert_eq!(RGB8::new(0, 0, 0), gtfs.get_route("1").unwrap().color);
+    assert_eq!(
+        RGB8::new(0, 0, 0),
+        gtfs.get_route("default_colors").unwrap().text_color
+    );
+    assert_eq!(
+        RGB8::new(255, 255, 255),
+        gtfs.get_route("default_colors").unwrap().color
     );
     assert_eq!(Some(1), gtfs.get_route("1").unwrap().order);
     assert_eq!(

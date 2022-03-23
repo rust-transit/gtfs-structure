@@ -149,11 +149,15 @@ fn read_transfers() {
 
     assert_eq!(
         "stop5",
-        gtfs.get_stop("stop3").unwrap().transfers[0].to_stop_id
+        gtfs.get_stop("stop3").unwrap().transfers[0]
+            .to_stop_id
+            .as_str()
     );
     assert_eq!(
         "stop2",
-        gtfs.get_stop("stop1").unwrap().transfers[0].to_stop_id
+        gtfs.get_stop("stop1").unwrap().transfers[0]
+            .to_stop_id
+            .as_str()
     );
     assert_eq!(
         TransferType::Recommended,
@@ -180,7 +184,7 @@ fn read_pathways() {
     let pathways = &gtfs.get_stop("stop1").unwrap().pathways;
 
     assert_eq!(1, pathways.len());
-    assert_eq!("stop3", pathways[0].to_stop_id);
+    assert_eq!("stop3", pathways[0].to_stop_id.as_str());
     assert_eq!(PathwayMode::Walkway, pathways[0].mode);
     assert_eq!(
         PathwayDirectionType::Unidirectional,
@@ -348,7 +352,10 @@ fn read_interpolated_stops() {
     assert_eq!(1, gtfs.feed_info.len());
     // the second stop have no departure/arrival, it should not cause any problems
     assert_eq!(
-        gtfs.trips["trip1"].stop_times[1].stop.name,
+        gtfs.stops
+            .get(&gtfs.trips["trip1"].stop_times[1].stop)
+            .expect("no stop")
+            .name,
         "Stop Point child of 1"
     );
     assert!(gtfs.trips["trip1"].stop_times[1].arrival_time.is_none());

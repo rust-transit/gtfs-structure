@@ -1,4 +1,4 @@
-use crate::{objects::*, Error, Id, RawGtfs};
+use crate::{id::Collection, objects::*, Error, RawGtfs};
 use chrono::prelude::NaiveDate;
 use chrono::Duration;
 use std::collections::{HashMap, HashSet};
@@ -27,7 +27,7 @@ pub struct Gtfs {
     /// All calendar dates grouped by service_id
     pub calendar_dates: HashMap<String, Vec<CalendarDate>>,
     /// All stop by `stop_id`
-    pub stops: HashMap<Id<Stop>, Stop>,
+    pub stops: Collection<Stop>,
     /// All routes by `route_id`
     pub routes: HashMap<String, Route>,
     /// All trips by `trip_id`
@@ -49,7 +49,7 @@ impl TryFrom<RawGtfs> for Gtfs {
     /// It might fail if some mandatory files couldn’t be read or if there are references to other objects that are invalid.
     fn try_from(raw: RawGtfs) -> Result<Gtfs, Error> {
         let frequencies = raw.frequencies.unwrap_or_else(|| Ok(Vec::new()))?;
-        let stops = to_stop_map(
+        let stops = to_stop_collection(
             raw.stops?,
             raw.transfers.unwrap_or_else(|| Ok(Vec::new()))?,
             raw.pathways.unwrap_or(Ok(Vec::new()))?,
@@ -174,11 +174,11 @@ impl Gtfs {
     }
 
     /// Gets a [Stop] by its `stop_id`
-    pub fn get_stop<'a>(&'a self, id: &Id<Stop>) -> Result<&'a Stop, Error> {
-        match self.stops.get(id) {
-            Some(stop) => Ok(stop),
-            None => Err(Error::ReferenceError(id.to_string())),
-        }
+    pub fn get_stop<'a>(&'a self, raw_id: &str) -> Result<&'a Stop, Error> {
+        self.stops
+            .get_by_str(raw_id)
+            .ok_or_else(|| Error::ReferenceError(raw_id.to_string()))
+            .map(|(_stop_id, s)| s)
     }
 
     /// Gets a [Trip] by its `trip_id`
@@ -231,37 +231,32 @@ fn to_map<O: WithId>(elements: impl IntoIterator<Item = O>) -> HashMap<String, O
         .collect()
 }
 
-fn to_stop_map(
+fn to_stop_collection(
     stops: Vec<Stop>,
     raw_transfers: Vec<RawTransfer>,
     raw_pathways: Vec<RawPathway>,
-) -> Result<HashMap<Id<Stop>, Stop>, Error> {
-    let mut stop_map = HashMap::<Id<Stop>, Stop>::default();
-    for s in stops.into_iter() {
-        stop_map.insert(Id::must_exists(s.id.clone()), s);
-    }
+) -> Result<Collection<Stop>, Error> {
+    let mut stop_map: Collection<Stop> = stops.into_iter().collect();
     for transfer in raw_transfers {
         // Note: I'm not convinced at all by this Id::must_exists...
         // we shouldn't have to allocate here, and we must find a way to really ensure that the id exists (or remove the verbosity)
-        stop_map
-            .get(&Id::must_exists(transfer.to_stop_id.clone()))
+        let to_stop_id = stop_map
+            .get_id(&transfer.to_stop_id)
             .ok_or_else(|| Error::ReferenceError(transfer.to_stop_id.to_string()))?;
-        let to_stop_id = Id::must_exists(transfer.to_stop_id.clone());
-        let s = stop_map
-            .get_mut(&Id::must_exists(transfer.from_stop_id.clone()))
+        let (_, s) = stop_map
+            .get_mut_by_str(&transfer.from_stop_id)
             .ok_or_else(|| Error::ReferenceError(transfer.from_stop_id.to_string()))?;
         s.transfers.push(StopTransfer::from((transfer, to_stop_id)));
     }
 
     for pathway in raw_pathways {
-        stop_map
-            .get(&Id::must_exists(pathway.to_stop_id.clone()))
+        let to_stop_id = stop_map
+            .get_id(&pathway.to_stop_id)
             .ok_or_else(|| Error::ReferenceError(pathway.to_stop_id.to_string()))?;
-        let s = stop_map
-            .get_mut(&Id::must_exists(pathway.from_stop_id.clone()))
-            .ok_or_else(|| Error::ReferenceError(pathway.to_stop_id.to_string()))?;
-        let stop_id = Id::must_exists(pathway.to_stop_id.clone());
-        s.pathways.push(Pathway::from((pathway, stop_id)));
+        let (_, s) = stop_map
+            .get_mut_by_str(&pathway.from_stop_id)
+            .ok_or_else(|| Error::ReferenceError(pathway.from_stop_id.to_string()))?;
+        s.pathways.push(Pathway::from((pathway, to_stop_id)));
     }
     Ok(stop_map)
 }
@@ -293,7 +288,7 @@ fn create_trips(
     raw_trips: Vec<RawTrip>,
     raw_stop_times: Vec<RawStopTime>,
     raw_frequencies: Vec<RawFrequency>,
-    stops: &HashMap<Id<Stop>, Stop>,
+    stops: &Collection<Stop>,
 ) -> Result<HashMap<String, Trip>, Error> {
     let mut trips = to_map(raw_trips.into_iter().map(|rt| Trip {
         id: rt.id,
@@ -313,10 +308,9 @@ fn create_trips(
         let trip = &mut trips
             .get_mut(&s.trip_id)
             .ok_or_else(|| Error::ReferenceError(s.trip_id.to_string()))?;
-        let stop_id = Id::must_exists(s.stop_id.clone());
-        let stop = stops
-            .get(&stop_id)
-            .ok_or_else(|| Error::ReferenceError(stop_id.to_string()))?;
+        let stop_id = stops
+            .get_id(&s.stop_id)
+            .ok_or_else(|| Error::ReferenceError(s.stop_id.to_string()))?;
         trip.stop_times.push(StopTime::from(&s, stop_id));
     }
 

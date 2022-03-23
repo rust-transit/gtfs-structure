@@ -664,7 +664,7 @@ impl From<(RawTransfer, Id<Stop>)> for StopTransfer {
     /// Converts from a [RawTransfer] to a [StopTransfer]
     fn from((transfer, to_stop_id): (RawTransfer, Id<Stop>)) -> Self {
         Self {
-            to_stop_id: to_stop_id,
+            to_stop_id,
             transfer_type: transfer.transfer_type,
             min_transfer_time: transfer.min_transfer_time,
         }
@@ -786,7 +786,7 @@ impl From<(RawPathway, Id<Stop>)> for Pathway {
     fn from((raw, to_stop_id): (RawPathway, Id<Stop>)) -> Self {
         Self {
             id: raw.id,
-            to_stop_id: to_stop_id,
+            to_stop_id,
             mode: raw.mode,
             is_bidirectional: raw.is_bidirectional,
             length: raw.length,

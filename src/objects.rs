@@ -334,7 +334,7 @@ pub struct Route {
     pub order: Option<u32>,
     /// Route color designation that matches public facing material
     #[serde(
-        deserialize_with = "deserialize_color",
+        deserialize_with = "deserialize_route_color",
         serialize_with = "serialize_color",
         rename = "route_color",
         default = "default_route_color"
@@ -342,7 +342,7 @@ pub struct Route {
     pub color: RGB8,
     /// Legible color to use for text drawn against a background of [Route::route_color]
     #[serde(
-        deserialize_with = "deserialize_color",
+        deserialize_with = "deserialize_route_text_color",
         serialize_with = "serialize_color",
         rename = "route_text_color",
         default

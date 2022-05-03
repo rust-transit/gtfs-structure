@@ -184,7 +184,7 @@ fn read_pathways() {
     let pathways = &gtfs.get_stop("stop1").unwrap().pathways;
 
     assert_eq!(1, pathways.len());
-    assert_eq!("stop3", pathways[0].to_stop_id.as_str());
+    assert_eq!("stop3", pathways[0].to_stop_id.as_ref());
     assert_eq!(PathwayMode::Walkway, pathways[0].mode);
     assert_eq!(
         PathwayDirectionType::Unidirectional,

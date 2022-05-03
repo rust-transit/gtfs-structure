@@ -18,7 +18,6 @@ pub struct Id<T> {
 }
 
 impl<T> Id<T> {
-
     /// private method to build an Id that exists in the [Collection]
     fn must_exists(s: String) -> Id<T> {
         Id {
@@ -27,8 +26,14 @@ impl<T> Id<T> {
         }
     }
 
-    /// get as str
+    /// Extracts a string slice containing the entire [Id]
     pub fn as_str(&self) -> &str {
+        self
+    }
+}
+
+impl<T> std::convert::AsRef<str> for Id<T> {
+    fn as_ref(&self) -> &str {
         self
     }
 }
@@ -58,7 +63,6 @@ impl<T> Default for Collection<T> {
 }
 
 impl<T> Collection<T> {
-
     /// Get a typed [Id] from a raw &str
     /// An [Id] can be returned only if it exists in the [Collection]
     pub fn get_id(&self, raw_id: &str) -> Option<Id<T>> {
@@ -69,10 +73,12 @@ impl<T> Collection<T> {
     pub(crate) fn get_by_str(&self, raw_id: &str) -> Option<(&Id<T>, &T)> {
         self.0.get_key_value(raw_id)
     }
-    
+
     /// Get an &[Id] and a mutable reference to the object associated with it if it exists in the [Collection]
     pub(crate) fn get_mut_by_str(&mut self, raw_id: &str) -> Option<(Id<T>, &mut T)> {
-        self.0.get_mut(raw_id).map(|v| (Id::must_exists(raw_id.to_owned()), v))
+        self.0
+            .get_mut(raw_id)
+            .map(|v| (Id::must_exists(raw_id.to_owned()), v))
     }
 
     /// Get the object associated to the typed [Id]

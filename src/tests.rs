@@ -33,22 +33,25 @@ fn read_stop() {
     assert_eq!(6, gtfs.stops.len());
     assert_eq!(
         LocationType::StopArea,
-        gtfs.get_stop("stop1").unwrap().location_type
+        gtfs.get_stop_by_raw_id("stop1").unwrap().location_type
     );
     assert_eq!(
         LocationType::StopPoint,
-        gtfs.get_stop("stop2").unwrap().location_type
+        gtfs.get_stop_by_raw_id("stop2").unwrap().location_type
     );
-    assert_eq!(Some(48.796_058), gtfs.get_stop("stop2").unwrap().latitude);
+    assert_eq!(
+        Some(48.796_058),
+        gtfs.get_stop_by_raw_id("stop2").unwrap().latitude
+    );
     assert_eq!(
         Some("1".to_owned()),
-        gtfs.get_stop("stop3").unwrap().parent_station
+        gtfs.get_stop_by_raw_id("stop3").unwrap().parent_station
     );
     assert_eq!(
         LocationType::GenericNode,
-        gtfs.get_stop("stop6").unwrap().location_type
+        gtfs.get_stop_by_raw_id("stop6").unwrap().location_type
     );
-    assert_eq!(None, gtfs.get_stop("stop6").unwrap().latitude);
+    assert_eq!(None, gtfs.get_stop_by_raw_id("stop6").unwrap().latitude);
 }
 
 #[test]
@@ -144,36 +147,36 @@ fn read_fare_attributes() {
 #[test]
 fn read_transfers() {
     let gtfs = Gtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
-    assert_eq!(1, gtfs.get_stop("stop3").unwrap().transfers.len());
-    assert_eq!(1, gtfs.get_stop("stop1").unwrap().transfers.len());
+    assert_eq!(1, gtfs.get_stop_by_raw_id("stop3").unwrap().transfers.len());
+    assert_eq!(1, gtfs.get_stop_by_raw_id("stop1").unwrap().transfers.len());
 
     assert_eq!(
         "stop5",
-        gtfs.get_stop("stop3").unwrap().transfers[0]
+        gtfs.get_stop_by_raw_id("stop3").unwrap().transfers[0]
             .to_stop_id
             .as_str()
     );
     assert_eq!(
         "stop2",
-        gtfs.get_stop("stop1").unwrap().transfers[0]
+        gtfs.get_stop_by_raw_id("stop1").unwrap().transfers[0]
             .to_stop_id
             .as_str()
     );
     assert_eq!(
         TransferType::Recommended,
-        gtfs.get_stop("stop3").unwrap().transfers[0].transfer_type
+        gtfs.get_stop_by_raw_id("stop3").unwrap().transfers[0].transfer_type
     );
     assert_eq!(
         TransferType::Impossible,
-        gtfs.get_stop("stop1").unwrap().transfers[0].transfer_type
+        gtfs.get_stop_by_raw_id("stop1").unwrap().transfers[0].transfer_type
     );
     assert_eq!(
         Some(60),
-        gtfs.get_stop("stop3").unwrap().transfers[0].min_transfer_time
+        gtfs.get_stop_by_raw_id("stop3").unwrap().transfers[0].min_transfer_time
     );
     assert_eq!(
         None,
-        gtfs.get_stop("stop1").unwrap().transfers[0].min_transfer_time
+        gtfs.get_stop_by_raw_id("stop1").unwrap().transfers[0].min_transfer_time
     );
 }
 
@@ -181,7 +184,7 @@ fn read_transfers() {
 fn read_pathways() {
     let gtfs = Gtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
 
-    let pathways = &gtfs.get_stop("stop1").unwrap().pathways;
+    let pathways = &gtfs.get_stop_by_raw_id("stop1").unwrap().pathways;
 
     assert_eq!(1, pathways.len());
     assert_eq!("stop3", pathways[0].to_stop_id.as_ref());
@@ -237,12 +240,12 @@ fn read_from_gtfs() {
 
     assert!(gtfs.get_calendar("service1").is_ok());
     assert!(gtfs.get_calendar_date("service1").is_ok());
-    assert!(gtfs.get_stop("stop1").is_ok());
+    assert!(gtfs.get_stop_by_raw_id("stop1").is_ok());
     assert!(gtfs.get_route("1").is_ok());
     assert!(gtfs.get_trip("trip1").is_ok());
     assert!(gtfs.get_fare_attributes("50").is_ok());
 
-    assert!(gtfs.get_stop("Utopia").is_err());
+    assert!(gtfs.get_stop_by_raw_id("Utopia").is_err());
 }
 
 #[test]

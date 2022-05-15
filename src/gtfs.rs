@@ -1,4 +1,4 @@
-use crate::{id::Collection, objects::*, Error, RawGtfs};
+use crate::{id::Collection, id::Id, objects::*, Error, RawGtfs};
 use chrono::prelude::NaiveDate;
 use chrono::Duration;
 use std::collections::{HashMap, HashSet};
@@ -174,7 +174,14 @@ impl Gtfs {
     }
 
     /// Gets a [Stop] by its `stop_id`
-    pub fn get_stop<'a>(&'a self, raw_id: &str) -> Result<&'a Stop, Error> {
+    pub fn get_stop<'a>(&'a self, raw_id: &Id<Stop>) -> Result<&'a Stop, Error> {
+        self.stops
+            .get(raw_id)
+            .ok_or_else(|| Error::ReferenceError(raw_id.to_string()))
+    }
+
+    /// Gets a [Stop] by a &str
+    pub fn get_stop_by_raw_id<'a>(&'a self, raw_id: &str) -> Result<&'a Stop, Error> {
         self.stops
             .get_by_str(raw_id)
             .ok_or_else(|| Error::ReferenceError(raw_id.to_string()))

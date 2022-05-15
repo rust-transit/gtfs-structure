@@ -89,6 +89,11 @@ impl<T> Collection<T> {
         self.0.get(id)
     }
 
+    /// Get a mutable reference on the object associated to the typed [Id]
+    pub fn get_mut(&mut self, id: &Id<T>) -> Option<&mut T> {
+        self.0.get_mut(id)
+    }
+
     /// Returns the number of objects in the [Collection]
     pub fn len(&self) -> usize {
         self.0.len()

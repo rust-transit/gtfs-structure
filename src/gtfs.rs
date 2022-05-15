@@ -245,8 +245,6 @@ fn to_stop_collection(
 ) -> Result<Collection<Stop>, Error> {
     let mut stop_map: Collection<Stop> = stops.into_iter().collect();
     for transfer in raw_transfers {
-        // Note: I'm not convinced at all by this Id::must_exists...
-        // we shouldn't have to allocate here, and we must find a way to really ensure that the id exists (or remove the verbosity)
         let to_stop_id = stop_map
             .get_id(&transfer.to_stop_id)
             .ok_or_else(|| Error::ReferenceError(transfer.to_stop_id.to_string()))?;

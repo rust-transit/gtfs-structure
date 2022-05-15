@@ -1,6 +1,9 @@
 use crate::WithId;
 use core::marker::PhantomData;
-use std::{collections::HashMap, iter::FromIterator};
+use std::{
+    collections::{hash_map, HashMap},
+    iter::FromIterator,
+};
 
 /// Typed Id over a [Collection]
 #[derive(Derivative, Serialize, Deserialize)]
@@ -90,6 +93,26 @@ impl<T> Collection<T> {
     pub fn len(&self) -> usize {
         self.0.len()
     }
+
+    // Return true if the collection has no objects.
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    /// Iterates over the ([Id]<T>, &T) of the [Collection].
+    pub fn iter(&self) -> hash_map::Iter<Id<T>, T> {
+        self.0.iter()
+    }
+
+    /// Iterates over the &T of the [Collection].
+    pub fn values(&self) -> hash_map::Values<'_, Id<T>, T> {
+        self.0.values()
+    }
+
+    /// Iterates over the &mut T of the [Collection].
+    pub fn values_mut(&mut self) -> hash_map::ValuesMut<'_, Id<T>, T> {
+        self.0.values_mut()
+    }
 }
 
 // Implements FromIterator to be able to easily build a [Collection] if we know how to associate an object with its [Id]
@@ -102,5 +125,23 @@ impl<T: WithId> FromIterator<T> for Collection<T> {
         }
 
         c
+    }
+}
+
+impl<'a, T> IntoIterator for &'a Collection<T> {
+    type Item = (&'a Id<T>, &'a T);
+    type IntoIter = hash_map::Iter<'a, Id<T>, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+impl<T> IntoIterator for Collection<T> {
+    type Item = (Id<T>, T);
+    type IntoIter = hash_map::IntoIter<Id<T>, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
     }
 }

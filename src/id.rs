@@ -145,3 +145,22 @@ impl<T> IntoIterator for Collection<T> {
         self.0.into_iter()
     }
 }
+
+impl<Q, T> std::ops::Index<&Q> for Collection<T>
+where
+    Id<T>: std::borrow::Borrow<Q>,
+    Q: Eq + std::hash::Hash,
+{
+    type Output = T;
+
+    /// Returns a reference to the value corresponding to the supplied key.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the key is not present in the [Collection].
+    /// This can happens only if the key was removed from the collection at one point.
+    /// If no key are removed from the [Collection], you can safely use this method.
+    fn index(&self, k: &Q) -> &Self::Output {
+        &self.0[k]
+    }
+}

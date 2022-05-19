@@ -735,7 +735,7 @@ pub struct RawPathway {
     /// Location at which the pathway ends
     pub to_stop_id: String,
     /// Type of pathway between the specified (from_stop_id, to_stop_id) pair
-    pub mode: PathwayMode,
+    pub pathway_mode: PathwayMode,
     /// Indicates in which direction the pathway can be used
     pub is_bidirectional: PathwayDirectionType,
     /// Horizontal length in meters of the pathway from the origin location to the destination location
@@ -762,7 +762,7 @@ pub struct Pathway {
     /// Location at which the pathway ends
     pub to_stop_id: String,
     /// Type of pathway between the specified (from_stop_id, to_stop_id) pair
-    pub mode: PathwayMode,
+    pub pathway_mode: PathwayMode,
     /// Indicates in which direction the pathway can be used
     pub is_bidirectional: PathwayDirectionType,
     /// Horizontal length in meters of the pathway from the origin location to the destination location
@@ -793,7 +793,7 @@ impl From<RawPathway> for Pathway {
         Self {
             id: raw.id,
             to_stop_id: raw.to_stop_id,
-            mode: raw.mode,
+            pathway_mode: raw.pathway_mode,
             is_bidirectional: raw.is_bidirectional,
             length: raw.length,
             max_slope: raw.max_slope,

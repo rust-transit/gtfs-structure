@@ -190,7 +190,7 @@ fn read_pathways() {
 
     assert_eq!(1, pathways.len());
     assert_eq!("stop3", pathways[0].to_stop_id);
-    assert_eq!(PathwayMode::Walkway, pathways[0].mode);
+    assert_eq!(PathwayMode::Walkway, pathways[0].pathway_mode);
     assert_eq!(
         PathwayDirectionType::Unidirectional,
         pathways[0].is_bidirectional

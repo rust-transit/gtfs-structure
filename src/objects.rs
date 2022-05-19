@@ -735,7 +735,8 @@ pub struct RawPathway {
     /// Location at which the pathway ends
     pub to_stop_id: String,
     /// Type of pathway between the specified (from_stop_id, to_stop_id) pair
-    pub pathway_mode: PathwayMode,
+   #[serde(rename = "pathway_mode")]
+    pub mode: PathwayMode,
     /// Indicates in which direction the pathway can be used
     pub is_bidirectional: PathwayDirectionType,
     /// Horizontal length in meters of the pathway from the origin location to the destination location

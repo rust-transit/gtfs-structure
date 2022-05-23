@@ -28,6 +28,9 @@ pub enum Error {
     /// The color is not given in the RRGGBB format, without a leading `#`
     #[error("'{0}' is not a valid color; RRGGBB format is expected, without a leading `#`")]
     InvalidColor(String),
+    /// Several stops have the same id
+    #[error("duplicate stop: '{0}'")]
+    DuplicateStop(String),
     /// Generic Input/Output error while reading a file
     #[error("impossible to read file")]
     IO(#[from] std::io::Error),

@@ -4,7 +4,7 @@ use chrono::{Datelike, NaiveDate, Weekday};
 use rgb::RGB8;
 
 use std::fmt;
-use std::sync::Arc;
+use typed_generational_arena::Index;
 
 /// Objects that have an identifier implement this trait
 ///
@@ -14,22 +14,10 @@ pub trait Id {
     fn id(&self) -> &str;
 }
 
-impl<T: Id> Id for Arc<T> {
-    fn id(&self) -> &str {
-        self.as_ref().id()
-    }
-}
-
 /// Trait to introspect what is the object’s type (stop, route…)
 pub trait Type {
     /// What is the type of the object
     fn object_type(&self) -> ObjectType;
-}
-
-impl<T: Type> Type for Arc<T> {
-    fn object_type(&self) -> ObjectType {
-        self.as_ref().object_type()
-    }
 }
 
 /// A calender describes on which days the vehicle runs. See <https://gtfs.org/reference/static/#calendartxt>
@@ -258,14 +246,14 @@ pub struct RawStopTime {
 }
 
 /// The moment where a vehicle, running on [Trip] stops at a [Stop]. See <https://gtfs.org/reference/static/#stopstxt>
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct StopTime {
     /// Arrival time of the stop time.
     /// It's an option since the intermediate stops can have have no arrival
     /// and this arrival needs to be interpolated
     pub arrival_time: Option<u32>,
-    /// [Stop] where the vehicle stops
-    pub stop: Arc<Stop>,
+    /// [Index] of the [Stop] where the vehicle stops
+    pub stop: Index<Stop>,
     /// Departure time of the stop time.
     /// It's an option since the intermediate stops can have have no departure
     /// and this departure needs to be interpolated
@@ -290,7 +278,7 @@ pub struct StopTime {
 
 impl StopTime {
     /// Creates [StopTime] by linking a [RawStopTime::stop_id] to the actual [Stop]
-    pub fn from(stop_time_gtfs: &RawStopTime, stop: Arc<Stop>) -> Self {
+    pub fn from(stop_time_gtfs: &RawStopTime, stop: Index<Stop>) -> Self {
         Self {
             arrival_time: stop_time_gtfs.arrival_time,
             departure_time: stop_time_gtfs.departure_time,

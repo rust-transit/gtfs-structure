@@ -43,6 +43,7 @@ extern crate derivative;
 #[macro_use]
 extern crate serde_derive;
 
+mod collection;
 mod enums;
 pub mod error;
 mod gtfs;

@@ -1,5 +1,5 @@
 pub use crate::enums::*;
-use crate::serde_helpers::*;
+use crate::{serde_helpers::*, Id};
 use chrono::{Datelike, NaiveDate, Weekday};
 use rgb::RGB8;
 
@@ -9,15 +9,9 @@ use std::sync::Arc;
 /// Objects that have an identifier implement this trait
 ///
 /// Those identifier are technical and should not be shown to travellers
-pub trait Id {
+pub trait WithId {
     /// Identifier of the object
     fn id(&self) -> &str;
-}
-
-impl<T: Id> Id for Arc<T> {
-    fn id(&self) -> &str {
-        self.as_ref().id()
-    }
 }
 
 /// Trait to introspect what is the object’s type (stop, route…)
@@ -100,7 +94,7 @@ impl Type for Calendar {
     }
 }
 
-impl Id for Calendar {
+impl WithId for Calendar {
     fn id(&self) -> &str {
         &self.id
     }
@@ -199,7 +193,7 @@ impl Type for Stop {
     }
 }
 
-impl Id for Stop {
+impl WithId for Stop {
     fn id(&self) -> &str {
         &self.id
     }
@@ -258,14 +252,14 @@ pub struct RawStopTime {
 }
 
 /// The moment where a vehicle, running on [Trip] stops at a [Stop]. See <https://gtfs.org/reference/static/#stopstxt>
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct StopTime {
     /// Arrival time of the stop time.
     /// It's an option since the intermediate stops can have have no arrival
     /// and this arrival needs to be interpolated
     pub arrival_time: Option<u32>,
     /// [Stop] where the vehicle stops
-    pub stop: Arc<Stop>,
+    pub stop: Id<Stop>,
     /// Departure time of the stop time.
     /// It's an option since the intermediate stops can have have no departure
     /// and this departure needs to be interpolated
@@ -290,7 +284,7 @@ pub struct StopTime {
 
 impl StopTime {
     /// Creates [StopTime] by linking a [RawStopTime::stop_id] to the actual [Stop]
-    pub fn from(stop_time_gtfs: &RawStopTime, stop: Arc<Stop>) -> Self {
+    pub fn from(stop_time_gtfs: &RawStopTime, stop: Id<Stop>) -> Self {
         Self {
             arrival_time: stop_time_gtfs.arrival_time,
             departure_time: stop_time_gtfs.departure_time,
@@ -362,7 +356,7 @@ impl Type for Route {
     }
 }
 
-impl Id for Route {
+impl WithId for Route {
     fn id(&self) -> &str {
         &self.id
     }
@@ -412,7 +406,7 @@ impl Type for RawTrip {
     }
 }
 
-impl Id for RawTrip {
+impl WithId for RawTrip {
     fn id(&self) -> &str {
         &self.id
     }
@@ -463,7 +457,7 @@ impl Type for Trip {
     }
 }
 
-impl Id for Trip {
+impl WithId for Trip {
     fn id(&self) -> &str {
         &self.id
     }
@@ -514,7 +508,7 @@ impl Type for Agency {
     }
 }
 
-impl Id for Agency {
+impl WithId for Agency {
     fn id(&self) -> &str {
         match &self.id {
             None => "",
@@ -555,7 +549,7 @@ impl Type for Shape {
     }
 }
 
-impl Id for Shape {
+impl WithId for Shape {
     fn id(&self) -> &str {
         &self.id
     }
@@ -582,7 +576,7 @@ pub struct FareAttribute {
     pub transfer_duration: Option<usize>,
 }
 
-impl Id for FareAttribute {
+impl WithId for FareAttribute {
     fn id(&self) -> &str {
         &self.id
     }
@@ -655,22 +649,22 @@ pub struct RawTransfer {
     pub min_transfer_time: Option<u32>,
 }
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Clone)]
 /// Transfer information between stops
 pub struct StopTransfer {
     /// Stop which to transfer to
-    pub to_stop_id: String,
+    pub to_stop_id: Id<Stop>,
     /// Type of the transfer
     pub transfer_type: TransferType,
     /// Minimum time needed to make the transfer in seconds
     pub min_transfer_time: Option<u32>,
 }
 
-impl From<RawTransfer> for StopTransfer {
+impl From<(RawTransfer, Id<Stop>)> for StopTransfer {
     /// Converts from a [RawTransfer] to a [StopTransfer]
-    fn from(transfer: RawTransfer) -> Self {
+    fn from((transfer, to_stop_id): (RawTransfer, Id<Stop>)) -> Self {
         Self {
-            to_stop_id: transfer.to_stop_id,
+            to_stop_id,
             transfer_type: transfer.transfer_type,
             min_transfer_time: transfer.min_transfer_time,
         }
@@ -756,12 +750,12 @@ pub struct RawPathway {
 }
 
 /// Pathway going from a stop to another.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Pathway {
     /// Uniquely identifies the pathway
     pub id: String,
     /// Location at which the pathway ends
-    pub to_stop_id: String,
+    pub to_stop_id: Id<Stop>,
     /// Type of pathway between the specified (from_stop_id, to_stop_id) pair
     pub mode: PathwayMode,
     /// Indicates in which direction the pathway can be used
@@ -782,18 +776,18 @@ pub struct Pathway {
     pub reversed_signposted_as: Option<String>,
 }
 
-impl Id for Pathway {
+impl WithId for Pathway {
     fn id(&self) -> &str {
         &self.id
     }
 }
 
-impl From<RawPathway> for Pathway {
+impl From<(RawPathway, Id<Stop>)> for Pathway {
     /// Converts from a [RawPathway] to a [Pathway]
-    fn from(raw: RawPathway) -> Self {
+    fn from((raw, to_stop_id): (RawPathway, Id<Stop>)) -> Self {
         Self {
             id: raw.id,
-            to_stop_id: raw.to_stop_id,
+            to_stop_id,
             mode: raw.mode,
             is_bidirectional: raw.is_bidirectional,
             length: raw.length,

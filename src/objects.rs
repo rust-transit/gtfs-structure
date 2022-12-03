@@ -169,10 +169,12 @@ pub struct Stop {
     pub url: Option<String>,
     /// Longitude of the stop
     #[serde(deserialize_with = "de_with_optional_float")]
+    #[serde(serialize_with = "serialize_float_as_str")]
     #[serde(rename = "stop_lon", default)]
     pub longitude: Option<f64>,
     /// Latitude of the stop
     #[serde(deserialize_with = "de_with_optional_float")]
+    #[serde(serialize_with = "serialize_float_as_str")]
     #[serde(rename = "stop_lat", default)]
     pub latitude: Option<f64>,
     /// Timezone of the location

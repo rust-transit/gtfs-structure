@@ -39,6 +39,9 @@ pub enum LocationType {
     Unknown(i32),
 }
 
+fn serialize_i32_as_str<S: Serializer>(s: S, value: i32) -> Result<S::Ok, S::Error> {
+    s.serialize_str(&value.to_string())
+}
 impl<'de> Deserialize<'de> for LocationType {
     fn deserialize<D>(deserializer: D) -> Result<LocationType, D::Error>
     where
@@ -67,14 +70,17 @@ impl Serialize for LocationType {
         S: Serializer,
     {
         // Note: for extended route type, we might loose the initial precise route type
-        serializer.serialize_i32(match self {
-            LocationType::StopPoint => 0,
-            LocationType::StopArea => 1,
-            LocationType::StationEntrance => 2,
-            LocationType::GenericNode => 3,
-            LocationType::BoardingArea => 4,
-            LocationType::Unknown(i) => *i,
-        })
+        serialize_i32_as_str(
+            serializer,
+            match self {
+                LocationType::StopPoint => 0,
+                LocationType::StopArea => 1,
+                LocationType::StationEntrance => 2,
+                LocationType::GenericNode => 3,
+                LocationType::BoardingArea => 4,
+                LocationType::Unknown(i) => *i,
+            },
+        )
     }
 }
 
@@ -203,13 +209,16 @@ impl Serialize for PickupDropOffType {
         S: Serializer,
     {
         // Note: for extended route type, we might loose the initial precise route type
-        serializer.serialize_i32(match self {
-            PickupDropOffType::Regular => 0,
-            PickupDropOffType::NotAvailable => 1,
-            PickupDropOffType::ArrangeByPhone => 2,
-            PickupDropOffType::CoordinateWithDriver => 3,
-            PickupDropOffType::Unknown(i) => *i,
-        })
+        serialize_i32_as_str(
+            serializer,
+            match self {
+                PickupDropOffType::Regular => 0,
+                PickupDropOffType::NotAvailable => 1,
+                PickupDropOffType::ArrangeByPhone => 2,
+                PickupDropOffType::CoordinateWithDriver => 3,
+                PickupDropOffType::Unknown(i) => *i,
+            },
+        )
     }
 }
 
@@ -238,13 +247,16 @@ impl Serialize for ContinuousPickupDropOff {
         S: Serializer,
     {
         // Note: for extended route type, we might loose the initial precise route type
-        serializer.serialize_i32(match self {
-            ContinuousPickupDropOff::Continuous => 0,
-            ContinuousPickupDropOff::NotAvailable => 1,
-            ContinuousPickupDropOff::ArrangeByPhone => 2,
-            ContinuousPickupDropOff::CoordinateWithDriver => 3,
-            ContinuousPickupDropOff::Unknown(i) => *i,
-        })
+        serialize_i32_as_str(
+            serializer,
+            match self {
+                ContinuousPickupDropOff::Continuous => 0,
+                ContinuousPickupDropOff::NotAvailable => 1,
+                ContinuousPickupDropOff::ArrangeByPhone => 2,
+                ContinuousPickupDropOff::CoordinateWithDriver => 3,
+                ContinuousPickupDropOff::Unknown(i) => *i,
+            },
+        )
     }
 }
 
@@ -274,9 +286,11 @@ impl<'de> Deserialize<'de> for ContinuousPickupDropOff {
 #[derivative(Default)]
 pub enum TimepointType {
     /// Times are considered approximate
+    #[serde(rename = "0")]
     Approximate = 0,
     /// Times are considered exact
     #[derivative(Default)]
+    #[serde(rename = "1")]
     Exact = 1,
 }
 
@@ -338,12 +352,15 @@ impl Serialize for Availability {
         S: Serializer,
     {
         // Note: for extended route type, we might loose the initial precise route type
-        serializer.serialize_i32(match self {
-            Availability::InformationNotAvailable => 0,
-            Availability::Available => 1,
-            Availability::NotAvailable => 2,
-            Availability::Unknown(i) => *i,
-        })
+        serialize_i32_as_str(
+            serializer,
+            match self {
+                Availability::InformationNotAvailable => 0,
+                Availability::Available => 1,
+                Availability::NotAvailable => 2,
+                Availability::Unknown(i) => *i,
+            },
+        )
     }
 }
 
@@ -410,12 +427,15 @@ impl Serialize for BikesAllowedType {
         S: Serializer,
     {
         // Note: for extended route type, we might loose the initial precise route type
-        serializer.serialize_i32(match self {
-            BikesAllowedType::NoBikeInfo => 0,
-            BikesAllowedType::AtLeastOneBike => 1,
-            BikesAllowedType::NoBikesAllowed => 2,
-            BikesAllowedType::Unknown(i) => *i,
-        })
+        serialize_i32_as_str(
+            serializer,
+            match self {
+                BikesAllowedType::NoBikeInfo => 0,
+                BikesAllowedType::AtLeastOneBike => 1,
+                BikesAllowedType::NoBikesAllowed => 2,
+                BikesAllowedType::Unknown(i) => *i,
+            },
+        )
     }
 }
 
@@ -497,10 +517,10 @@ impl Serialize for Transfers {
         S: Serializer,
     {
         match self {
-            Transfers::NoTransfer => serializer.serialize_i32(0),
-            Transfers::UniqueTransfer => serializer.serialize_i32(1),
-            Transfers::TwoTransfers => serializer.serialize_i32(2),
-            Transfers::Other(a) => serializer.serialize_i32(*a),
+            Transfers::NoTransfer => serialize_i32_as_str(serializer, 0),
+            Transfers::UniqueTransfer => serialize_i32_as_str(serializer, 1),
+            Transfers::TwoTransfers => serialize_i32_as_str(serializer, 2),
+            Transfers::Other(a) => serialize_i32_as_str(serializer, *a),
             Transfers::Unlimited => serializer.serialize_none(),
         }
     }

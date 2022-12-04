@@ -5,6 +5,32 @@ use chrono::NaiveDate;
 use rgb::RGB8;
 
 #[test]
+fn serialization_deserialization() {
+    // route, trip, stop, stop_times
+    let gtfs = RawGtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
+
+    let string = serde_json::to_string(&gtfs.routes.unwrap()).unwrap();
+    let _parsed: Vec<Route> = serde_json::from_str(&string).unwrap();
+
+    let string = serde_json::to_string(&gtfs.trips.unwrap()).unwrap();
+    let _parsed: Vec<RawTrip> = serde_json::from_str(&string).unwrap();
+
+    let string = serde_json::to_string(&gtfs.stops.unwrap()).unwrap();
+    let _parsed: Vec<Stop> = serde_json::from_str(&string).unwrap();
+
+    let string = serde_json::to_string(&gtfs.stop_times.unwrap()).unwrap();
+    let _parsed: Vec<RawStopTime> = serde_json::from_str(&string).unwrap();
+
+    let string = serde_json::to_string(&gtfs.frequencies.unwrap().unwrap()).unwrap();
+    let _parsed: Vec<RawFrequency> = serde_json::from_str(&string).unwrap();
+
+    let string = serde_json::to_string(&gtfs.pathways.unwrap().unwrap()).unwrap();
+    let _parsed: Vec<RawPathway> = serde_json::from_str(&string).unwrap();
+
+    let string = serde_json::to_string(&gtfs.transfers.unwrap().unwrap()).unwrap();
+    let _parsed: Vec<RawTransfer> = serde_json::from_str(&string).unwrap();
+}
+#[test]
 fn read_calendar() {
     let gtfs = Gtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
     assert_eq!(1, gtfs.calendar.len());

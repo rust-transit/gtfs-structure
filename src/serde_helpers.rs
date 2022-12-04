@@ -119,6 +119,16 @@ where
     })
 }
 
+pub fn serialize_float_as_str<S>(float: &Option<f64>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    match float {
+        None => serializer.serialize_str(""),
+        Some(f) => serializer.serialize_str(&f.to_string()),
+    }
+}
+
 pub fn parse_color(
     s: &str,
     default: impl std::ops::FnOnce() -> RGB8,

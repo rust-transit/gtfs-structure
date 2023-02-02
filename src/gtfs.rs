@@ -243,7 +243,7 @@ fn to_stop_map(
     for transfer in raw_transfers {
         stop_map
             .get(&transfer.to_stop_id)
-            .ok_or_else(|| Error::ReferenceError(transfer.to_stop_id.to_string()))?;
+            .ok_or_else(|| Error::ReferenceError(format!("'{}' in transfers.txt", transfer.to_stop_id)))?;
         stop_map
             .entry(transfer.from_stop_id.clone())
             .and_modify(|stop| stop.transfers.push(StopTransfer::from(transfer)));
@@ -252,7 +252,7 @@ fn to_stop_map(
     for pathway in raw_pathways {
         stop_map
             .get(&pathway.to_stop_id)
-            .ok_or_else(|| Error::ReferenceError(pathway.to_stop_id.to_string()))?;
+            .ok_or_else(|| Error::ReferenceError(format!("'{}' in pathways.txt", pathway.to_stop_id)))?;
         stop_map
             .entry(pathway.from_stop_id.clone())
             .and_modify(|stop| stop.pathways.push(Pathway::from(pathway)));

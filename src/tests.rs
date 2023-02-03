@@ -232,18 +232,18 @@ fn read_feed_info() {
     assert_eq!("SNCF", feed[0].name);
     assert_eq!("http://www.sncf.com", feed[0].url);
     assert_eq!("fr", feed[0].lang);
-    assert_eq!(Some(NaiveDate::from_ymd(2018, 07, 09)), feed[0].start_date);
-    assert_eq!(Some(NaiveDate::from_ymd(2018, 09, 27)), feed[0].end_date);
+    assert_eq!(Some(NaiveDate::from_ymd(2018, 7, 9)), feed[0].start_date);
+    assert_eq!(Some(NaiveDate::from_ymd(2018, 9, 27)), feed[0].end_date);
     assert_eq!(Some("0.3".to_string()), feed[0].version);
 }
 
 #[test]
 fn trip_days() {
     let gtfs = Gtfs::from_path("fixtures/basic/").unwrap();
-    let days = gtfs.trip_days(&"service1".to_owned(), NaiveDate::from_ymd(2017, 1, 1));
+    let days = gtfs.trip_days("service1", NaiveDate::from_ymd(2017, 1, 1));
     assert_eq!(vec![6, 7, 13, 14], days);
 
-    let days2 = gtfs.trip_days(&"service2".to_owned(), NaiveDate::from_ymd(2017, 1, 1));
+    let days2 = gtfs.trip_days("service2", NaiveDate::from_ymd(2017, 1, 1));
     assert_eq!(vec![0], days2);
 }
 
@@ -414,7 +414,7 @@ fn sorted_shapes() {
     let shape = &gtfs.shapes.get("Unordered_shp").unwrap();
 
     let points = shape
-        .into_iter()
+        .iter()
         .map(|s| (s.sequence, s.latitude, s.longitude))
         .collect::<Vec<_>>();
 

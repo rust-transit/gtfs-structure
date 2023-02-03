@@ -56,8 +56,7 @@ impl<'de> Deserialize<'de> for LocationType {
             "4" => LocationType::BoardingArea,
             s => LocationType::Unknown(s.parse().map_err(|_| {
                 serde::de::Error::custom(format!(
-                    "invalid value for LocationType, must be an integer: {}",
-                    s
+                    "invalid value for LocationType, must be an integer: {s}"
                 ))
             })?),
         })
@@ -195,8 +194,7 @@ impl<'de> Deserialize<'de> for PickupDropOffType {
             "3" => PickupDropOffType::CoordinateWithDriver,
             s => PickupDropOffType::Unknown(s.parse().map_err(|_| {
                 serde::de::Error::custom(format!(
-                    "invalid value for PickupDropOffType, must be an integer: {}",
-                    s
+                    "invalid value for PickupDropOffType, must be an integer: {s}"
                 ))
             })?),
         })
@@ -273,8 +271,7 @@ impl<'de> Deserialize<'de> for ContinuousPickupDropOff {
             "3" => ContinuousPickupDropOff::CoordinateWithDriver,
             s => ContinuousPickupDropOff::Unknown(s.parse().map_err(|_| {
                 serde::de::Error::custom(format!(
-                    "invalid value for ContinuousPickupDropOff, must be an integer: {}",
-                    s
+                    "invalid value for ContinuousPickupDropOff, must be an integer: {s}"
                 ))
             })?),
         })
@@ -304,8 +301,7 @@ impl<'de> Deserialize<'de> for TimepointType {
             "" | "1" => Ok(Self::Exact),
             "0" => Ok(Self::Approximate),
             v => Err(serde::de::Error::custom(format!(
-                "invalid value for timepoint: {}",
-                v
+                "invalid value for timepoint: {v}"
             ))),
         }
     }
@@ -338,8 +334,7 @@ impl<'de> Deserialize<'de> for Availability {
             "2" => Availability::NotAvailable,
             s => Availability::Unknown(s.parse().map_err(|_| {
                 serde::de::Error::custom(format!(
-                    "invalid value for Availability, must be an integer: {}",
-                    s
+                    "invalid value for Availability, must be an integer: {s}"
                 ))
             })?),
         })
@@ -413,8 +408,7 @@ impl<'de> Deserialize<'de> for BikesAllowedType {
             "2" => BikesAllowedType::NoBikesAllowed,
             s => BikesAllowedType::Unknown(s.parse().map_err(|_| {
                 serde::de::Error::custom(format!(
-                    "invalid value for BikeAllowedType, must be an integer: {}",
-                    s
+                    "invalid value for BikeAllowedType, must be an integer: {s}"
                 ))
             })?),
         })
@@ -470,8 +464,7 @@ impl<'de> Deserialize<'de> for ExactTimes {
             "1" => ExactTimes::ScheduleBased,
             &_ => {
                 return Err(serde::de::Error::custom(format!(
-                    "Invalid value `{}`, expected 0 or 1",
-                    s
+                    "Invalid value `{s}`, expected 0 or 1"
                 )))
             }
         })

@@ -146,7 +146,7 @@ impl RawGtfs {
 fn mandatory_file_summary<T>(objs: &Result<Vec<T>, Error>) -> String {
     match objs {
         Ok(vec) => format!("{} objects", vec.len()),
-        Err(e) => format!("Could not read {}", e),
+        Err(e) => format!("Could not read {e}"),
     }
 }
 

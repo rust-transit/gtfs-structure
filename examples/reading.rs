@@ -13,6 +13,6 @@ fn main() {
         Ok(g) => {
             g.print_stats();
         }
-        Err(e) => eprintln!("error: {:?}", e),
+        Err(e) => eprintln!("error: {e:?}"),
     }
 }

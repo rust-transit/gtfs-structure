@@ -285,7 +285,7 @@ impl RawGtfsReader {
             shapes: self.read_optional_file(&file_mapping, &mut archive, "shapes.txt"),
             read_duration: Utc::now().signed_duration_since(now).num_milliseconds(),
             files,
-            sha256: Some(format!("{:x}", hash)),
+            sha256: Some(format!("{hash:x}")),
         };
 
         if self.reader.unkown_enum_as_default {

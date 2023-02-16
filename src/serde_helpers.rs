@@ -191,8 +191,7 @@ where
         "0" => Ok(false),
         "1" => Ok(true),
         &_ => Err(serde::de::Error::custom(format!(
-            "Invalid value `{}`, expected 0 or 1",
-            s
+            "Invalid value `{s}`, expected 0 or 1"
         ))),
     }
 }

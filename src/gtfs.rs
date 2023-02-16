@@ -241,18 +241,20 @@ fn to_stop_map(
         stops.into_iter().map(|s| (s.id.clone(), s)).collect();
 
     for transfer in raw_transfers {
-        stop_map
-            .get(&transfer.to_stop_id)
-            .ok_or_else(|| Error::ReferenceError(transfer.to_stop_id.to_string()))?;
+        stop_map.get(&transfer.to_stop_id).ok_or_else(|| {
+            let stop_id = &transfer.to_stop_id;
+            Error::ReferenceError(format!("'{stop_id}' in transfers.txt"))
+        })?;
         stop_map
             .entry(transfer.from_stop_id.clone())
             .and_modify(|stop| stop.transfers.push(StopTransfer::from(transfer)));
     }
 
     for pathway in raw_pathways {
-        stop_map
-            .get(&pathway.to_stop_id)
-            .ok_or_else(|| Error::ReferenceError(pathway.to_stop_id.to_string()))?;
+        stop_map.get(&pathway.to_stop_id).ok_or_else(|| {
+            let stop_id = &pathway.to_stop_id;
+            Error::ReferenceError(format!("'{stop_id}' in pathways.txt"))
+        })?;
         stop_map
             .entry(pathway.from_stop_id.clone())
             .and_modify(|stop| stop.pathways.push(Pathway::from(pathway)));

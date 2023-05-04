@@ -549,19 +549,17 @@ impl<'de> Deserialize<'de> for TransferType {
     where
         D: Deserializer<'de>,
     {
-        let i = Option::<i32>::deserialize(deserializer)?;
-        Ok(match i {
-            Some(0) => TransferType::Recommended,
-            Some(1) => TransferType::Timed,
-            Some(2) => TransferType::MinTime,
-            Some(3) => TransferType::Impossible,
-            Some(4) => TransferType::StayOnBoard,
-            Some(5) => TransferType::MustAlight,
-            None => TransferType::default(),
-            _ => {
+        let s: String = String::deserialize(deserializer)?;
+        Ok(match s.as_str() {
+            "" | "0" => TransferType::Recommended,
+            "1" => TransferType::Timed,
+            "2" => TransferType::MinTime,
+            "3" => TransferType::Impossible,
+            "4" => TransferType::StayOnBoard,
+            "5" => TransferType::MustAlight,
+            s => {
                 return Err(serde::de::Error::custom(format!(
-                    "Invalid value `{:?}`, expected 0, 1, 2, 3, 4, 5",
-                    i
+                    "Invalid value `{s}`, expected 0, 1, 2, 3, 4, 5"
                 )))
             }
         })

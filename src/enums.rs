@@ -519,7 +519,7 @@ impl Serialize for Transfers {
     }
 }
 /// Defines the type of a [StopTransfer]
-#[derive(Debug, Serialize, Deserialize, Derivative, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Serialize, Derivative, Copy, Clone, PartialEq, Eq)]
 #[derivative(Default)]
 pub enum TransferType {
     /// Recommended transfer point between routes
@@ -535,6 +535,37 @@ pub enum TransferType {
     /// Transfer is not possible at this location
     #[serde(rename = "3")]
     Impossible,
+    /// Passengers can stay onboard the same vehicle to transfer from one trip to another
+    #[serde(rename = "4")]
+    StayOnBoard,
+    /// In-seat transfers aren't allowed between sequential trips.
+    /// The passenger must alight from the vehicle and re-board.
+    #[serde(rename = "5")]
+    MustAlight,
+}
+
+impl<'de> Deserialize<'de> for TransferType {
+    fn deserialize<D>(deserializer: D) -> Result<TransferType, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let i = Option::<i32>::deserialize(deserializer)?;
+        Ok(match i {
+            Some(0) => TransferType::Recommended,
+            Some(1) => TransferType::Timed,
+            Some(2) => TransferType::MinTime,
+            Some(3) => TransferType::Impossible,
+            Some(4) => TransferType::StayOnBoard,
+            Some(5) => TransferType::MustAlight,
+            None => TransferType::default(),
+            _ => {
+                return Err(serde::de::Error::custom(format!(
+                    "Invalid value `{:?}`, expected 0, 1, 2, 3, 4, 5",
+                    i
+                )))
+            }
+        })
+    }
 }
 
 /// Type of pathway between [from_stop] and [to_stop]

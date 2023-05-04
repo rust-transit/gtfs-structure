@@ -206,6 +206,18 @@ fn read_transfers() {
         None,
         gtfs.get_stop("stop1").unwrap().transfers[0].min_transfer_time
     );
+    assert_eq!(
+        TransferType::Recommended,
+        gtfs.get_stop("stop2").unwrap().transfers[0].transfer_type
+    );
+    assert_eq!(
+        TransferType::StayOnBoard,
+        gtfs.get_stop("stop5").unwrap().transfers[0].transfer_type
+    );
+    assert_eq!(
+        TransferType::MustAlight,
+        gtfs.get_stop("stop5").unwrap().transfers[1].transfer_type
+    );
 }
 
 #[test]

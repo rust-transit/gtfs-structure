@@ -316,10 +316,10 @@ pub struct Route {
     #[serde(rename = "route_id")]
     pub id: String,
     /// Short name of a route. This will often be a short, abstract identifier like "32", "100X", or "Green" that riders use to identify a route, but which doesn't give any indication of what places the route serves
-    #[serde(rename = "route_short_name")]
+    #[serde(rename = "route_short_name", default)]
     pub short_name: String,
     /// Full name of a route. This name is generally more descriptive than the [Route::short_name]] and often includes the route's destination or stop
-    #[serde(rename = "route_long_name")]
+    #[serde(rename = "route_long_name", default)]
     pub long_name: String,
     /// Description of a route that provides useful, quality information
     #[serde(rename = "route_desc")]

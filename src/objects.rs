@@ -441,7 +441,7 @@ pub struct Trip {
     pub route_id: String,
     /// All the [StopTime] that define the trip
     pub stop_times: Vec<StopTime>,
-    /// Text that appears on signage identifying the trip's destination to riders
+    /// Unique technical (not for the traveller) identifier for the Shape
     pub shape_id: Option<String>,
     /// Text that appears on signage identifying the trip's destination to riders
     pub trip_headsign: Option<String>,

@@ -490,7 +490,7 @@ pub struct Agency {
     ///Full name of the transit agency
     #[serde(rename = "agency_name")]
     pub name: String,
-    /// Full name of the transit agency.
+    /// Full url of the transit agency.
     #[serde(rename = "agency_url")]
     pub url: String,
     /// Timezone where the transit agency is located

@@ -292,7 +292,7 @@ fn to_calendar_dates(cd: Vec<CalendarDate>) -> HashMap<String, Vec<CalendarDate>
 
 fn create_trips(
     raw_trips: Vec<RawTrip>,
-    raw_stop_times: Vec<RawStopTime>,
+    mut raw_stop_times: Vec<RawStopTime>,
     raw_frequencies: Vec<RawFrequency>,
     stops: &HashMap<String, Arc<Stop>>,
 ) -> Result<HashMap<String, Trip>, Error> {
@@ -310,7 +310,8 @@ fn create_trips(
         bikes_allowed: rt.bikes_allowed,
         frequencies: vec![],
     }));
-    for s in raw_stop_times {
+
+    while let Some(s) = raw_stop_times.pop() {
         let trip = &mut trips
             .get_mut(&s.trip_id)
             .ok_or_else(|| Error::ReferenceError(s.trip_id.to_string()))?;
@@ -318,6 +319,7 @@ fn create_trips(
             .get(&s.stop_id)
             .ok_or_else(|| Error::ReferenceError(s.stop_id.to_string()))?;
         trip.stop_times.push(StopTime::from(&s, Arc::clone(stop)));
+        raw_stop_times.shrink_to_fit();
     }
 
     for trip in &mut trips.values_mut() {

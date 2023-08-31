@@ -292,7 +292,7 @@ pub struct StopTime {
 
 impl StopTime {
     /// Creates [StopTime] by linking a [RawStopTime::stop_id] to the actual [Stop]
-    pub fn from(stop_time_gtfs: &RawStopTime, stop: Arc<Stop>) -> Self {
+    pub fn from(stop_time_gtfs: RawStopTime, stop: Arc<Stop>) -> Self {
         Self {
             arrival_time: stop_time_gtfs.arrival_time,
             departure_time: stop_time_gtfs.departure_time,
@@ -300,7 +300,7 @@ impl StopTime {
             pickup_type: stop_time_gtfs.pickup_type,
             drop_off_type: stop_time_gtfs.drop_off_type,
             stop_sequence: stop_time_gtfs.stop_sequence,
-            stop_headsign: stop_time_gtfs.stop_headsign.clone(),
+            stop_headsign: stop_time_gtfs.stop_headsign,
             continuous_pickup: stop_time_gtfs.continuous_pickup,
             continuous_drop_off: stop_time_gtfs.continuous_drop_off,
             shape_dist_traveled: stop_time_gtfs.shape_dist_traveled,

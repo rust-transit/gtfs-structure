@@ -36,10 +36,10 @@ pub enum LocationType {
     /// A specific location on a platform, where passengers can board and/or alight vehicles
     BoardingArea,
     /// An unknown value
-    Unknown(i32),
+    Unknown(i16),
 }
 
-fn serialize_i32_as_str<S: Serializer>(s: S, value: i32) -> Result<S::Ok, S::Error> {
+fn serialize_i16_as_str<S: Serializer>(s: S, value: i16) -> Result<S::Ok, S::Error> {
     s.serialize_str(&value.to_string())
 }
 impl<'de> Deserialize<'de> for LocationType {
@@ -69,7 +69,7 @@ impl Serialize for LocationType {
         S: Serializer,
     {
         // Note: for extended route type, we might loose the initial precise route type
-        serialize_i32_as_str(
+        serialize_i16_as_str(
             serializer,
             match self {
                 LocationType::StopPoint => 0,
@@ -113,7 +113,7 @@ pub enum RouteType {
     /// (extended) Taxi, Cab
     Taxi,
     /// (extended) any other value
-    Other(i32),
+    Other(i16),
 }
 
 impl<'de> Deserialize<'de> for RouteType {
@@ -121,7 +121,7 @@ impl<'de> Deserialize<'de> for RouteType {
     where
         D: Deserializer<'de>,
     {
-        let i = i32::deserialize(deserializer)?;
+        let i = i16::deserialize(deserializer)?;
 
         let hundreds = i / 100;
         Ok(match (i, hundreds) {
@@ -147,7 +147,7 @@ impl Serialize for RouteType {
         S: Serializer,
     {
         // Note: for extended route type, we might loose the initial precise route type
-        serializer.serialize_i32(match self {
+        serializer.serialize_i16(match self {
             RouteType::Tramway => 0,
             RouteType::Subway => 1,
             RouteType::Rail => 2,
@@ -178,7 +178,7 @@ pub enum PickupDropOffType {
     /// Must coordinate with driver to arrange pickup or drop off.
     CoordinateWithDriver,
     /// An unknown value not in the specification
-    Unknown(i32),
+    Unknown(i16),
 }
 
 impl<'de> Deserialize<'de> for PickupDropOffType {
@@ -207,7 +207,7 @@ impl Serialize for PickupDropOffType {
         S: Serializer,
     {
         // Note: for extended route type, we might loose the initial precise route type
-        serialize_i32_as_str(
+        serialize_i16_as_str(
             serializer,
             match self {
                 PickupDropOffType::Regular => 0,
@@ -236,7 +236,7 @@ pub enum ContinuousPickupDropOff {
     /// Must coordinate with driver to arrange continuous stopping pickup or drop off.
     CoordinateWithDriver,
     /// An unknown value not in the specification
-    Unknown(i32),
+    Unknown(i16),
 }
 
 impl Serialize for ContinuousPickupDropOff {
@@ -245,7 +245,7 @@ impl Serialize for ContinuousPickupDropOff {
         S: Serializer,
     {
         // Note: for extended route type, we might loose the initial precise route type
-        serialize_i32_as_str(
+        serialize_i16_as_str(
             serializer,
             match self {
                 ContinuousPickupDropOff::Continuous => 0,
@@ -319,7 +319,7 @@ pub enum Availability {
     /// The service is not available
     NotAvailable,
     /// An unknown value not in the specification
-    Unknown(i32),
+    Unknown(i16),
 }
 
 impl<'de> Deserialize<'de> for Availability {
@@ -347,7 +347,7 @@ impl Serialize for Availability {
         S: Serializer,
     {
         // Note: for extended route type, we might loose the initial precise route type
-        serialize_i32_as_str(
+        serialize_i16_as_str(
             serializer,
             match self {
                 Availability::InformationNotAvailable => 0,
@@ -393,7 +393,7 @@ pub enum BikesAllowedType {
     /// No bicycles are allowed on this trip
     NoBikesAllowed,
     /// An unknown value not in the specification
-    Unknown(i32),
+    Unknown(i16),
 }
 
 impl<'de> Deserialize<'de> for BikesAllowedType {
@@ -421,7 +421,7 @@ impl Serialize for BikesAllowedType {
         S: Serializer,
     {
         // Note: for extended route type, we might loose the initial precise route type
-        serialize_i32_as_str(
+        serialize_i16_as_str(
             serializer,
             match self {
                 BikesAllowedType::NoBikeInfo => 0,
@@ -485,7 +485,7 @@ pub enum Transfers {
     ///Riders may transfer twice
     TwoTransfers,
     /// Other transfer values
-    Other(i32),
+    Other(i16),
 }
 
 impl<'de> Deserialize<'de> for Transfers {
@@ -493,7 +493,7 @@ impl<'de> Deserialize<'de> for Transfers {
     where
         D: Deserializer<'de>,
     {
-        let i = Option::<i32>::deserialize(deserializer)?;
+        let i = Option::<i16>::deserialize(deserializer)?;
         Ok(match i {
             Some(0) => Transfers::NoTransfer,
             Some(1) => Transfers::UniqueTransfer,
@@ -510,10 +510,10 @@ impl Serialize for Transfers {
         S: Serializer,
     {
         match self {
-            Transfers::NoTransfer => serialize_i32_as_str(serializer, 0),
-            Transfers::UniqueTransfer => serialize_i32_as_str(serializer, 1),
-            Transfers::TwoTransfers => serialize_i32_as_str(serializer, 2),
-            Transfers::Other(a) => serialize_i32_as_str(serializer, *a),
+            Transfers::NoTransfer => serialize_i16_as_str(serializer, 0),
+            Transfers::UniqueTransfer => serialize_i16_as_str(serializer, 1),
+            Transfers::TwoTransfers => serialize_i16_as_str(serializer, 2),
+            Transfers::Other(a) => serialize_i16_as_str(serializer, *a),
             Transfers::Unlimited => serializer.serialize_none(),
         }
     }

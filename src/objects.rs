@@ -746,7 +746,7 @@ pub struct RawPathway {
     /// Average time in seconds needed to walk through the pathway from the origin location to the destination location
     pub traversal_time: Option<u32>,
     /// Number of stairs of the pathway
-    pub stair_count: Option<u32>,
+    pub stair_count: Option<i32>,
     /// Maximum slope ratio of the pathway
     pub max_slope: Option<f32>,
     /// Minimum width of the pathway in meters
@@ -773,7 +773,7 @@ pub struct Pathway {
     /// Average time in seconds needed to walk through the pathway from the origin location to the destination location
     pub traversal_time: Option<u32>,
     /// Number of stairs of the pathway
-    pub stair_count: Option<u32>,
+    pub stair_count: Option<i32>,
     /// Maximum slope ratio of the pathway
     pub max_slope: Option<f32>,
     /// Minimum width of the pathway in meters

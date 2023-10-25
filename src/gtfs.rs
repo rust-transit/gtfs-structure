@@ -290,6 +290,10 @@ fn to_calendar_dates(cd: Vec<CalendarDate>) -> HashMap<String, Vec<CalendarDate>
     res
 }
 
+// Number of stoptimes to `pop` from the list before using shrink_to_fit to reduce the memory footprint
+// Hardcoded to what seems a sensible value, but if needed we could make this a parameter, feel free to open an issue if this could help
+const NB_STOP_TIMES_BEFORE_SHRINK: usize = 1_000_000;
+
 fn create_trips(
     raw_trips: Vec<RawTrip>,
     mut raw_stop_times: Vec<RawStopTime>,
@@ -311,7 +315,9 @@ fn create_trips(
         frequencies: vec![],
     }));
 
+    let mut st_idx = 0;
     while let Some(s) = raw_stop_times.pop() {
+        st_idx += 1;
         let trip = &mut trips
             .get_mut(&s.trip_id)
             .ok_or_else(|| Error::ReferenceError(s.trip_id.to_string()))?;
@@ -319,7 +325,9 @@ fn create_trips(
             .get(&s.stop_id)
             .ok_or_else(|| Error::ReferenceError(s.stop_id.to_string()))?;
         trip.stop_times.push(StopTime::from(s, Arc::clone(stop)));
-        raw_stop_times.shrink_to_fit();
+        if st_idx % NB_STOP_TIMES_BEFORE_SHRINK == 0 {
+            raw_stop_times.shrink_to_fit();
+        }
     }
 
     for trip in &mut trips.values_mut() {

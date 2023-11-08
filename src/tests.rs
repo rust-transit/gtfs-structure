@@ -341,12 +341,15 @@ fn display() {
 fn path_files() {
     let gtfs = RawGtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
     assert_eq!(gtfs.files.len(), 13);
+    assert_eq!(gtfs.source_format, SourceFormat::Directory);
+    assert!(gtfs.files.contains(&"agency.txt".to_owned()));
 }
 
 #[test]
 fn zip_files() {
     let gtfs = RawGtfs::from_path("fixtures/zips/gtfs.zip").expect("impossible to read gtfs");
     assert_eq!(gtfs.files.len(), 10);
+    assert_eq!(gtfs.source_format, SourceFormat::Zip);
     assert!(gtfs.files.contains(&"agency.txt".to_owned()));
 }
 
@@ -355,6 +358,7 @@ fn zip_subdirectory_files() {
     let gtfs =
         RawGtfs::from_path("fixtures/zips/subdirectory.zip").expect("impossible to read gtfs");
     assert_eq!(gtfs.files.len(), 11);
+    assert_eq!(gtfs.source_format, SourceFormat::Zip);
     assert!(gtfs.files.contains(&"subdirectory/agency.txt".to_owned()));
 }
 

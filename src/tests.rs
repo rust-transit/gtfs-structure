@@ -346,6 +346,19 @@ fn path_files() {
 }
 
 #[test]
+fn subdirectory_files() {
+    // reading subdirectory does not work when reading from a path (it's useless since the path can be given explicitly)
+    // Note: if its needed, an issue can be opened to discuss it
+    let gtfs = RawGtfs::from_path("fixtures/subdirectory").expect("impossible to read gtfs");
+    // no files can be read
+    assert!(gtfs.stops.is_err());
+    assert!(gtfs.routes.is_err());
+    assert!(gtfs.agencies.is_err());
+
+    assert_eq!(gtfs.files, vec!["gtfs".to_string()]);
+}
+
+#[test]
 fn zip_files() {
     let gtfs = RawGtfs::from_path("fixtures/zips/gtfs.zip").expect("impossible to read gtfs");
     assert_eq!(gtfs.files.len(), 10);

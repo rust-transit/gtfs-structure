@@ -39,6 +39,8 @@ pub struct RawGtfs {
     pub stop_times: Result<Vec<RawStopTime>, Error>,
     /// All files that are present in the feed
     pub files: Vec<String>,
+    /// Format of the data read
+    pub source_format: SourceFormat,
     /// sha256 sum of the feed
     pub sha256: Option<String>,
 }

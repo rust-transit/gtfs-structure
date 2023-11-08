@@ -808,3 +808,12 @@ impl From<RawPathway> for Pathway {
         }
     }
 }
+
+/// Format of the data
+#[derive(Debug, Serialize, PartialEq)]
+pub enum SourceFormat {
+    /// `Directory` means the data comes from a directory
+    Directory,
+    /// `Zip` means the data were read from a zip
+    Zip,
+}

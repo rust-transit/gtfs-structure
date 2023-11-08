@@ -141,7 +141,14 @@ impl RawGtfsReader {
         // Thoses files are not mandatory
         // We use None if they don’t exist, not an Error
         let files = std::fs::read_dir(p)?
-            .filter_map(|d| d.ok().and_then(|p| p.path().to_str().map(|s| s.to_owned())))
+            .filter_map(|d| {
+                d.ok().and_then(|e| {
+                    e.path()
+                        .strip_prefix(p)
+                        .ok()
+                        .and_then(|f| f.to_str().map(|s| s.to_owned()))
+                })
+            })
             .collect();
 
         let mut result = RawGtfs {
@@ -164,6 +171,7 @@ impl RawGtfsReader {
             feed_info: self.read_objs_from_optional_path(p, "feed_info.txt"),
             read_duration: Utc::now().signed_duration_since(now).num_milliseconds(),
             files,
+            source_format: crate::SourceFormat::Directory,
             sha256: None,
         };
 
@@ -285,6 +293,7 @@ impl RawGtfsReader {
             shapes: self.read_optional_file(&file_mapping, &mut archive, "shapes.txt"),
             read_duration: Utc::now().signed_duration_since(now).num_milliseconds(),
             files,
+            source_format: crate::SourceFormat::Zip,
             sha256: Some(format!("{hash:x}")),
         };
 

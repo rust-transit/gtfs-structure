@@ -49,14 +49,23 @@ pub fn parse_time_impl(h: &str, m: &str, s: &str) -> Result<u32, std::num::Parse
 }
 
 pub fn parse_time(s: &str) -> Result<u32, crate::Error> {
-    let len = s.len();
-
-    if s.len() < 7 || s.len() > 8 {
+    if s.len() < 7 {
         Err(crate::Error::InvalidTime(s.to_owned()))
     } else {
-        let sec = &s[len - 2..];
-        let min = &s[len - 5..len - 3];
-        let hour = &s[..len - 6];
+        let parts: Vec<&str> = s.split(':').collect();
+
+        if parts.len() != 3 {
+            return Err(crate::Error::InvalidTime(s.to_owned()));
+        }
+
+        let sec = parts[2];
+        let min = parts[1];
+        let hour = parts[0];
+
+        if min.len() != 2 || sec.len() != 2 {
+            return Err(crate::Error::InvalidTime(s.to_owned()));
+        }
+
         parse_time_impl(hour, min, sec).map_err(|_| crate::Error::InvalidTime(s.to_owned()))
     }
 }
@@ -220,6 +229,14 @@ fn test_serialize_time() {
         .unwrap()
         .unwrap();
     assert_eq!(3600 + 60 + 1, parsed.time);
+
+    let data_in_long_ride = "time\n172:35:42\n";
+    let parsed_long_ride: Test = csv::Reader::from_reader(data_in_long_ride.as_bytes())
+        .deserialize()
+        .next()
+        .unwrap()
+        .unwrap();
+    assert_eq!((172 * 3600) + (35 * 60) + 42, parsed_long_ride.time);
 
     let mut wtr = csv::Writer::from_writer(vec![]);
     wtr.serialize(parsed).unwrap();

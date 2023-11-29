@@ -757,6 +757,18 @@ pub struct RawPathway {
     pub reversed_signposted_as: Option<String>,
 }
 
+impl Id for RawPathway {
+    fn id(&self) -> &str {
+        &self.id
+    }
+}
+
+impl Type for RawPathway {
+    fn object_type(&self) -> ObjectType {
+        ObjectType::Pathway
+    }
+}
+
 /// Pathway going from a stop to another.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Pathway {
@@ -787,6 +799,12 @@ pub struct Pathway {
 impl Id for Pathway {
     fn id(&self) -> &str {
         &self.id
+    }
+}
+
+impl Type for Pathway {
+    fn object_type(&self) -> ObjectType {
+        ObjectType::Pathway
     }
 }
 

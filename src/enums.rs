@@ -18,6 +18,8 @@ pub enum ObjectType {
     Shape,
     /// [FareAttribute] <https://gtfs.org/reference/static/#fare_rulestxt>
     Fare,
+    /// [Pathway] <https://gtfs.org/schedule/reference/#pathwaystxt>
+    Pathway,
 }
 
 /// Describes the kind of [Stop]. See <https://gtfs.org/reference/static/#stopstxt> `location_type`

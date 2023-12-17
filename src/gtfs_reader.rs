@@ -14,6 +14,7 @@ use std::path::Path;
 /// ```
 ///let gtfs = gtfs_structures::GtfsReader::default()
 ///    .read_stop_times(false) // Won’t read the stop times to save time and memory
+///    .read_shapes(false) // Won’t read shapes to save time and memory
 ///    .unkown_enum_as_default(false) // Won’t convert unknown enumerations into default (e.g. LocationType=42 considered as a stop point)
 ///    .read("fixtures/zips/gtfs.zip")?;
 ///assert_eq!(0, gtfs.trips.get("trip1").unwrap().stop_times.len());
@@ -36,6 +37,9 @@ pub struct GtfsReader {
     /// [crate::objects::StopTime] are very large and not always needed. This allows to skip reading them
     #[derivative(Default(value = "true"))]
     pub read_stop_times: bool,
+    /// [crate::objects::Shape] are very large and not always needed. This allows to skip reading them
+    #[derivative(Default(value = "true"))]
+    pub read_shapes: bool,
     /// If a an enumeration has un unknown value, should we use the default value
     #[derivative(Default(value = "false"))]
     pub unkown_enum_as_default: bool,
@@ -54,6 +58,13 @@ impl GtfsReader {
     /// Returns Self and can be chained
     pub fn read_stop_times(mut self, read_stop_times: bool) -> Self {
         self.read_stop_times = read_stop_times;
+        self
+    }
+
+    /// This can be useful to save time and memory with large datasets when shapes are not needed
+    /// Returns Self and can be chained
+    pub fn read_shapes(mut self, read_shapes: bool) -> Self {
+        self.read_shapes = read_shapes;
         self
     }
 
@@ -290,7 +301,11 @@ impl RawGtfsReader {
             transfers: self.read_optional_file(&file_mapping, &mut archive, "transfers.txt"),
             pathways: self.read_optional_file(&file_mapping, &mut archive, "pathways.txt"),
             feed_info: self.read_optional_file(&file_mapping, &mut archive, "feed_info.txt"),
-            shapes: self.read_optional_file(&file_mapping, &mut archive, "shapes.txt"),
+            shapes: if self.reader.read_shapes {
+                self.read_optional_file(&file_mapping, &mut archive, "shapes.txt")
+            } else {
+                Some(Ok(Vec::new()))
+            },
             read_duration: Utc::now().signed_duration_since(now).num_milliseconds(),
             files,
             source_format: crate::SourceFormat::Zip,

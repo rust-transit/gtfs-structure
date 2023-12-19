@@ -9,7 +9,7 @@ use std::sync::Arc;
 ///
 /// This structure is easier to use than the [RawGtfs] structure as some relationships are parsed to be easier to use.
 ///
-/// If you want to configure the behaviour (e.g. skipping : [StopTime]), see [crate::GtfsReader] for more personalisation
+/// If you want to configure the behaviour (e.g. skipping : [StopTime] or [Shape]), see [crate::GtfsReader] for more personalisation
 ///
 /// This is probably the entry point you want to use:
 /// ```

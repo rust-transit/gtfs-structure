@@ -353,7 +353,10 @@ impl RawGtfsReader {
                 source: e,
                 line_in_error: None,
             })?
-            .clone();
+            .clone()
+            .into_iter()
+            .map(|x| x.trim())
+            .collect::<csv::StringRecord>();
 
         // Pre-allocate a StringRecord for performance reasons
         let mut rec = csv::StringRecord::new();

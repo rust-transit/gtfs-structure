@@ -438,6 +438,20 @@ fn read_only_required_fields() {
 }
 
 #[test]
+fn metra_gtfs() {
+    let gtfs = Gtfs::from_path("fixtures/zips/metra.zip");
+
+    match &gtfs {
+        Err(err) => {
+            eprintln!("{:#?}", err);
+        }
+        _ => {}
+    }
+
+    assert!(gtfs.is_ok());
+}
+
+#[test]
 fn sorted_shapes() {
     let gtfs = Gtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
     let shape = &gtfs.shapes.get("Unordered_shp").unwrap();

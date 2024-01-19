@@ -380,6 +380,25 @@ impl fmt::Display for Route {
     }
 }
 
+/// Raw structure to hold translations as defined in the GTFS file. See <https://gtfs.org/schedule/reference/#translationstxt>
+#[derive(Debug, Serialize, Deserialize, Default)]
+pub struct RawTranslation {
+    /// To which table does the translation apply
+    pub table_name: String,
+    /// To which field does the translation apply
+    pub field_name: String,
+    /// Language of the translation
+    pub language: String,
+    /// Translated value
+    pub translation: String,
+    /// The record identifier to translate. For stop_times, it’s the trip_id
+    pub record_id: Option<String>,
+    /// Only for stop_times: the stop_sequence
+    pub record_sub_id: Option<String>,
+    /// Translate all values that match exactly, instead of specifying individual records
+    pub field_value: Option<String>,
+}
+
 /// A [Trip] where the relationships with other objects have not been checked
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct RawTrip {

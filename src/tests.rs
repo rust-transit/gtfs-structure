@@ -239,6 +239,17 @@ fn read_pathways() {
 }
 
 #[test]
+fn read_translations() {
+    let gtfs = RawGtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
+    let translation = &gtfs.translations.unwrap().unwrap()[0];
+    assert_eq!(translation.table_name, "stops");
+    assert_eq!(translation.field_name, "stop_name");
+    assert_eq!(translation.language, "nl");
+    assert_eq!(translation.translation, "Stop Gebied");
+    assert_eq!(translation.field_value, None);
+}
+
+#[test]
 fn read_feed_info() {
     let gtfs = Gtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
     let feed = &gtfs.feed_info;
@@ -342,7 +353,7 @@ fn display() {
 #[test]
 fn path_files() {
     let gtfs = RawGtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
-    assert_eq!(gtfs.files.len(), 13);
+    assert_eq!(gtfs.files.len(), 14);
     assert_eq!(gtfs.source_format, SourceFormat::Directory);
     assert!(gtfs.files.contains(&"agency.txt".to_owned()));
 }

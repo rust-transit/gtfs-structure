@@ -45,6 +45,8 @@ pub struct RawGtfs {
     pub source_format: SourceFormat,
     /// sha256 sum of the feed
     pub sha256: Option<String>,
+    /// All translations, None if the file was absent as it is not mandatory
+    pub translations: Option<Result<Vec<RawTranslation>, Error>>,
 }
 
 impl RawGtfs {
@@ -66,6 +68,10 @@ impl RawGtfs {
         println!("  Transfers: {}", optional_file_summary(&self.transfers));
         println!("  Pathways: {}", optional_file_summary(&self.pathways));
         println!("  Feed info: {}", optional_file_summary(&self.feed_info));
+        println!(
+            "  Translations: {}",
+            optional_file_summary(&self.translations)
+        );
     }
 
     /// Reads from an url (if starts with http), or a local path (either a directory or zipped file)

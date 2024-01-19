@@ -223,6 +223,17 @@ impl Gtfs {
             .get(id)
             .ok_or_else(|| Error::ReferenceError(id.to_owned()))
     }
+
+    pub fn translate<T: Translatable>(&self, obj: &T, field: T::Fields, lang: &str) -> String {
+        let value = obj.field_value(field);
+        if let Some(translation) = big_fat_hash.get(value, lang) {
+            translation
+        } else if let Some(translation) = big_fat_shas.get_by_id(obj.id(), lang) {
+            translation
+        } else {
+            value
+        }
+    }
 }
 
 fn to_map<O: Id>(elements: impl IntoIterator<Item = O>) -> HashMap<String, O> {

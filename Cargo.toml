@@ -20,7 +20,7 @@ serde_derive = "1.0"
 chrono = "0.4"
 itertools = "0.12"
 sha2 = "0.10"
-zip = { version = "0.6.6", default-features = false }
+zip = { version = "0.6.6", default-features = false, features = ["deflate"] }
 thiserror = "1"
 rgb = "0.8"
 

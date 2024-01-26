@@ -4,6 +4,7 @@ use chrono::Duration;
 use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
 use std::sync::Arc;
+use language_tags::LanguageTag;
 
 /// Data structure with all the GTFS objects
 ///
@@ -41,6 +42,8 @@ pub struct Gtfs {
     pub fare_attributes: HashMap<String, FareAttribute>,
     /// All feed information. There is no identifier
     pub feed_info: Vec<FeedInfo>,
+    /// List of possible localisations from this file
+    pub avaliable_languages: Vec<LanguageTag>,
 }
 
 impl TryFrom<RawGtfs> for Gtfs {
@@ -224,7 +227,7 @@ impl Gtfs {
             .ok_or_else(|| Error::ReferenceError(id.to_owned()))
     }
 
-    pub fn translate<T: Translatable>(&self, obj: &T, field: T::Fields, lang: &str) -> String {
+    pub fn translate<T: Translatable>(&self, obj: &T, field: T::Fields, lang: &LanguageTag) -> String {
         let value = obj.field_value(field);
         if let Some(translation) = big_fat_hash.get(value, lang) {
             translation

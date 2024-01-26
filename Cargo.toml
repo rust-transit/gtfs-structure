@@ -26,6 +26,7 @@ rgb = "0.8"
 
 futures = { version = "0.3", optional = true }
 reqwest = { version = "0.11", optional = true, features = ["blocking"]}
+language-tags = {version = "0.3.2", features = ["serde"]}
 
 [dev-dependencies]
 serde_json = "1.0"

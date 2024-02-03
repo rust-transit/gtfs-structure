@@ -32,6 +32,23 @@ impl<T: Type> Type for Arc<T> {
     }
 }
 
+pub trait Translatable: Id {
+    type Fields;
+    fn field_value(&self, field: Self::Fields) -> &str;
+}
+
+pub enum StopFields {
+    Name,
+}
+impl Translatable for Stop {
+    type Fields = StopFields;
+    fn field_value(&self, field: Self::Fields) -> &str {
+        match field {
+            StopFields::Name => &self.name,
+        }
+    }
+}
+
 /// A calender describes on which days the vehicle runs. See <https://gtfs.org/reference/static/#calendartxt>
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Calendar {

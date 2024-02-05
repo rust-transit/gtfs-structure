@@ -1,20 +1,8 @@
+use crate::enums::*;
 use crate::objects::*;
 use crate::Error;
 use crate::GtfsReader;
 use std::path::Path;
-
-#[derive(Derivative)]
-#[derivative(Default(bound = ""))]
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-pub struct RawTranslation {
-    pub table_name: String,
-    pub field_name: String,
-    pub language: String,
-    pub translation: String,
-    pub record_id: Option<String>,
-    pub record_sub_id: Option<String>,
-    pub field_value: Option<String>,
-}
 
 /// Data structure that map the GTFS csv with little intelligence
 ///

@@ -1,10 +1,24 @@
 pub use crate::enums::*;
 use crate::serde_helpers::*;
 use chrono::{Datelike, NaiveDate, Weekday};
+use language_tags::LanguageTag;
 use rgb::RGB8;
-
 use std::fmt;
 use std::sync::Arc;
+
+/// Raw Translation used for RawGtfs
+#[derive(Derivative)]
+#[derivative(Default(bound = ""))]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+pub struct RawTranslation {
+    pub table_name: String,
+    pub field_name: String,
+    pub language: String,
+    pub translation: String,
+    pub record_id: Option<String>,
+    pub record_sub_id: Option<String>,
+    pub field_value: Option<String>,
+}
 
 /// Objects that have an identifier implement this trait
 ///
@@ -32,22 +46,103 @@ impl<T: Type> Type for Arc<T> {
     }
 }
 
+#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq)]
+pub enum TranslatableField {
+    Agency(AgencyFields),
+    Areas(AreaFields),
+    Calendar(CalendarFields),
+    FareProducts(FareProductsFields),
+    FeedInfo(FeedInfoFields),
+    Routes(RouteFields),
+    StopTimes(StopTimeFields),
+    Stops(StopFields),
+    Trips(TripFields),
+}
+
+#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq)]
+pub enum TranslationKey {
+    Record(String),
+    RecordSub((String, String)),
+    Value(String),
+}
+
+#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq)]
+pub struct TranslationLookup {
+    pub language: LanguageTag,
+    pub field: TranslatableField,
+    pub key: TranslationKey,
+}
+
 pub trait Translatable: Id {
     type Fields;
     fn field_value(&self, field: Self::Fields) -> &str;
 }
 
-pub enum StopFields {
+#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq)]
+pub enum StopTimeFields {
+    Headsign,
+}
+
+#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq)]
+pub enum RouteFields {
+    Desc,
+    LongName,
+    ShortName,
+    Url,
+}
+
+#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq)]
+pub enum CalendarFields {
+    ServiceId,
+}
+
+#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq)]
+pub enum FeedInfoFields {
+    PublisherName,
+}
+
+#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq)]
+pub enum AreaFields {
     Name,
 }
+
+#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq)]
+pub enum AgencyFields {
+    Name,
+    FareUrl,
+    Url,
+}
+
+#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq)]
+pub enum FareProductsFields {
+    ProductName,
+}
+
+#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq)]
+pub enum TripFields {
+    Headsign,
+    ShortName
+}
+
+#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq)]
+pub enum StopFields {
+    Code,
+    Name,
+    TtsName,
+    PlatformCode,
+    Desc,
+}
+
+/*
 impl Translatable for Stop {
     type Fields = StopFields;
     fn field_value(&self, field: Self::Fields) -> &str {
         match field {
             StopFields::Name => &self.name,
+            StopFields::Code => &self.
         }
     }
-}
+}*/
 
 /// A calender describes on which days the vehicle runs. See <https://gtfs.org/reference/static/#calendartxt>
 #[derive(Debug, Deserialize, Serialize)]

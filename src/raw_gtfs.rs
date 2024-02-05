@@ -3,6 +3,19 @@ use crate::Error;
 use crate::GtfsReader;
 use std::path::Path;
 
+#[derive(Derivative)]
+#[derivative(Default(bound = ""))]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+pub struct RawTranslation {
+    pub table_name: String,
+    pub field_name: String,
+    pub language: String,
+    pub translation: String,
+    pub record_id: Option<String>,
+    pub record_sub_id: Option<String>,
+    pub field_value: Option<String>,
+}
+
 /// Data structure that map the GTFS csv with little intelligence
 ///
 /// This is used to analyze the GTFS and detect anomalies
@@ -37,6 +50,8 @@ pub struct RawGtfs {
     pub feed_info: Option<Result<Vec<FeedInfo>, Error>>,
     /// All StopTimes
     pub stop_times: Result<Vec<RawStopTime>, Error>,
+    /// All Translations
+    pub translations: Option<Result<Vec<RawTranslation>, Error>>,
     /// All files that are present in the feed
     pub files: Vec<String>,
     /// Format of the data read

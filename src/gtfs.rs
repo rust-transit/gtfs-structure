@@ -46,6 +46,7 @@ pub struct Gtfs {
     /// List of possible localisations from this file
     pub avaliable_languages: Vec<LanguageTag>,
     pub translations: HashMap<TranslationLookup, String>,
+    pub possible_translations: Vec<(TranslatableField, LanguageTag)>,
 }
 
 impl TryFrom<RawGtfs> for Gtfs {
@@ -68,8 +69,8 @@ impl TryFrom<RawGtfs> for Gtfs {
 
         let mut avaliable_languages: HashSet<LanguageTag> = HashSet::new();
 
-        for summary_item in translations.1 {
-           avaliable_languages.insert(summary_item.1);
+        for summary_item in translations.1.iter() {
+           avaliable_languages.insert(summary_item.1.clone());
         }
 
         let avaliable_languages = avaliable_languages.into_iter().collect::<Vec<LanguageTag>>();
@@ -87,6 +88,7 @@ impl TryFrom<RawGtfs> for Gtfs {
                 raw.calendar_dates.unwrap_or_else(|| Ok(Vec::new()))?,
             ),
             avaliable_languages: avaliable_languages,
+            possible_translations: translations.1,
             translations: translations.0,
             read_duration: raw.read_duration,
         })

@@ -46,7 +46,7 @@ impl<T: Type> Type for Arc<T> {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq, Clone)]
 pub enum TranslatableField {
     Agency(AgencyFields),
     Areas(AreaFields),
@@ -59,14 +59,14 @@ pub enum TranslatableField {
     Trips(TripFields),
 }
 
-#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq, Clone)]
 pub enum TranslationKey {
     Record(String),
     RecordSub((String, String)),
     Value(String),
 }
 
-#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq, Clone)]
 pub struct TranslationLookup {
     pub language: LanguageTag,
     pub field: TranslatableField,
@@ -78,12 +78,12 @@ pub trait Translatable: Id {
     fn field_value(&self, field: Self::Fields) -> &str;
 }
 
-#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq, Clone)]
 pub enum StopTimeFields {
     Headsign,
 }
 
-#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq, Clone)]
 pub enum RouteFields {
     Desc,
     LongName,
@@ -91,40 +91,40 @@ pub enum RouteFields {
     Url,
 }
 
-#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq, Clone)]
 pub enum CalendarFields {
     ServiceId,
 }
 
-#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq, Clone)]
 pub enum FeedInfoFields {
     PublisherName,
 }
 
-#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq, Clone)]
 pub enum AreaFields {
     Name,
 }
 
-#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq, Clone)]
 pub enum AgencyFields {
     Name,
     FareUrl,
     Url,
 }
 
-#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq, Clone)]
 pub enum FareProductsFields {
     ProductName,
 }
 
-#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq, Clone)]
 pub enum TripFields {
     Headsign,
     ShortName
 }
 
-#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq, Clone)]
 pub enum StopFields {
     Code,
     Name,

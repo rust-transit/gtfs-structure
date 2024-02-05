@@ -425,10 +425,11 @@ impl Gtfs {
             if let Some(field) = Self::table_and_field_to_enum(row.table_name.as_str(), row.field_name.as_str()) {
                 if let Some(key) = Self::key_options_to_struct(row.record_id, row.record_sub_id, row.field_value) {
                     res.insert(TranslationLookup {
-                        language: language_tag,
-                        field: field,
+                        language: language_tag.clone(),
+                        field: field.clone(),
                         key: key
                     }, row.translation);
+                    possible_translations.insert((field, language_tag));
                 }
             }
             

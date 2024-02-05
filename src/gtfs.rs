@@ -72,6 +72,7 @@ impl TryFrom<RawGtfs> for Gtfs {
             calendar_dates: to_calendar_dates(
                 raw.calendar_dates.unwrap_or_else(|| Ok(Vec::new()))?,
             ),
+            avaliable_languages: vec![],
             read_duration: raw.read_duration,
         })
     }

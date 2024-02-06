@@ -340,7 +340,7 @@ fn display() {
 #[test]
 fn path_files() {
     let gtfs = RawGtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
-    assert_eq!(gtfs.files.len(), 13);
+    assert_eq!(gtfs.files.len(), 14);
     assert_eq!(gtfs.source_format, SourceFormat::Directory);
     assert!(gtfs.files.contains(&"agency.txt".to_owned()));
 }

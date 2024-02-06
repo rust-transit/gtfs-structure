@@ -67,6 +67,7 @@ impl RawGtfs {
         println!("  Transfers: {}", optional_file_summary(&self.transfers));
         println!("  Pathways: {}", optional_file_summary(&self.pathways));
         println!("  Feed info: {}", optional_file_summary(&self.feed_info));
+        println!("  Translatable Items: {}", optional_file_summary(&self.translations));
     }
 
     /// Reads from an url (if starts with http), or a local path (either a directory or zipped file)

@@ -564,7 +564,7 @@ impl Id for Shape {
 }
 
 /// Defines one possible fare. See <https://gtfs.org/reference/static/#fare_attributestxt>
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct FareAttribute {
     /// Unique technical (not for the traveller) identifier for the FareAttribute
     #[serde(rename = "fare_id")]
@@ -594,6 +594,21 @@ impl Type for FareAttribute {
     fn object_type(&self) -> ObjectType {
         ObjectType::Fare
     }
+}
+
+/// Defines one possible fare. See <https://gtfs.org/schedule/reference/#fare_rulestxt>
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct FareRule {
+    /// ID of the referenced FareAttribute.
+    pub fare_id: String,
+    /// ID of a [Route] associated with the fare class
+    pub route_id: Option<String>,
+    /// Identifies an origin zone. References a [Stop].zone_id
+    pub origin_id: Option<String>,
+    /// Identifies an destination zone. References a [Stop].zone_id
+    pub destination_id: Option<String>,
+    /// Identifies the zones that a rider will enter while using a given fare class. References a [Stop].zone_id
+    pub contains_id: Option<String>,
 }
 
 /// A [Frequency] before being merged into the corresponding [Trip]

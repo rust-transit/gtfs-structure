@@ -39,6 +39,8 @@ pub struct Gtfs {
     pub shapes: HashMap<String, Vec<Shape>>,
     /// All fare attributes by `fare_id`
     pub fare_attributes: HashMap<String, FareAttribute>,
+    /// All fare rules by `fare_id`
+    pub fare_rules: HashMap<String, Vec<FareRule>>,
     /// All feed information. There is no identifier
     pub feed_info: Vec<FeedInfo>,
 }
@@ -57,6 +59,11 @@ impl TryFrom<RawGtfs> for Gtfs {
         let frequencies = raw.frequencies.unwrap_or_else(|| Ok(Vec::new()))?;
         let trips = create_trips(raw.trips?, raw.stop_times?, frequencies, &stops)?;
 
+        let mut fare_rules = HashMap::<String, Vec<FareRule>>::new();
+        for f in raw.fare_rules.unwrap_or_else(|| Ok(Vec::new()))? {
+            (*fare_rules.entry(f.fare_id.clone()).or_default()).push(f);
+        }
+
         Ok(Gtfs {
             stops,
             routes: to_map(raw.routes?),
@@ -64,6 +71,7 @@ impl TryFrom<RawGtfs> for Gtfs {
             agencies: raw.agencies?,
             shapes: to_shape_map(raw.shapes.unwrap_or_else(|| Ok(Vec::new()))?),
             fare_attributes: to_map(raw.fare_attributes.unwrap_or_else(|| Ok(Vec::new()))?),
+            fare_rules,
             feed_info: raw.feed_info.unwrap_or_else(|| Ok(Vec::new()))?,
             calendar: to_map(raw.calendar.unwrap_or_else(|| Ok(Vec::new()))?),
             calendar_dates: to_calendar_dates(

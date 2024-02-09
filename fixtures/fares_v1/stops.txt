@@ -1,0 +1,3 @@
+stop_id,stop_name,stop_lat,stop_lon,zone_id
+Bloor,Bloor Station,,43.670049,-79.385389,ttc_subway_stations
+Yonge,Yonge Station,,43.671049,-79.386789,ttc_subway_stations

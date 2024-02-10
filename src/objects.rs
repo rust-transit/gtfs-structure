@@ -34,6 +34,43 @@ impl<T: Id> Id for Arc<T> {
     }
 }
 
+/// Objects that have a couple tuple as an identifier implement this trait
+///
+/// Those identifier are technical and should not be shown to travellers
+pub trait CoupleId {
+    fn couple_id(&self) -> (&str, &str);
+}
+
+pub enum RecordIdTypes {
+    RecordSubId((String, String)),
+    RecordId(String)
+}
+
+pub trait TranslateRecord {
+    fn record_id(&self) -> RecordIdTypes;
+}
+
+impl TranslateRecord for CoupleId {
+    fn record_id(&self) -> RecordIdTypes {
+        let couple_id = self.couple_id();
+        RecordIdTypes::RecordSubId((couple_id.0.to_string(), couple_id.1.to_string()))
+    }
+}
+
+impl TranslateRecord for Id {
+    fn record_id(&self) -> RecordIdTypes {
+        let id = self.id();
+        RecordIdTypes::RecordId(id.to_string())
+    }
+}
+
+/// Translatable allows an Option<String> as the field, as long as the record exists, a string will be returned, even if the original table's field is empty.
+pub trait Translatable: TranslateRecord {
+    type Fields;
+    fn field_value_lookup(self, field: Self::Fields) -> Option<String>;
+    fn record_id_lookup(self, field: Self::Fields) -> Option<String>;
+}
+
 /// Trait to introspect what is the object’s type (stop, route…)
 pub trait Type {
     /// What is the type of the object
@@ -71,11 +108,6 @@ pub struct TranslationLookup {
     pub language: LanguageTag,
     pub field: TranslatableField,
     pub key: TranslationKey,
-}
-
-pub trait Translatable: Id {
-    type Fields;
-    fn field_value(&self, field: Self::Fields) -> &str;
 }
 
 #[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq, Clone)]

@@ -247,8 +247,9 @@ impl Gtfs {
             .ok_or_else(|| Error::ReferenceError(id.to_owned()))
     }
 
-    /*
-        pub fn translate<T: Translatable>(&self, obj: &T, field: T::Fields, lang: &LanguageTag) -> String {
+    
+    pub fn translate<T: Translatable>(&self, obj: &T, field: T::Fields, lang: &LanguageTag) -> Option<String> {
+           /*
             let value = obj.field_value(field);
             if let Some(translation) = big_fat_hash.get(value, lang) {
                 translation
@@ -256,9 +257,10 @@ impl Gtfs {
                 translation
             } else {
                 value
-            }
+            } */
+
+            todo!("Not implemented yet");
         }
-    }*/
 
     fn to_map<O: Id>(elements: impl IntoIterator<Item = O>) -> HashMap<String, O> {
         elements
@@ -416,7 +418,9 @@ impl Gtfs {
     fn to_translations(
         raw_translations: Vec<RawTranslation>,
     ) -> (
+        //The translation table itself
         HashMap<TranslationLookup, String>,
+        //This is the summary for the GTFS structure
         Vec<(TranslatableField, LanguageTag)>
     ) {
         let mut res:HashMap<TranslationLookup, String> = HashMap::new();

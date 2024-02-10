@@ -248,6 +248,17 @@ impl Translatable for Route {
     }
 }
 
+impl Translatable for Agency {
+    type Fields = AgencyFields;
+    fn field_value_lookup(&self, field: Self::Fields) -> Option<&str> {
+        match field {
+            AgencyFields::Name => Some(&self.name),
+            AgencyFields::FareUrl => self.fare_url.as_deref(),
+            AgencyFields::Url => Some(&self.url),
+        }
+    }
+}
+
 /// A calender describes on which days the vehicle runs. See <https://gtfs.org/reference/static/#calendartxt>
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Calendar {
@@ -525,6 +536,16 @@ impl StopTime {
             shape_dist_traveled: stop_time_gtfs.shape_dist_traveled,
             timepoint: stop_time_gtfs.timepoint,
         }
+    }
+}
+
+impl CoupleId for StopTime {
+    fn couple_id(&self) -> (&str, &str) {
+        todo!()
+
+        //oh no... i need trip_id... but that's contained in the parent...
+
+        // should I add trip_id to stop_times?
     }
 }
 

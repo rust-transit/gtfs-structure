@@ -67,8 +67,8 @@ impl TranslateRecord for Id {
 /// Translatable allows an Option<String> as the field, as long as the record exists, a string will be returned, even if the original table's field is empty.
 pub trait Translatable: TranslateRecord {
     type Fields;
-    fn field_value_lookup(self, field: Self::Fields) -> Option<String>;
-    fn record_id_lookup(self, field: Self::Fields) -> Option<String>;
+    fn field_value_lookup(&self, field: Self::Fields) -> Option<String>;
+    fn record_id_lookup(&self) -> RecordIdTypes;
 }
 
 /// Trait to introspect what is the object’s type (stop, route…)

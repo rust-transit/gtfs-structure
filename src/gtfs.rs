@@ -248,18 +248,38 @@ impl Gtfs {
     }
 
     
-    pub fn translate<T: Translatable>(&self, obj: &T, field: T::Fields, lang: &LanguageTag) -> Option<String> {
-           /*
-            let value = obj.field_value(field);
-            if let Some(translation) = big_fat_hash.get(value, lang) {
-                translation
-            } else if let Some(translation) = big_fat_shas.get_by_id(obj.id(), lang) {
-                translation
-            } else {
-                value
-            } */
+    pub fn translate<T: Translatable + TranslateRecord>(&self, obj: &T, field: T::Fields, lang: &LanguageTag) -> Option<&str> {
+            let record = obj.record_id();
 
-            todo!("Not implemented yet");
+            let key:TranslationKey = match record {
+                RecordIdTypes::RecordSubId(sub_id) => TranslationKey::RecordSub((sub_id.0, sub_id.1)),
+                RecordIdTypes::RecordId(id) => TranslationKey::Record(id)
+            };
+
+            let lookup_field: TranslatableField = field.clone().wrap_with_table();
+
+            //according to the GTFS docs, record based translations take priority over value based translations.
+            if let Some(translation) = self.translations.get(&TranslationLookup{
+                language: lang.clone(),
+                field: lookup_field.clone(),
+                key: key
+            }) {
+               return Some(translation);
+            }
+            
+            let value = obj.field_value_lookup(field);
+
+            if let Some(value) = value {
+                if let Some(translation) = self.translations.get(&TranslationLookup{
+                    language: lang.clone(),
+                    field: lookup_field,
+                    key: TranslationKey::Value(value.to_string())
+                }) {
+                   return Some(translation);
+                }
+            }
+            
+            None
         }
 
     fn to_map<O: Id>(elements: impl IntoIterator<Item = O>) -> HashMap<String, O> {
@@ -382,7 +402,7 @@ impl Gtfs {
             },
             "fare_products" => {
                 match field_name {
-                    "fare_product_name" => Some(TranslatableField::FareProducts(FareProductsFields::ProductName)),
+                    "fare_product_name" => Some(TranslatableField::FareProducts(FareProductFields::ProductName)),
                     _ => None
                 }
             },

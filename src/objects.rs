@@ -50,14 +50,14 @@ pub trait TranslateRecord {
     fn record_id(&self) -> RecordIdTypes;
 }
 
-impl TranslateRecord for CoupleId {
+impl TranslateRecord for dyn CoupleId {
     fn record_id(&self) -> RecordIdTypes {
         let couple_id = self.couple_id();
         RecordIdTypes::RecordSubId((couple_id.0.to_string(), couple_id.1.to_string()))
     }
 }
 
-impl TranslateRecord for Id {
+impl TranslateRecord for dyn Id {
     fn record_id(&self) -> RecordIdTypes {
         let id = self.id();
         RecordIdTypes::RecordId(id.to_string())
@@ -65,10 +65,9 @@ impl TranslateRecord for Id {
 }
 
 /// Translatable allows an Option<String> as the field, as long as the record exists, a string will be returned, even if the original table's field is empty.
-pub trait Translatable: TranslateRecord {
-    type Fields;
-    fn field_value_lookup(&self, field: Self::Fields) -> Option<String>;
-    fn record_id_lookup(&self) -> RecordIdTypes;
+pub trait Translatable {
+    type Fields : WrapFieldWithTable + Clone;
+    fn field_value_lookup(&self, field: Self::Fields) -> Option<&str>;
 }
 
 /// Trait to introspect what is the object’s type (stop, route…)
@@ -88,7 +87,7 @@ pub enum TranslatableField {
     Agency(AgencyFields),
     Areas(AreaFields),
     Calendar(CalendarFields),
-    FareProducts(FareProductsFields),
+    FareProducts(FareProductFields),
     FeedInfo(FeedInfoFields),
     Routes(RouteFields),
     StopTimes(StopTimeFields),
@@ -146,7 +145,7 @@ pub enum AgencyFields {
 }
 
 #[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq, Clone)]
-pub enum FareProductsFields {
+pub enum FareProductFields {
     ProductName,
 }
 
@@ -165,16 +164,89 @@ pub enum StopFields {
     Desc,
 }
 
-/*
+pub trait WrapFieldWithTable {
+    fn wrap_with_table(self) -> TranslatableField;
+}
+
+
+impl WrapFieldWithTable for StopFields {
+    fn wrap_with_table(self) -> TranslatableField {
+        TranslatableField::Stops(self)
+    }
+}
+
+impl WrapFieldWithTable for AgencyFields {
+    fn wrap_with_table(self) -> TranslatableField {
+        TranslatableField::Agency(self)
+    }
+}
+
+impl WrapFieldWithTable for AreaFields {
+    fn wrap_with_table(self) -> TranslatableField {
+        TranslatableField::Areas(self)
+    }
+}
+
+impl WrapFieldWithTable for CalendarFields {
+    fn wrap_with_table(self) -> TranslatableField {
+        TranslatableField::Calendar(self)
+    }
+}
+
+impl WrapFieldWithTable for FareProductFields {
+    fn wrap_with_table(self) -> TranslatableField {
+        TranslatableField::FareProducts(self)
+    }
+}
+
+impl WrapFieldWithTable for FeedInfoFields {
+    fn wrap_with_table(self) -> TranslatableField {
+        TranslatableField::FeedInfo(self)
+    }
+}
+
+impl WrapFieldWithTable for RouteFields {
+    fn wrap_with_table(self) -> TranslatableField {
+        TranslatableField::Routes(self)
+    }
+}
+
+impl WrapFieldWithTable for StopTimeFields {
+    fn wrap_with_table(self) -> TranslatableField {
+        TranslatableField::StopTimes(self)
+    }
+}
+
+impl WrapFieldWithTable for TripFields {
+    fn wrap_with_table(self) -> TranslatableField {
+        TranslatableField::Trips(self)
+    }
+}
+
 impl Translatable for Stop {
     type Fields = StopFields;
-    fn field_value(&self, field: Self::Fields) -> &str {
+    fn field_value_lookup(&self, field: Self::Fields) -> Option<&str> {
         match field {
-            StopFields::Name => &self.name,
-            StopFields::Code => &self.
+            StopFields::Name => Some(&self.name),
+            StopFields::Code => self.code.as_deref(),
+            StopFields::TtsName => self.tts_name.as_deref(),
+            StopFields::PlatformCode => self.platform_code.as_deref(),
+            StopFields::Desc => self.description.as_deref(),
         }
     }
-}*/
+}
+
+impl Translatable for Route {
+    type Fields = RouteFields;
+    fn field_value_lookup(&self, field: Self::Fields) -> Option<&str> {
+        match field {
+            RouteFields::Desc => self.desc.as_deref(),
+            RouteFields::LongName => self.long_name.as_deref(),
+            RouteFields::ShortName => self.short_name.as_deref(),
+            RouteFields::Url => self.url.as_deref(),
+        }
+    }
+}
 
 /// A calender describes on which days the vehicle runs. See <https://gtfs.org/reference/static/#calendartxt>
 #[derive(Debug, Deserialize, Serialize)]
@@ -300,7 +372,7 @@ pub struct Stop {
     pub name: String,
     /// Description of the location that provides useful, quality information
     #[serde(default, rename = "stop_desc")]
-    pub description: String,
+    pub description: Option<String>,
     /// Type of the location
     #[serde(default)]
     pub location_type: LocationType,
@@ -337,6 +409,9 @@ pub struct Stop {
     /// Pathways from this stop
     #[serde(skip)]
     pub pathways: Vec<Pathway>,
+    /// Text to speech readable version of the stop_name
+    #[serde(rename = "tts_stop_name")]
+    pub tts_name: Option<String>
 }
 
 impl Type for Stop {
@@ -461,10 +536,10 @@ pub struct Route {
     pub id: String,
     /// Short name of a route. This will often be a short, abstract identifier like "32", "100X", or "Green" that riders use to identify a route, but which doesn't give any indication of what places the route serves
     #[serde(rename = "route_short_name", default)]
-    pub short_name: String,
+    pub short_name: Option<String>,
     /// Full name of a route. This name is generally more descriptive than the [Route::short_name]] and often includes the route's destination or stop
     #[serde(rename = "route_long_name", default)]
-    pub long_name: String,
+    pub long_name: Option<String>,
     /// Description of a route that provides useful, quality information
     #[serde(rename = "route_desc")]
     pub desc: Option<String>,
@@ -516,10 +591,10 @@ impl Id for Route {
 
 impl fmt::Display for Route {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if !self.long_name.is_empty() {
-            write!(f, "{}", self.long_name)
+        if self.long_name.is_some() {
+            write!(f, "{:?}", self.long_name)
         } else {
-            write!(f, "{}", self.short_name)
+            write!(f, "{:?}", self.short_name)
         }
     }
 }

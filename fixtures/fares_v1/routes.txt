@@ -1,0 +1,3 @@
+agency_id,route_id,route_type
+TTC,Line1,1
+TTC,Line2,1

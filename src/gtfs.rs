@@ -1,6 +1,8 @@
-use crate::{objects::*, Error, RawGtfs};
+use crate::objects::*;
+use crate::{Error, RawGtfs};
 use chrono::prelude::NaiveDate;
 use chrono::Duration;
+use language_tags::LanguageTag;
 use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
 use std::sync::Arc;
@@ -43,6 +45,10 @@ pub struct Gtfs {
     pub fare_rules: HashMap<String, Vec<FareRule>>,
     /// All feed information. There is no identifier
     pub feed_info: Vec<FeedInfo>,
+    /// List of possible localisations from this file
+    pub avaliable_languages: Vec<LanguageTag>,
+    pub translations: HashMap<TranslationLookup, String>,
+    pub possible_translations: Vec<(TranslatableField, LanguageTag)>,
 }
 
 impl TryFrom<RawGtfs> for Gtfs {
@@ -51,13 +57,25 @@ impl TryFrom<RawGtfs> for Gtfs {
     ///
     /// It might fail if some mandatory files couldn’t be read or if there are references to other objects that are invalid.
     fn try_from(raw: RawGtfs) -> Result<Gtfs, Error> {
-        let stops = to_stop_map(
+        let stops = Self::to_stop_map(
             raw.stops?,
             raw.transfers.unwrap_or_else(|| Ok(Vec::new()))?,
             raw.pathways.unwrap_or(Ok(Vec::new()))?,
         )?;
         let frequencies = raw.frequencies.unwrap_or_else(|| Ok(Vec::new()))?;
-        let trips = create_trips(raw.trips?, raw.stop_times?, frequencies, &stops)?;
+        let trips = Self::create_trips(raw.trips?, raw.stop_times?, frequencies, &stops)?;
+
+        let translations = Self::to_translations(
+            raw.translations.unwrap_or_else(|| Ok(Vec::new()))?,
+        );
+
+        let mut avaliable_languages: HashSet<LanguageTag> = HashSet::new();
+
+        for summary_item in translations.1.iter() {
+           avaliable_languages.insert(summary_item.1.clone());
+        }
+
+        let avaliable_languages = avaliable_languages.into_iter().collect::<Vec<LanguageTag>>();
 
         let mut fare_rules = HashMap::<String, Vec<FareRule>>::new();
         for f in raw.fare_rules.unwrap_or_else(|| Ok(Vec::new()))? {
@@ -66,17 +84,20 @@ impl TryFrom<RawGtfs> for Gtfs {
 
         Ok(Gtfs {
             stops,
-            routes: to_map(raw.routes?),
+            routes: Self::to_map(raw.routes?),
             trips,
             agencies: raw.agencies?,
             shapes: to_shape_map(raw.shapes.unwrap_or_else(|| Ok(Vec::new()))?),
             fare_attributes: to_map(raw.fare_attributes.unwrap_or_else(|| Ok(Vec::new()))?),
             fare_rules,
             feed_info: raw.feed_info.unwrap_or_else(|| Ok(Vec::new()))?,
-            calendar: to_map(raw.calendar.unwrap_or_else(|| Ok(Vec::new()))?),
-            calendar_dates: to_calendar_dates(
+            calendar: Self::to_map(raw.calendar.unwrap_or_else(|| Ok(Vec::new()))?),
+            calendar_dates: Self::to_calendar_dates(
                 raw.calendar_dates.unwrap_or_else(|| Ok(Vec::new()))?,
             ),
+            avaliable_languages: avaliable_languages,
+            possible_translations: translations.1,
+            translations: translations.0,
             read_duration: raw.read_duration,
         })
     }
@@ -93,7 +114,9 @@ impl Gtfs {
         println!("  Agencies: {}", self.agencies.len());
         println!("  Shapes: {}", self.shapes.len());
         println!("  Fare attributes: {}", self.fare_attributes.len());
-        println!("  Feed info: {}", self.feed_info.len());
+        println!("  Feed info: {:?}", self.feed_info);
+        println!("  Translatable Items: {:?}", self.translations.len());
+        println!("  Avaliable Languages: {:?}", self.avaliable_languages);
     }
 
     /// Reads from an url (if starts with `"http"`), or a local path (either a directory or zipped file)
@@ -104,7 +127,7 @@ impl Gtfs {
         RawGtfs::new(gtfs).and_then(Gtfs::try_from)
     }
 
-    /// Reads the GTFS from a local zip archive or local directory
+    /// Reads the GTFS from a local zip archive or local directory
     pub fn from_path<P>(path: P) -> Result<Gtfs, Error>
     where
         P: AsRef<std::path::Path> + std::fmt::Display,
@@ -231,124 +254,277 @@ impl Gtfs {
             .get(id)
             .ok_or_else(|| Error::ReferenceError(id.to_owned()))
     }
-}
 
-fn to_map<O: Id>(elements: impl IntoIterator<Item = O>) -> HashMap<String, O> {
-    elements
-        .into_iter()
-        .map(|e| (e.id().to_owned(), e))
-        .collect()
-}
+    
+    pub fn translate<T: Translatable + TranslateRecord>(&self, obj: &T, field: T::Fields, lang: &LanguageTag) -> Option<&str> {
+            let record = obj.record_id();
 
-fn to_stop_map(
-    stops: Vec<Stop>,
-    raw_transfers: Vec<RawTransfer>,
-    raw_pathways: Vec<RawPathway>,
-) -> Result<HashMap<String, Arc<Stop>>, Error> {
-    let mut stop_map: HashMap<String, Stop> =
-        stops.into_iter().map(|s| (s.id.clone(), s)).collect();
+            let key:TranslationKey = match record {
+                RecordIdTypes::RecordSubId(sub_id) => TranslationKey::RecordSub((sub_id.0, sub_id.1)),
+                RecordIdTypes::RecordId(id) => TranslationKey::Record(id)
+            };
 
-    for transfer in raw_transfers {
-        stop_map.get(&transfer.to_stop_id).ok_or_else(|| {
-            let stop_id = &transfer.to_stop_id;
-            Error::ReferenceError(format!("'{stop_id}' in transfers.txt"))
-        })?;
-        stop_map
-            .entry(transfer.from_stop_id.clone())
-            .and_modify(|stop| stop.transfers.push(StopTransfer::from(transfer)));
+            let lookup_field: TranslatableField = field.clone().wrap_with_table();
+
+            //according to the GTFS docs, record based translations take priority over value based translations.
+            if let Some(translation) = self.translations.get(&TranslationLookup{
+                language: lang.clone(),
+                field: lookup_field.clone(),
+                key: key
+            }) {
+               return Some(translation);
+            }
+            
+            let value = obj.field_value_lookup(field);
+
+            if let Some(value) = value {
+                if let Some(translation) = self.translations.get(&TranslationLookup{
+                    language: lang.clone(),
+                    field: lookup_field,
+                    key: TranslationKey::Value(value.to_string())
+                }) {
+                   return Some(translation);
+                }
+            }
+            
+            None
+        }
+
+    fn to_map<O: Id>(elements: impl IntoIterator<Item = O>) -> HashMap<String, O> {
+        elements
+            .into_iter()
+            .map(|e| (e.id().to_owned(), e))
+            .collect()
     }
 
-    for pathway in raw_pathways {
-        stop_map.get(&pathway.to_stop_id).ok_or_else(|| {
-            let stop_id = &pathway.to_stop_id;
-            Error::ReferenceError(format!("'{stop_id}' in pathways.txt"))
-        })?;
-        stop_map
-            .entry(pathway.from_stop_id.clone())
-            .and_modify(|stop| stop.pathways.push(Pathway::from(pathway)));
+    fn to_stop_map(
+        stops: Vec<Stop>,
+        raw_transfers: Vec<RawTransfer>,
+        raw_pathways: Vec<RawPathway>,
+    ) -> Result<HashMap<String, Arc<Stop>>, Error> {
+        let mut stop_map: HashMap<String, Stop> =
+            stops.into_iter().map(|s| (s.id.clone(), s)).collect();
+
+        for transfer in raw_transfers {
+            stop_map.get(&transfer.to_stop_id).ok_or_else(|| {
+                let stop_id = &transfer.to_stop_id;
+                Error::ReferenceError(format!("'{stop_id}' in transfers.txt"))
+            })?;
+            stop_map
+                .entry(transfer.from_stop_id.clone())
+                .and_modify(|stop| stop.transfers.push(StopTransfer::from(transfer)));
+        }
+
+        for pathway in raw_pathways {
+            stop_map.get(&pathway.to_stop_id).ok_or_else(|| {
+                let stop_id = &pathway.to_stop_id;
+                Error::ReferenceError(format!("'{stop_id}' in pathways.txt"))
+            })?;
+            stop_map
+                .entry(pathway.from_stop_id.clone())
+                .and_modify(|stop| stop.pathways.push(Pathway::from(pathway)));
+        }
+
+        let res = stop_map
+            .into_iter()
+            .map(|(i, s)| (i, Arc::new(s)))
+            .collect();
+        Ok(res)
     }
 
-    let res = stop_map
-        .into_iter()
-        .map(|(i, s)| (i, Arc::new(s)))
-        .collect();
-    Ok(res)
-}
+    fn to_shape_map(shapes: Vec<Shape>) -> HashMap<String, Vec<Shape>> {
+        let mut res = HashMap::default();
+        for s in shapes {
+            let shape = res.entry(s.id.to_owned()).or_insert_with(Vec::new);
+            shape.push(s);
+        }
+        // we sort the shape by it's pt_sequence
+        for shapes in res.values_mut() {
+            shapes.sort_by_key(|s| s.sequence);
+        }
 
-fn to_shape_map(shapes: Vec<Shape>) -> HashMap<String, Vec<Shape>> {
-    let mut res = HashMap::default();
-    for s in shapes {
-        let shape = res.entry(s.id.to_owned()).or_insert_with(Vec::new);
-        shape.push(s);
-    }
-    // we sort the shape by it's pt_sequence
-    for shapes in res.values_mut() {
-        shapes.sort_by_key(|s| s.sequence);
+        res
     }
 
-    res
-}
-
-fn to_calendar_dates(cd: Vec<CalendarDate>) -> HashMap<String, Vec<CalendarDate>> {
-    let mut res = HashMap::default();
-    for c in cd {
-        let cal = res.entry(c.service_id.to_owned()).or_insert_with(Vec::new);
-        cal.push(c);
+    fn to_calendar_dates(cd: Vec<CalendarDate>) -> HashMap<String, Vec<CalendarDate>> {
+        let mut res = HashMap::default();
+        for c in cd {
+            let cal = res.entry(c.service_id.to_owned()).or_insert_with(Vec::new);
+            cal.push(c);
+        }
+        res
     }
-    res
-}
 
-// Number of stoptimes to `pop` from the list before using shrink_to_fit to reduce the memory footprint
-// Hardcoded to what seems a sensible value, but if needed we could make this a parameter, feel free to open an issue if this could help
-const NB_STOP_TIMES_BEFORE_SHRINK: usize = 1_000_000;
-
-fn create_trips(
-    raw_trips: Vec<RawTrip>,
-    mut raw_stop_times: Vec<RawStopTime>,
-    raw_frequencies: Vec<RawFrequency>,
-    stops: &HashMap<String, Arc<Stop>>,
-) -> Result<HashMap<String, Trip>, Error> {
-    let mut trips = to_map(raw_trips.into_iter().map(|rt| Trip {
-        id: rt.id,
-        service_id: rt.service_id,
-        route_id: rt.route_id,
-        stop_times: vec![],
-        shape_id: rt.shape_id,
-        trip_headsign: rt.trip_headsign,
-        trip_short_name: rt.trip_short_name,
-        direction_id: rt.direction_id,
-        block_id: rt.block_id,
-        wheelchair_accessible: rt.wheelchair_accessible,
-        bikes_allowed: rt.bikes_allowed,
-        frequencies: vec![],
-    }));
-
-    let mut st_idx = 0;
-    while let Some(s) = raw_stop_times.pop() {
-        st_idx += 1;
-        let trip = &mut trips
-            .get_mut(&s.trip_id)
-            .ok_or_else(|| Error::ReferenceError(s.trip_id.to_string()))?;
-        let stop = stops
-            .get(&s.stop_id)
-            .ok_or_else(|| Error::ReferenceError(s.stop_id.to_string()))?;
-        trip.stop_times.push(StopTime::from(s, Arc::clone(stop)));
-        if st_idx % NB_STOP_TIMES_BEFORE_SHRINK == 0 {
-            raw_stop_times.shrink_to_fit();
+    fn table_and_field_to_enum(table_name: &str, field_name: &str) -> Option<TranslatableField> {
+        match table_name {
+            "agency" => {
+                match field_name {
+                    "agency_name" => Some(TranslatableField::Agency(AgencyFields::Name)),
+                    "agency_url" => Some(TranslatableField::Agency(AgencyFields::Url)),
+                    "agency_fare_url" => Some(TranslatableField::Agency(AgencyFields::FareUrl)),
+                    _ => None
+                  }
+            },
+            "areas" => {
+                match field_name {
+                    "area_name" => Some(TranslatableField::Areas(AreaFields::Name)),
+                    _ => None
+                  }
+            },
+            "routes" => {
+                match field_name {
+                    "route_long_name" => Some(TranslatableField::Routes(RouteFields::LongName)),
+                    "route_short_name" => Some(TranslatableField::Routes(RouteFields::ShortName)),
+                    "route_url" => Some(TranslatableField::Routes(RouteFields::Url)),
+                    _ => None
+                  }
+            },
+            "stop_times" => {
+                match field_name {
+                    "stop_headsign" => Some(TranslatableField::StopTimes(StopTimeFields::Headsign)),
+                    _ => None
+                  }
+            },
+            "stops" => {
+                match field_name {
+                    "stop_code" => Some(TranslatableField::Stops(StopFields::Code)),
+                    "stop_name" => Some(TranslatableField::Stops(StopFields::Name)),
+                    "tts_stop_name" => Some(TranslatableField::Stops(StopFields::TtsName)),
+                    "stop_desc" => Some(TranslatableField::Stops(StopFields::Desc)),
+                    "platform_code" => Some(TranslatableField::Stops(StopFields::PlatformCode)),
+                    _ => None
+                }
+            },
+            "trips" => {
+                match field_name {
+                    "trip_headsign" => Some(TranslatableField::Trips(TripFields::Headsign)),
+                    "trip_short_name" => Some(TranslatableField::Trips(TripFields::ShortName)),
+                    _ => None
+                }
+            },
+            "calendar" => {
+                match field_name {
+                    "service_id" => Some(TranslatableField::Calendar(CalendarFields::ServiceId)),
+                    _ => None
+                }
+            },
+            "fare_products" => {
+                match field_name {
+                    "fare_product_name" => Some(TranslatableField::FareProducts(FareProductFields::ProductName)),
+                    _ => None
+                }
+            },
+            "feed_info" => {
+                match field_name {
+                    "feed_publisher_name" => Some(TranslatableField::FeedInfo(FeedInfoFields::PublisherName)),
+                _ => None
+                }
+            }
+            _ => None
         }
     }
 
-    for trip in &mut trips.values_mut() {
-        trip.stop_times
-            .sort_by(|a, b| a.stop_sequence.cmp(&b.stop_sequence));
+    fn key_options_to_struct(record_id: Option<String>, record_sub_id: Option<String>, field_value: Option<String>) -> Option<TranslationKey> {
+     //https://gtfs.org/schedule/reference/#translationstxt
+     //If both referencing methods (record_id, record_sub_id) and field_value are used to translate the same value in 2 different rows, the translation provided with (record_id, record_sub_id) takes precedence.
+       
+     if record_id.is_some() && record_sub_id.is_some() {
+        return Some(TranslationKey::RecordSub((record_id.unwrap(), record_sub_id.unwrap())));
     }
 
-    for f in raw_frequencies {
-        let trip = &mut trips
-            .get_mut(&f.trip_id)
-            .ok_or_else(|| Error::ReferenceError(f.trip_id.to_string()))?;
-        trip.frequencies.push(Frequency::from(&f));
+     if record_id.is_some() {
+        return Some(TranslationKey::Record(record_id.unwrap()));
     }
 
-    Ok(trips)
+       if field_value.is_some() {
+           return Some(TranslationKey::Value(field_value.unwrap()));
+       }
+
+       None
+    }
+
+    fn to_translations(
+        raw_translations: Vec<RawTranslation>,
+    ) -> (
+        //The translation table itself
+        HashMap<TranslationLookup, String>,
+        //This is the summary for the GTFS structure
+        Vec<(TranslatableField, LanguageTag)>
+    ) {
+        let mut res:HashMap<TranslationLookup, String> = HashMap::new();
+        let mut possible_translations:HashSet<(TranslatableField, LanguageTag)> = HashSet::new();
+
+        for row in raw_translations {
+            if let Ok(language_tag) = LanguageTag::parse(row.language.as_str()) {
+            if let Some(field) = Self::table_and_field_to_enum(row.table_name.as_str(), row.field_name.as_str()) {
+                if let Some(key) = Self::key_options_to_struct(row.record_id, row.record_sub_id, row.field_value) {
+                    res.insert(TranslationLookup {
+                        language: language_tag.clone(),
+                        field: field.clone(),
+                        key: key
+                    }, row.translation);
+                    possible_translations.insert((field, language_tag));
+                }
+            }
+            
+            }
+        }
+
+        (res, possible_translations.into_iter().collect::<Vec<(TranslatableField, LanguageTag)>>())
+    }
+
+    // Number of stoptimes to `pop` from the list before using shrink_to_fit to reduce the memory footprint
+    // Hardcoded to what seems a sensible value, but if needed we could make this a parameter, feel free to open an issue if this could help
+    const NB_STOP_TIMES_BEFORE_SHRINK: usize = 1_000_000;
+
+    fn create_trips(
+        raw_trips: Vec<RawTrip>,
+        mut raw_stop_times: Vec<RawStopTime>,
+        raw_frequencies: Vec<RawFrequency>,
+        stops: &HashMap<String, Arc<Stop>>,
+    ) -> Result<HashMap<String, Trip>, Error> {
+        let mut trips = Self::to_map(raw_trips.into_iter().map(|rt| Trip {
+            id: rt.id,
+            service_id: rt.service_id,
+            route_id: rt.route_id,
+            stop_times: vec![],
+            shape_id: rt.shape_id,
+            trip_headsign: rt.trip_headsign,
+            trip_short_name: rt.trip_short_name,
+            direction_id: rt.direction_id,
+            block_id: rt.block_id,
+            wheelchair_accessible: rt.wheelchair_accessible,
+            bikes_allowed: rt.bikes_allowed,
+            frequencies: vec![],
+        }));
+
+        let mut st_idx = 0;
+        while let Some(s) = raw_stop_times.pop() {
+            st_idx += 1;
+            let trip = &mut trips
+                .get_mut(&s.trip_id)
+                .ok_or_else(|| Error::ReferenceError(s.trip_id.to_string()))?;
+            let stop = stops
+                .get(&s.stop_id)
+                .ok_or_else(|| Error::ReferenceError(s.stop_id.to_string()))?;
+            trip.stop_times.push(StopTime::from(s, Arc::clone(stop)));
+            if st_idx % Self::NB_STOP_TIMES_BEFORE_SHRINK == 0 {
+                raw_stop_times.shrink_to_fit();
+            }
+        }
+
+        for trip in &mut trips.values_mut() {
+            trip.stop_times
+                .sort_by(|a, b| a.stop_sequence.cmp(&b.stop_sequence));
+        }
+
+        for f in raw_frequencies {
+            let trip = &mut trips
+                .get_mut(&f.trip_id)
+                .ok_or_else(|| Error::ReferenceError(f.trip_id.to_string()))?;
+            trip.frequencies.push(Frequency::from(&f));
+        }
+
+        Ok(trips)
+    }
 }

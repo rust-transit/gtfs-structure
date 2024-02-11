@@ -1,3 +1,4 @@
+use crate::enums::*;
 use crate::objects::*;
 use crate::Error;
 use crate::GtfsReader;
@@ -39,6 +40,8 @@ pub struct RawGtfs {
     pub feed_info: Option<Result<Vec<FeedInfo>, Error>>,
     /// All StopTimes
     pub stop_times: Result<Vec<RawStopTime>, Error>,
+    /// All Translations
+    pub translations: Option<Result<Vec<RawTranslation>, Error>>,
     /// All files that are present in the feed
     pub files: Vec<String>,
     /// Format of the data read
@@ -66,6 +69,7 @@ impl RawGtfs {
         println!("  Transfers: {}", optional_file_summary(&self.transfers));
         println!("  Pathways: {}", optional_file_summary(&self.pathways));
         println!("  Feed info: {}", optional_file_summary(&self.feed_info));
+        println!("  Translatable Items: {}", optional_file_summary(&self.translations));
     }
 
     /// Reads from an url (if starts with http), or a local path (either a directory or zipped file)

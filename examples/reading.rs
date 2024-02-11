@@ -12,6 +12,7 @@ fn main() {
     match gtfs {
         Ok(g) => {
             g.print_stats();
+            let (_, stop) = g.stops.iter().next().unwrap();
         }
         Err(e) => eprintln!("error: {e:?}"),
     }

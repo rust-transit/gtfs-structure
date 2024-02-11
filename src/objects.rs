@@ -1,10 +1,24 @@
 pub use crate::enums::*;
 use crate::serde_helpers::*;
 use chrono::{Datelike, NaiveDate, Weekday};
+use language_tags::LanguageTag;
 use rgb::RGB8;
-
 use std::fmt;
 use std::sync::Arc;
+
+/// Raw Translation used for RawGtfs
+#[derive(Derivative)]
+#[derivative(Default(bound = ""))]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+pub struct RawTranslation {
+    pub table_name: String,
+    pub field_name: String,
+    pub language: String,
+    pub translation: String,
+    pub record_id: Option<String>,
+    pub record_sub_id: Option<String>,
+    pub field_value: Option<String>,
+}
 
 /// Objects that have an identifier implement this trait
 ///
@@ -20,6 +34,42 @@ impl<T: Id> Id for Arc<T> {
     }
 }
 
+/// Objects that have a couple tuple as an identifier implement this trait
+///
+/// Those identifier are technical and should not be shown to travellers
+pub trait CoupleId {
+    fn couple_id(&self) -> (&str, &str);
+}
+
+pub enum RecordIdTypes {
+    RecordSubId((String, String)),
+    RecordId(String)
+}
+
+pub trait TranslateRecord {
+    fn record_id(&self) -> RecordIdTypes;
+}
+
+impl TranslateRecord for dyn CoupleId {
+    fn record_id(&self) -> RecordIdTypes {
+        let couple_id = self.couple_id();
+        RecordIdTypes::RecordSubId((couple_id.0.to_string(), couple_id.1.to_string()))
+    }
+}
+
+impl TranslateRecord for dyn Id {
+    fn record_id(&self) -> RecordIdTypes {
+        let id = self.id();
+        RecordIdTypes::RecordId(id.to_string())
+    }
+}
+
+/// Translatable allows an Option<String> as the field, as long as the record exists, a string will be returned, even if the original table's field is empty.
+pub trait Translatable {
+    type Fields : WrapFieldWithTable + Clone;
+    fn field_value_lookup(&self, field: Self::Fields) -> Option<&str>;
+}
+
 /// Trait to introspect what is the object’s type (stop, route…)
 pub trait Type {
     /// What is the type of the object
@@ -29,6 +79,183 @@ pub trait Type {
 impl<T: Type> Type for Arc<T> {
     fn object_type(&self) -> ObjectType {
         self.as_ref().object_type()
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq, Clone)]
+pub enum TranslatableField {
+    Agency(AgencyFields),
+    Areas(AreaFields),
+    Calendar(CalendarFields),
+    FareProducts(FareProductFields),
+    FeedInfo(FeedInfoFields),
+    Routes(RouteFields),
+    StopTimes(StopTimeFields),
+    Stops(StopFields),
+    Trips(TripFields),
+}
+
+#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq, Clone)]
+pub enum TranslationKey {
+    Record(String),
+    RecordSub((String, String)),
+    Value(String),
+}
+
+#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq, Clone)]
+pub struct TranslationLookup {
+    pub language: LanguageTag,
+    pub field: TranslatableField,
+    pub key: TranslationKey,
+}
+
+#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq, Clone)]
+pub enum StopTimeFields {
+    Headsign,
+}
+
+#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq, Clone)]
+pub enum RouteFields {
+    Desc,
+    LongName,
+    ShortName,
+    Url,
+}
+
+#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq, Clone)]
+pub enum CalendarFields {
+    ServiceId,
+}
+
+#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq, Clone)]
+pub enum FeedInfoFields {
+    PublisherName,
+}
+
+#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq, Clone)]
+pub enum AreaFields {
+    Name,
+}
+
+#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq, Clone)]
+pub enum AgencyFields {
+    Name,
+    FareUrl,
+    Url,
+}
+
+#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq, Clone)]
+pub enum FareProductFields {
+    ProductName,
+}
+
+#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq, Clone)]
+pub enum TripFields {
+    Headsign,
+    ShortName
+}
+
+#[derive(Debug, Deserialize, Serialize, Hash, Eq, PartialEq, Clone)]
+pub enum StopFields {
+    Code,
+    Name,
+    TtsName,
+    PlatformCode,
+    Desc,
+}
+
+pub trait WrapFieldWithTable {
+    fn wrap_with_table(self) -> TranslatableField;
+}
+
+
+impl WrapFieldWithTable for StopFields {
+    fn wrap_with_table(self) -> TranslatableField {
+        TranslatableField::Stops(self)
+    }
+}
+
+impl WrapFieldWithTable for AgencyFields {
+    fn wrap_with_table(self) -> TranslatableField {
+        TranslatableField::Agency(self)
+    }
+}
+
+impl WrapFieldWithTable for AreaFields {
+    fn wrap_with_table(self) -> TranslatableField {
+        TranslatableField::Areas(self)
+    }
+}
+
+impl WrapFieldWithTable for CalendarFields {
+    fn wrap_with_table(self) -> TranslatableField {
+        TranslatableField::Calendar(self)
+    }
+}
+
+impl WrapFieldWithTable for FareProductFields {
+    fn wrap_with_table(self) -> TranslatableField {
+        TranslatableField::FareProducts(self)
+    }
+}
+
+impl WrapFieldWithTable for FeedInfoFields {
+    fn wrap_with_table(self) -> TranslatableField {
+        TranslatableField::FeedInfo(self)
+    }
+}
+
+impl WrapFieldWithTable for RouteFields {
+    fn wrap_with_table(self) -> TranslatableField {
+        TranslatableField::Routes(self)
+    }
+}
+
+impl WrapFieldWithTable for StopTimeFields {
+    fn wrap_with_table(self) -> TranslatableField {
+        TranslatableField::StopTimes(self)
+    }
+}
+
+impl WrapFieldWithTable for TripFields {
+    fn wrap_with_table(self) -> TranslatableField {
+        TranslatableField::Trips(self)
+    }
+}
+
+impl Translatable for Stop {
+    type Fields = StopFields;
+    fn field_value_lookup(&self, field: Self::Fields) -> Option<&str> {
+        match field {
+            StopFields::Name => Some(&self.name),
+            StopFields::Code => self.code.as_deref(),
+            StopFields::TtsName => self.tts_name.as_deref(),
+            StopFields::PlatformCode => self.platform_code.as_deref(),
+            StopFields::Desc => self.description.as_deref(),
+        }
+    }
+}
+
+impl Translatable for Route {
+    type Fields = RouteFields;
+    fn field_value_lookup(&self, field: Self::Fields) -> Option<&str> {
+        match field {
+            RouteFields::Desc => self.desc.as_deref(),
+            RouteFields::LongName => self.long_name.as_deref(),
+            RouteFields::ShortName => self.short_name.as_deref(),
+            RouteFields::Url => self.url.as_deref(),
+        }
+    }
+}
+
+impl Translatable for Agency {
+    type Fields = AgencyFields;
+    fn field_value_lookup(&self, field: Self::Fields) -> Option<&str> {
+        match field {
+            AgencyFields::Name => Some(&self.name),
+            AgencyFields::FareUrl => self.fare_url.as_deref(),
+            AgencyFields::Url => Some(&self.url),
+        }
     }
 }
 
@@ -156,7 +383,7 @@ pub struct Stop {
     pub name: String,
     /// Description of the location that provides useful, quality information
     #[serde(default, rename = "stop_desc")]
-    pub description: String,
+    pub description: Option<String>,
     /// Type of the location
     #[serde(default)]
     pub location_type: LocationType,
@@ -193,6 +420,9 @@ pub struct Stop {
     /// Pathways from this stop
     #[serde(skip)]
     pub pathways: Vec<Pathway>,
+    /// Text to speech readable version of the stop_name
+    #[serde(rename = "tts_stop_name")]
+    pub tts_name: Option<String>
 }
 
 impl Type for Stop {
@@ -309,6 +539,16 @@ impl StopTime {
     }
 }
 
+impl CoupleId for StopTime {
+    fn couple_id(&self) -> (&str, &str) {
+        todo!()
+
+        //oh no... i need trip_id... but that's contained in the parent...
+
+        // should I add trip_id to stop_times?
+    }
+}
+
 /// A route is a commercial line (there can be various stop sequences for a same line). See <https://gtfs.org/reference/static/#routestxt>
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Route {
@@ -317,10 +557,10 @@ pub struct Route {
     pub id: String,
     /// Short name of a route. This will often be a short, abstract identifier like "32", "100X", or "Green" that riders use to identify a route, but which doesn't give any indication of what places the route serves
     #[serde(rename = "route_short_name", default)]
-    pub short_name: String,
+    pub short_name: Option<String>,
     /// Full name of a route. This name is generally more descriptive than the [Route::short_name]] and often includes the route's destination or stop
     #[serde(rename = "route_long_name", default)]
-    pub long_name: String,
+    pub long_name: Option<String>,
     /// Description of a route that provides useful, quality information
     #[serde(rename = "route_desc")]
     pub desc: Option<String>,
@@ -372,10 +612,10 @@ impl Id for Route {
 
 impl fmt::Display for Route {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if !self.long_name.is_empty() {
-            write!(f, "{}", self.long_name)
+        if self.long_name.is_some() {
+            write!(f, "{:?}", self.long_name)
         } else {
-            write!(f, "{}", self.short_name)
+            write!(f, "{:?}", self.short_name)
         }
     }
 }

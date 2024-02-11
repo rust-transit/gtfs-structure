@@ -28,6 +28,8 @@ pub struct RawGtfs {
     pub shapes: Option<Result<Vec<Shape>, Error>>,
     /// All FareAttribates, None if the file was absent as it is not mandatory
     pub fare_attributes: Option<Result<Vec<FareAttribute>, Error>>,
+    /// All FareRules, None if the file was absent as it is not mandatory
+    pub fare_rules: Option<Result<Vec<FareRule>, Error>>,
     /// All Frequencies, None if the file was absent as it is not mandatory
     pub frequencies: Option<Result<Vec<RawFrequency>, Error>>,
     /// All Transfers, None if the file was absent as it is not mandatory

@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::objects::*;
 use crate::Gtfs;
 use crate::RawGtfs;
@@ -469,4 +471,46 @@ fn sorted_shapes() {
             (11, 37.65863, -122.30839),
         ]
     );
+}
+
+#[test]
+fn fare_v1() {
+    let gtfs = Gtfs::from_path("fixtures/fares_v1").expect("impossible to read gtfs");
+
+    let mut expected_attributes = HashMap::new();
+    expected_attributes.insert(
+        "presto_fare".to_string(),
+        FareAttribute {
+            id: "presto_fare".to_string(),
+            currency: "CAD".to_string(),
+            price: "3.2".to_string(),
+            payment_method: PaymentMethod::PreBoarding,
+            transfer_duration: Some(7200),
+            agency_id: None,
+            transfers: Transfers::Unlimited,
+        },
+    );
+    assert_eq!(gtfs.fare_attributes, expected_attributes);
+
+    let mut expected_rules = HashMap::new();
+    expected_rules.insert(
+        "presto_fare".to_string(),
+        vec![
+            FareRule {
+                fare_id: "presto_fare".to_string(),
+                route_id: Some("line1".to_string()),
+                origin_id: Some("ttc_subway_stations".to_string()),
+                destination_id: Some("ttc_subway_stations".to_string()),
+                contains_id: None,
+            },
+            FareRule {
+                fare_id: "presto_fare".to_string(),
+                route_id: Some("line2".to_string()),
+                origin_id: Some("ttc_subway_stations".to_string()),
+                destination_id: Some("ttc_subway_stations".to_string()),
+                contains_id: None,
+            },
+        ],
+    );
+    assert_eq!(gtfs.fare_rules, expected_rules);
 }

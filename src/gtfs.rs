@@ -41,6 +41,8 @@ pub struct Gtfs {
     pub shapes: HashMap<String, Vec<Shape>>,
     /// All fare attributes by `fare_id`
     pub fare_attributes: HashMap<String, FareAttribute>,
+    /// All fare rules by `fare_id`
+    pub fare_rules: HashMap<String, Vec<FareRule>>,
     /// All feed information. There is no identifier
     pub feed_info: Vec<FeedInfo>,
     /// List of possible localisations from this file
@@ -75,13 +77,19 @@ impl TryFrom<RawGtfs> for Gtfs {
 
         let avaliable_languages = avaliable_languages.into_iter().collect::<Vec<LanguageTag>>();
 
+        let mut fare_rules = HashMap::<String, Vec<FareRule>>::new();
+        for f in raw.fare_rules.unwrap_or_else(|| Ok(Vec::new()))? {
+            (*fare_rules.entry(f.fare_id.clone()).or_default()).push(f);
+        }
+
         Ok(Gtfs {
             stops,
             routes: Self::to_map(raw.routes?),
             trips,
             agencies: raw.agencies?,
-            shapes: Self::to_shape_map(raw.shapes.unwrap_or_else(|| Ok(Vec::new()))?),
-            fare_attributes: Self::to_map(raw.fare_attributes.unwrap_or_else(|| Ok(Vec::new()))?),
+            shapes: to_shape_map(raw.shapes.unwrap_or_else(|| Ok(Vec::new()))?),
+            fare_attributes: to_map(raw.fare_attributes.unwrap_or_else(|| Ok(Vec::new()))?),
+            fare_rules,
             feed_info: raw.feed_info.unwrap_or_else(|| Ok(Vec::new()))?,
             calendar: Self::to_map(raw.calendar.unwrap_or_else(|| Ok(Vec::new()))?),
             calendar_dates: Self::to_calendar_dates(

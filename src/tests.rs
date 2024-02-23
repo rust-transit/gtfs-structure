@@ -310,7 +310,7 @@ fn display() {
         format!(
             "{}",
             Stop {
-                name: "Sorano".to_owned(),
+                name:Some("Sorano".to_owned()),
                 ..Stop::default()
             }
         )
@@ -321,7 +321,8 @@ fn display() {
         format!(
             "{}",
             Route {
-                long_name: "Long route name".to_owned(),
+                long_name: Some("Long route name".to_owned()),
+                short_name: None,
                 ..Route::default()
             }
         )
@@ -332,7 +333,8 @@ fn display() {
         format!(
             "{}",
             Route {
-                short_name: "Short route name".to_owned(),
+                short_name: Some("Short route name".to_owned()),
+                long_name: None,
                 ..Route::default()
             }
         )
@@ -415,7 +417,7 @@ fn read_interpolated_stops() {
     // the second stop have no departure/arrival, it should not cause any problems
     assert_eq!(
         gtfs.trips["trip1"].stop_times[1].stop.name,
-        "Stop Point child of 1"
+        Some("Stop Point child of 1".to_owned())
     );
     assert!(gtfs.trips["trip1"].stop_times[1].arrival_time.is_none());
 }

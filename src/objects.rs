@@ -153,10 +153,10 @@ pub struct Stop {
     pub code: Option<String>,
     ///Name of the location. Use a name that people will understand in the local and tourist vernacular
     #[serde(rename = "stop_name")]
-    pub name: String,
+    pub name: Option<String>,
     /// Description of the location that provides useful, quality information
     #[serde(default, rename = "stop_desc")]
-    pub description: String,
+    pub description: Option<String>,
     /// Type of the location
     #[serde(default)]
     pub location_type: LocationType,
@@ -212,7 +212,7 @@ impl Id for Stop {
 
 impl fmt::Display for Stop {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.name)
+        write!(f, "{}", self.name.clone().unwrap_or(String::from("")))
     }
 }
 

@@ -9,6 +9,6 @@ fn main() {
     raw_gtfs.print_stats();
 
     for stop in raw_gtfs.stops.expect("impossible to read stops.txt") {
-        println!("stop: {}", stop.name);
+        println!("stop: {}", stop.name.unwrap_or(String::from("")));
     }
 }

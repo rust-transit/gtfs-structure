@@ -212,7 +212,7 @@ impl Id for Stop {
 
 impl fmt::Display for Stop {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.name.clone().unwrap_or(String::from("")))
+        write!(f, "{}", self.name.as_ref().unwrap_or(&String::from("")))
     }
 }
 
@@ -375,10 +375,10 @@ impl Id for Route {
 
 impl fmt::Display for Route {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if self.long_name.is_some() {
-            write!(f, "{}", self.long_name.as_ref().unwrap())
-        } else if self.short_name.is_some() {
-            write!(f, "{}", self.short_name.as_ref().unwrap())
+        if let Some(long_name) = self.long_name.as_ref() {
+            write!(f, "{}", long_name)
+        } else if let Some(short_name) = self.short_name.as_ref() {
+            write!(f, "{}", short_name)
         } else {
             write!(f, "{}", self.id)
         }

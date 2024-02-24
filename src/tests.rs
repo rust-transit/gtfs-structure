@@ -310,7 +310,7 @@ fn display() {
         format!(
             "{}",
             Stop {
-                name:Some("Sorano".to_owned()),
+                name: Some("Sorano".to_owned()),
                 ..Stop::default()
             }
         )

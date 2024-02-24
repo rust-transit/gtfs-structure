@@ -195,7 +195,7 @@ pub struct Stop {
     pub pathways: Vec<Pathway>,
     /// Text to speech readable version of the stop_name
     #[serde(rename = "tts_stop_name")]
-    pub tts_name: Option<String>
+    pub tts_name: Option<String>,
 }
 
 impl Type for Stop {

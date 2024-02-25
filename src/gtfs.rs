@@ -425,22 +425,14 @@ impl Gtfs {
     }
 
     fn key_options_to_struct(record_id: Option<String>, record_sub_id: Option<String>, field_value: Option<String>) -> Option<TranslationKey> {
-     //https://gtfs.org/schedule/reference/#translationstxt
-     //If both referencing methods (record_id, record_sub_id) and field_value are used to translate the same value in 2 different rows, the translation provided with (record_id, record_sub_id) takes precedence.
-       
-     if record_id.is_some() && record_sub_id.is_some() {
-        return Some(TranslationKey::RecordSub((record_id.unwrap(), record_sub_id.unwrap())));
-    }
-
-     if record_id.is_some() {
-        return Some(TranslationKey::Record(record_id.unwrap()));
-    }
-
-       if field_value.is_some() {
-           return Some(TranslationKey::Value(field_value.unwrap()));
-       }
-
-       None
+        //https://gtfs.org/schedule/reference/#translationstxt
+        //If both referencing methods (record_id, record_sub_id) and field_value are used to translate the same value in 2 different rows, the translation provided with (record_id, record_sub_id) takes precedence.
+        match (record_id, record_sub_id, field_value) {
+            (Some(record_id), Some(record_sub_id), _) => Some(TranslationKey::RecordSub((record_id, record_sub_id))),
+            (Some(record_id), _, _) => Some(TranslationKey::Record(record_id)),
+            (_, _, Some(field_value)) => Some(TranslationKey::Value(field_value)),
+            _ => None
+        } 
     }
 
     fn to_translations(

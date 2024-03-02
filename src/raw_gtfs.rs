@@ -85,7 +85,7 @@ impl RawGtfs {
     /// Reads the raw GTFS from a local zip archive or local directory
     pub fn from_path<P>(path: P) -> Result<Self, Error>
     where
-        P: AsRef<Path> + std::fmt::Display,
+        P: AsRef<Path>,
     {
         GtfsReader::default().raw().read_from_path(path)
     }

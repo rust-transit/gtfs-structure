@@ -176,11 +176,13 @@ impl RawGtfsReader {
             agencies: self.read_objs_from_path(p.join("agency.txt")),
             shapes: self.read_objs_from_optional_path(p, "shapes.txt"),
             fare_attributes: self.read_objs_from_optional_path(p, "fare_attributes.txt"),
+            fare_rules: self.read_objs_from_optional_path(p, "fare_rules.txt"),
             frequencies: self.read_objs_from_optional_path(p, "frequencies.txt"),
             transfers: self.read_objs_from_optional_path(p, "transfers.txt"),
             pathways: self.read_objs_from_optional_path(p, "pathways.txt"),
             feed_info: self.read_objs_from_optional_path(p, "feed_info.txt"),
             read_duration: Utc::now().signed_duration_since(now).num_milliseconds(),
+            translations: self.read_objs_from_optional_path(p, "translations.txt"),
             files,
             source_format: crate::SourceFormat::Directory,
             sha256: None,
@@ -223,7 +225,7 @@ impl RawGtfsReader {
     /// Reads the raw GTFS from a local zip archive or local directory
     pub fn read_from_path<P>(&self, path: P) -> Result<RawGtfs, Error>
     where
-        P: AsRef<Path> + std::fmt::Display,
+        P: AsRef<Path>,
     {
         let p = path.as_ref();
         if p.is_file() {
@@ -262,6 +264,7 @@ impl RawGtfsReader {
                 "stop_times.txt",
                 "trips.txt",
                 "fare_attributes.txt",
+                "fare_rules.txt",
                 "frequencies.txt",
                 "transfers.txt",
                 "pathways.txt",
@@ -297,6 +300,7 @@ impl RawGtfsReader {
                 &mut archive,
                 "fare_attributes.txt",
             ),
+            fare_rules: self.read_optional_file(&file_mapping, &mut archive, "fare_rules.txt"),
             frequencies: self.read_optional_file(&file_mapping, &mut archive, "frequencies.txt"),
             transfers: self.read_optional_file(&file_mapping, &mut archive, "transfers.txt"),
             pathways: self.read_optional_file(&file_mapping, &mut archive, "pathways.txt"),
@@ -306,6 +310,7 @@ impl RawGtfsReader {
             } else {
                 Some(Ok(Vec::new()))
             },
+            translations: self.read_optional_file(&file_mapping, &mut archive, "translations.txt"),
             read_duration: Utc::now().signed_duration_since(now).num_milliseconds(),
             files,
             source_format: crate::SourceFormat::Zip,

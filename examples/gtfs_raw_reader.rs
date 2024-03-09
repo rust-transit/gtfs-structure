@@ -11,5 +11,5 @@ fn main() {
 
     let routes = gtfs.routes.expect("impossible to read routes");
     let route_1 = routes.first().expect("no route");
-    println!("{}: {:?}", route_1.short_name, route_1);
+    println!("{}: {:?}", route_1.short_name.as_ref().unwrap(), route_1);
 }

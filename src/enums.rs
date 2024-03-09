@@ -23,7 +23,7 @@ pub enum ObjectType {
 }
 
 /// Describes the kind of [Stop]. See <https://gtfs.org/reference/static/#stopstxt> `location_type`
-#[derive(Derivative, Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Derivative, Debug, Copy, Clone, PartialEq, Eq, Hash)]
 #[derivative(Default(bound = ""))]
 pub enum LocationType {
     /// Stop (or Platform). A location where passengers board or disembark from a transit vehicle. Is called a platform when defined within a parent_station

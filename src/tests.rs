@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::objects::*;
 use crate::Gtfs;
 use crate::RawGtfs;
@@ -237,6 +239,17 @@ fn read_pathways() {
 }
 
 #[test]
+fn read_translations() {
+    let gtfs = RawGtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
+    let translation = &gtfs.translations.unwrap().unwrap()[0];
+    assert_eq!(translation.table_name, "stops");
+    assert_eq!(translation.field_name, "stop_name");
+    assert_eq!(translation.language, "nl");
+    assert_eq!(translation.translation, "Stop Gebied");
+    assert_eq!(translation.field_value, None);
+}
+
+#[test]
 fn read_feed_info() {
     let gtfs = Gtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
     let feed = &gtfs.feed_info;
@@ -308,7 +321,7 @@ fn display() {
         format!(
             "{}",
             Stop {
-                name: "Sorano".to_owned(),
+                name: Some("Sorano".to_owned()),
                 ..Stop::default()
             }
         )
@@ -319,7 +332,8 @@ fn display() {
         format!(
             "{}",
             Route {
-                long_name: "Long route name".to_owned(),
+                long_name: Some("Long route name".to_owned()),
+                short_name: None,
                 ..Route::default()
             }
         )
@@ -330,7 +344,8 @@ fn display() {
         format!(
             "{}",
             Route {
-                short_name: "Short route name".to_owned(),
+                short_name: Some("Short route name".to_owned()),
+                long_name: None,
                 ..Route::default()
             }
         )
@@ -340,7 +355,7 @@ fn display() {
 #[test]
 fn path_files() {
     let gtfs = RawGtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
-    assert_eq!(gtfs.files.len(), 13);
+    assert_eq!(gtfs.files.len(), 14);
     assert_eq!(gtfs.source_format, SourceFormat::Directory);
     assert!(gtfs.files.contains(&"agency.txt".to_owned()));
 }
@@ -413,7 +428,7 @@ fn read_interpolated_stops() {
     // the second stop have no departure/arrival, it should not cause any problems
     assert_eq!(
         gtfs.trips["trip1"].stop_times[1].stop.name,
-        "Stop Point child of 1"
+        Some("Stop Point child of 1".to_owned())
     );
     assert!(gtfs.trips["trip1"].stop_times[1].arrival_time.is_none());
 }
@@ -469,4 +484,46 @@ fn sorted_shapes() {
             (11, 37.65863, -122.30839),
         ]
     );
+}
+
+#[test]
+fn fare_v1() {
+    let gtfs = Gtfs::from_path("fixtures/fares_v1").expect("impossible to read gtfs");
+
+    let mut expected_attributes = HashMap::new();
+    expected_attributes.insert(
+        "presto_fare".to_string(),
+        FareAttribute {
+            id: "presto_fare".to_string(),
+            currency: "CAD".to_string(),
+            price: "3.2".to_string(),
+            payment_method: PaymentMethod::PreBoarding,
+            transfer_duration: Some(7200),
+            agency_id: None,
+            transfers: Transfers::Unlimited,
+        },
+    );
+    assert_eq!(gtfs.fare_attributes, expected_attributes);
+
+    let mut expected_rules = HashMap::new();
+    expected_rules.insert(
+        "presto_fare".to_string(),
+        vec![
+            FareRule {
+                fare_id: "presto_fare".to_string(),
+                route_id: Some("line1".to_string()),
+                origin_id: Some("ttc_subway_stations".to_string()),
+                destination_id: Some("ttc_subway_stations".to_string()),
+                contains_id: None,
+            },
+            FareRule {
+                fare_id: "presto_fare".to_string(),
+                route_id: Some("line2".to_string()),
+                origin_id: Some("ttc_subway_stations".to_string()),
+                destination_id: Some("ttc_subway_stations".to_string()),
+                contains_id: None,
+            },
+        ],
+    );
+    assert_eq!(gtfs.fare_rules, expected_rules);
 }

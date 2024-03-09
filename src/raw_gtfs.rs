@@ -27,6 +27,8 @@ pub struct RawGtfs {
     pub shapes: Option<Result<Vec<Shape>, Error>>,
     /// All FareAttribates, None if the file was absent as it is not mandatory
     pub fare_attributes: Option<Result<Vec<FareAttribute>, Error>>,
+    /// All FareRules, None if the file was absent as it is not mandatory
+    pub fare_rules: Option<Result<Vec<FareRule>, Error>>,
     /// All Frequencies, None if the file was absent as it is not mandatory
     pub frequencies: Option<Result<Vec<RawFrequency>, Error>>,
     /// All Transfers, None if the file was absent as it is not mandatory
@@ -43,6 +45,8 @@ pub struct RawGtfs {
     pub source_format: SourceFormat,
     /// sha256 sum of the feed
     pub sha256: Option<String>,
+    /// All translations, None if the file was absent as it is not mandatory
+    pub translations: Option<Result<Vec<RawTranslation>, Error>>,
 }
 
 impl RawGtfs {
@@ -64,6 +68,10 @@ impl RawGtfs {
         println!("  Transfers: {}", optional_file_summary(&self.transfers));
         println!("  Pathways: {}", optional_file_summary(&self.pathways));
         println!("  Feed info: {}", optional_file_summary(&self.feed_info));
+        println!(
+            "  Translations: {}",
+            optional_file_summary(&self.translations)
+        );
     }
 
     /// Reads from an url (if starts with http), or a local path (either a directory or zipped file)
@@ -77,7 +85,7 @@ impl RawGtfs {
     /// Reads the raw GTFS from a local zip archive or local directory
     pub fn from_path<P>(path: P) -> Result<Self, Error>
     where
-        P: AsRef<Path> + std::fmt::Display,
+        P: AsRef<Path>,
     {
         GtfsReader::default().raw().read_from_path(path)
     }

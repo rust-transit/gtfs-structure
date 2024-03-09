@@ -153,10 +153,10 @@ pub struct Stop {
     pub code: Option<String>,
     ///Name of the location. Use a name that people will understand in the local and tourist vernacular
     #[serde(rename = "stop_name")]
-    pub name: String,
+    pub name: Option<String>,
     /// Description of the location that provides useful, quality information
     #[serde(default, rename = "stop_desc")]
-    pub description: String,
+    pub description: Option<String>,
     /// Type of the location
     #[serde(default)]
     pub location_type: LocationType,
@@ -193,6 +193,9 @@ pub struct Stop {
     /// Pathways from this stop
     #[serde(skip)]
     pub pathways: Vec<Pathway>,
+    /// Text to speech readable version of the stop_name
+    #[serde(rename = "tts_stop_name")]
+    pub tts_name: Option<String>,
 }
 
 impl Type for Stop {
@@ -209,7 +212,7 @@ impl Id for Stop {
 
 impl fmt::Display for Stop {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.name)
+        write!(f, "{}", self.name.as_ref().unwrap_or(&String::from("")))
     }
 }
 
@@ -317,10 +320,10 @@ pub struct Route {
     pub id: String,
     /// Short name of a route. This will often be a short, abstract identifier like "32", "100X", or "Green" that riders use to identify a route, but which doesn't give any indication of what places the route serves
     #[serde(rename = "route_short_name", default)]
-    pub short_name: String,
+    pub short_name: Option<String>,
     /// Full name of a route. This name is generally more descriptive than the [Route::short_name]] and often includes the route's destination or stop
     #[serde(rename = "route_long_name", default)]
-    pub long_name: String,
+    pub long_name: Option<String>,
     /// Description of a route that provides useful, quality information
     #[serde(rename = "route_desc")]
     pub desc: Option<String>,
@@ -372,12 +375,33 @@ impl Id for Route {
 
 impl fmt::Display for Route {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if !self.long_name.is_empty() {
-            write!(f, "{}", self.long_name)
+        if let Some(long_name) = self.long_name.as_ref() {
+            write!(f, "{}", long_name)
+        } else if let Some(short_name) = self.short_name.as_ref() {
+            write!(f, "{}", short_name)
         } else {
-            write!(f, "{}", self.short_name)
+            write!(f, "{}", self.id)
         }
     }
+}
+
+/// Raw structure to hold translations as defined in the GTFS file. See <https://gtfs.org/schedule/reference/#translationstxt>
+#[derive(Debug, Serialize, Deserialize, Default)]
+pub struct RawTranslation {
+    /// To which table does the translation apply
+    pub table_name: String,
+    /// To which field does the translation apply
+    pub field_name: String,
+    /// Language of the translation
+    pub language: String,
+    /// Translated value
+    pub translation: String,
+    /// The record identifier to translate. For stop_times, it’s the trip_id
+    pub record_id: Option<String>,
+    /// Only for stop_times: the stop_sequence
+    pub record_sub_id: Option<String>,
+    /// Translate all values that match exactly, instead of specifying individual records
+    pub field_value: Option<String>,
 }
 
 /// A [Trip] where the relationships with other objects have not been checked
@@ -564,7 +588,7 @@ impl Id for Shape {
 }
 
 /// Defines one possible fare. See <https://gtfs.org/reference/static/#fare_attributestxt>
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct FareAttribute {
     /// Unique technical (not for the traveller) identifier for the FareAttribute
     #[serde(rename = "fare_id")]
@@ -594,6 +618,21 @@ impl Type for FareAttribute {
     fn object_type(&self) -> ObjectType {
         ObjectType::Fare
     }
+}
+
+/// Defines one possible fare. See <https://gtfs.org/schedule/reference/#fare_rulestxt>
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct FareRule {
+    /// ID of the referenced FareAttribute.
+    pub fare_id: String,
+    /// ID of a [Route] associated with the fare class
+    pub route_id: Option<String>,
+    /// Identifies an origin zone. References a [Stop].zone_id
+    pub origin_id: Option<String>,
+    /// Identifies an destination zone. References a [Stop].zone_id
+    pub destination_id: Option<String>,
+    /// Identifies the zones that a rider will enter while using a given fare class. References a [Stop].zone_id
+    pub contains_id: Option<String>,
 }
 
 /// A [Frequency] before being merged into the corresponding [Trip]

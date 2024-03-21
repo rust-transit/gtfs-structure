@@ -167,14 +167,16 @@ impl Gtfs {
                 .signed_duration_since(start_date)
                 .num_days();
             for days_offset in 0..=total_days {
-                let current_date = start_date + Duration::days(days_offset);
+                if let Some(days_offset_timedelta) = chrono::TimeDelta::try_days(days_offset) {
+                    let current_date = start_date + days_offset_timedelta;
 
-                if calendar.start_date <= current_date
-                    && calendar.end_date >= current_date
-                    && calendar.valid_weekday(current_date)
-                    && !removed_days.contains(&days_offset)
-                {
-                    result.push(days_offset as u16);
+                    if calendar.start_date <= current_date
+                        && calendar.end_date >= current_date
+                        && calendar.valid_weekday(current_date)
+                        && !removed_days.contains(&days_offset)
+                    {
+                        result.push(days_offset as u16);
+                    }
                 }
             }
         }

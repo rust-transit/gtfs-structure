@@ -1,6 +1,5 @@
 use crate::{objects::*, Error, RawGtfs};
 use chrono::prelude::NaiveDate;
-use chrono::Duration;
 use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
 use std::sync::Arc;

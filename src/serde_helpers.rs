@@ -183,10 +183,10 @@ pub fn default_route_color() -> RGB8 {
     RGB8::new(255, 255, 255)
 }
 
-pub fn de_with_empty_default<'de, T: Default, D>(de: D) -> Result<T, D::Error>
+pub fn de_with_empty_default<'de, T, D>(de: D) -> Result<T, D::Error>
 where
     D: Deserializer<'de>,
-    T: Deserialize<'de>,
+    T: Deserialize<'de> + Default,
 {
     Option::<T>::deserialize(de).map(|opt| opt.unwrap_or_default())
 }

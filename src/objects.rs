@@ -33,7 +33,7 @@ impl<T: Type> Type for Arc<T> {
 }
 
 /// A calender describes on which days the vehicle runs. See <https://gtfs.org/reference/static/#calendartxt>
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Calendar {
     /// Unique technical identifier (not for the traveller) of this calendar
     #[serde(rename = "service_id")]
@@ -128,7 +128,7 @@ impl Calendar {
 }
 
 /// Defines a specific date that can be added or removed from a [Calendar]. See <https://gtfs.org/reference/static/#calendar_datestxt>
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct CalendarDate {
     /// Identifier of the service that is modified at this date
     pub service_id: String,
@@ -217,7 +217,7 @@ impl fmt::Display for Stop {
 }
 
 /// A [StopTime] where the relations with [Trip] and [Stop] have not been tested
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct RawStopTime {
     /// [Trip] to which this stop time belongs to
     pub trip_id: String,
@@ -313,7 +313,7 @@ impl StopTime {
 }
 
 /// A route is a commercial line (there can be various stop sequences for a same line). See <https://gtfs.org/reference/static/#routestxt>
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Route {
     /// Unique technical (not for the traveller) identifier for the route
     #[serde(rename = "route_id")]
@@ -386,7 +386,7 @@ impl fmt::Display for Route {
 }
 
 /// Raw structure to hold translations as defined in the GTFS file. See <https://gtfs.org/schedule/reference/#translationstxt>
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct RawTranslation {
     /// To which table does the translation apply
     pub table_name: String,
@@ -405,7 +405,7 @@ pub struct RawTranslation {
 }
 
 /// A [Trip] where the relationships with other objects have not been checked
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct RawTrip {
     /// Unique technical (not for the traveller) identifier for the Trip
     #[serde(rename = "trip_id")]
@@ -506,7 +506,7 @@ impl fmt::Display for Trip {
 }
 
 /// General informations about the agency running the network. See <https://gtfs.org/reference/static/#agencytxt>
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct Agency {
     /// Unique technical (not for the traveller) identifier for the Agency
     #[serde(rename = "agency_id")]
@@ -556,7 +556,7 @@ impl fmt::Display for Agency {
 }
 
 /// A single geographical point decribing the shape of a [Trip]. See <https://gtfs.org/reference/static/#shapestxt>
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct Shape {
     /// Unique technical (not for the traveller) identifier for the Shape
     #[serde(rename = "shape_id")]
@@ -588,7 +588,7 @@ impl Id for Shape {
 }
 
 /// Defines one possible fare. See <https://gtfs.org/reference/static/#fare_attributestxt>
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct FareAttribute {
     /// Unique technical (not for the traveller) identifier for the FareAttribute
     #[serde(rename = "fare_id")]
@@ -621,7 +621,7 @@ impl Type for FareAttribute {
 }
 
 /// Defines one possible fare. See <https://gtfs.org/schedule/reference/#fare_rulestxt>
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct FareRule {
     /// ID of the referenced FareAttribute.
     pub fare_id: String,
@@ -636,7 +636,7 @@ pub struct FareRule {
 }
 
 /// A [Frequency] before being merged into the corresponding [Trip]
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct RawFrequency {
     /// References the [Trip] that uses frequency
     pub trip_id: String,
@@ -684,7 +684,7 @@ impl Frequency {
 }
 
 /// Transfer information between stops before merged into [Stop]
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct RawTransfer {
     /// Stop from which to leave
     pub from_stop_id: String,
@@ -696,7 +696,7 @@ pub struct RawTransfer {
     pub min_transfer_time: Option<u32>,
 }
 
-#[derive(Debug, Default, Clone, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 /// Transfer information between stops
 pub struct StopTransfer {
     /// Stop which to transfer to
@@ -719,7 +719,7 @@ impl From<RawTransfer> for StopTransfer {
 }
 
 /// Meta-data about the feed. See <https://gtfs.org/reference/static/#feed_infotxt>
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct FeedInfo {
     /// Full name of the organization that publishes the dataset.
     #[serde(rename = "feed_publisher_name")]
@@ -766,7 +766,7 @@ impl fmt::Display for FeedInfo {
 }
 
 /// A graph representation to describe subway or train, with nodes (the locations) and edges (the pathways).
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct RawPathway {
     /// Uniquely identifies the pathway
     #[serde(rename = "pathway_id")]
@@ -867,7 +867,7 @@ impl From<RawPathway> for Pathway {
 }
 
 /// Format of the data
-#[derive(Debug, Serialize, PartialEq)]
+#[derive(Clone, Debug, Serialize, PartialEq)]
 pub enum SourceFormat {
     /// `Directory` means the data comes from a directory
     Directory,

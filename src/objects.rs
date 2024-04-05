@@ -3,6 +3,7 @@ use crate::serde_helpers::*;
 use chrono::{Datelike, NaiveDate, Weekday};
 use rgb::RGB8;
 
+use std::hash::{Hash, Hasher};
 use std::fmt;
 use std::sync::Arc;
 
@@ -33,7 +34,7 @@ impl<T: Type> Type for Arc<T> {
 }
 
 /// A calender describes on which days the vehicle runs. See <https://gtfs.org/reference/static/#calendartxt>
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, Hash, PartialEq, Eq)]
 pub struct Calendar {
     /// Unique technical identifier (not for the traveller) of this calendar
     #[serde(rename = "service_id")]

@@ -4,7 +4,7 @@ use chrono::{Datelike, NaiveDate, Weekday};
 use rgb::RGB8;
 
 use std::fmt;
-use std::hash::{Hash, Hasher};
+use std::hash::Hash;
 use std::sync::Arc;
 
 /// Objects that have an identifier implement this trait

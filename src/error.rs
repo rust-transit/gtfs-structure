@@ -11,7 +11,7 @@ pub struct LineError {
 }
 
 /// An error that can occur when processing GTFS data.
-#[derive(Error, Debug)]
+#[derive(Clone, Error, Debug)]
 pub enum Error {
     /// A mandatory file is not present in the archive
     #[error("Cound not find file {0}")]

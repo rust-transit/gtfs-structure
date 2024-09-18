@@ -49,8 +49,8 @@ impl<'de> Deserialize<'de> for LocationType {
     where
         D: Deserializer<'de>,
     {
-        let s: String = String::deserialize(deserializer)?;
-        Ok(match s.as_str() {
+        let s = <&str>::deserialize(deserializer)?;
+        Ok(match s {
             "" | "0" => LocationType::StopPoint,
             "1" => LocationType::StopArea,
             "2" => LocationType::StationEntrance,
@@ -188,8 +188,8 @@ impl<'de> Deserialize<'de> for PickupDropOffType {
     where
         D: Deserializer<'de>,
     {
-        let s: String = String::deserialize(deserializer)?;
-        Ok(match s.as_str() {
+        let s = <&str>::deserialize(deserializer)?;
+        Ok(match s {
             "" | "0" => PickupDropOffType::Regular,
             "1" => PickupDropOffType::NotAvailable,
             "2" => PickupDropOffType::ArrangeByPhone,
@@ -265,8 +265,8 @@ impl<'de> Deserialize<'de> for ContinuousPickupDropOff {
     where
         D: Deserializer<'de>,
     {
-        let s: String = String::deserialize(deserializer)?;
-        Ok(match s.as_str() {
+        let s = <&str>::deserialize(deserializer)?;
+        Ok(match s {
             "0" => ContinuousPickupDropOff::Continuous,
             "" | "1" => ContinuousPickupDropOff::NotAvailable,
             "2" => ContinuousPickupDropOff::ArrangeByPhone,
@@ -298,8 +298,8 @@ impl<'de> Deserialize<'de> for TimepointType {
     where
         D: Deserializer<'de>,
     {
-        let s: String = String::deserialize(deserializer)?;
-        match s.as_str() {
+        let s = <&str>::deserialize(deserializer)?;
+        match s {
             "" | "1" => Ok(Self::Exact),
             "0" => Ok(Self::Approximate),
             v => Err(serde::de::Error::custom(format!(
@@ -329,8 +329,8 @@ impl<'de> Deserialize<'de> for Availability {
     where
         D: Deserializer<'de>,
     {
-        let s: String = String::deserialize(deserializer)?;
-        Ok(match s.as_str() {
+        let s = <&str>::deserialize(deserializer)?;
+        Ok(match s {
             "" | "0" => Availability::InformationNotAvailable,
             "1" => Availability::Available,
             "2" => Availability::NotAvailable,
@@ -403,8 +403,8 @@ impl<'de> Deserialize<'de> for BikesAllowedType {
     where
         D: Deserializer<'de>,
     {
-        let s: String = String::deserialize(deserializer)?;
-        Ok(match s.as_str() {
+        let s = <&str>::deserialize(deserializer)?;
+        Ok(match s {
             "" | "0" => BikesAllowedType::NoBikeInfo,
             "1" => BikesAllowedType::AtLeastOneBike,
             "2" => BikesAllowedType::NoBikesAllowed,
@@ -460,8 +460,8 @@ impl<'de> Deserialize<'de> for ExactTimes {
     where
         D: Deserializer<'de>,
     {
-        let s: String = String::deserialize(deserializer)?;
-        Ok(match s.as_str() {
+        let s = <&str>::deserialize(deserializer)?;
+        Ok(match s {
             "" | "0" => ExactTimes::FrequencyBased,
             "1" => ExactTimes::ScheduleBased,
             &_ => {
@@ -551,8 +551,8 @@ impl<'de> Deserialize<'de> for TransferType {
     where
         D: Deserializer<'de>,
     {
-        let s: String = String::deserialize(deserializer)?;
-        Ok(match s.as_str() {
+        let s = <&str>::deserialize(deserializer)?;
+        Ok(match s {
             "" | "0" => TransferType::Recommended,
             "1" => TransferType::Timed,
             "2" => TransferType::MinTime,

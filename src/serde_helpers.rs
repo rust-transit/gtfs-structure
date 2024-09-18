@@ -49,24 +49,25 @@ pub fn parse_time_impl(h: &str, m: &str, s: &str) -> Result<u32, std::num::Parse
 }
 
 pub fn parse_time(s: &str) -> Result<u32, crate::Error> {
+    let mk_err = || crate::Error::InvalidTime(s.to_owned());
+
     if s.len() < 7 {
-        Err(crate::Error::InvalidTime(s.to_owned()))
+        Err(mk_err())
     } else {
-        let parts: Vec<&str> = s.split(':').collect();
+        let mut parts = s.split(':');
 
-        if parts.len() != 3 {
-            return Err(crate::Error::InvalidTime(s.to_owned()));
+        let hour = parts.next().ok_or_else(mk_err)?;
+        let min = parts.next().ok_or_else(mk_err)?;
+        let sec = parts.next().ok_or_else(mk_err)?;
+        if parts.next().is_some() {
+            return Err(mk_err());
         }
-
-        let sec = parts[2];
-        let min = parts[1];
-        let hour = parts[0];
 
         if min.len() != 2 || sec.len() != 2 {
-            return Err(crate::Error::InvalidTime(s.to_owned()));
+            return Err(mk_err());
         }
 
-        parse_time_impl(hour, min, sec).map_err(|_| crate::Error::InvalidTime(s.to_owned()))
+        parse_time_impl(hour, min, sec).map_err(|_| mk_err())
     }
 }
 

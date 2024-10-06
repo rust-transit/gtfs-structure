@@ -17,7 +17,6 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}
-      - uses: dtolnay/rust-toolchain@stable
       - run: test --all-features
       - run: cargo test --no-default-features
 
@@ -27,10 +26,6 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
-      - name: Install stable toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt, clippy
       - name: Run cargo fmt
         run: cargo fmt --all -- --check
       - name: Run cargo clippy

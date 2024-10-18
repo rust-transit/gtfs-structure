@@ -2,6 +2,7 @@ use crate::{objects::*, Error, RawGtfs};
 use chrono::prelude::NaiveDate;
 use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
+use std::time::{Duration, Instant};
 use std::sync::Arc;
 
 /// Data structure with all the GTFS objects
@@ -20,8 +21,8 @@ use std::sync::Arc;
 /// The [StopTime] are accessible from the [Trip]
 #[derive(Default)]
 pub struct Gtfs {
-    /// Time needed to read and parse the archive in milliseconds
-    pub read_duration: i64,
+    /// Time needed to read and parse the archive
+    pub read_duration: Duration,
     /// All Calendar by `service_id`
     pub calendar: HashMap<String, Calendar>,
     /// All calendar dates grouped by service_id
@@ -50,6 +51,8 @@ impl TryFrom<RawGtfs> for Gtfs {
     ///
     /// It might fail if some mandatory files couldn’t be read or if there are references to other objects that are invalid.
     fn try_from(raw: RawGtfs) -> Result<Gtfs, Error> {
+        let start = Instant::now();
+
         let stops = to_stop_map(
             raw.stops?,
             raw.transfers.unwrap_or_else(|| Ok(Vec::new()))?,
@@ -76,7 +79,7 @@ impl TryFrom<RawGtfs> for Gtfs {
             calendar_dates: to_calendar_dates(
                 raw.calendar_dates.unwrap_or_else(|| Ok(Vec::new()))?,
             ),
-            read_duration: raw.read_duration,
+            read_duration: raw.read_duration + start.elapsed(),
         })
     }
 }
@@ -85,7 +88,7 @@ impl Gtfs {
     /// Prints on stdout some basic statistics about the GTFS file (numbers of elements for each object). Mostly to be sure that everything was read
     pub fn print_stats(&self) {
         println!("GTFS data:");
-        println!("  Read in {} ms", self.read_duration);
+        println!("  Read in {:?} ms", self.read_duration);
         println!("  Stops: {}", self.stops.len());
         println!("  Routes: {}", self.routes.len());
         println!("  Trips: {}", self.trips.len());

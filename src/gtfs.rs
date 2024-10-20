@@ -2,8 +2,8 @@ use crate::{objects::*, Error, RawGtfs};
 use chrono::prelude::NaiveDate;
 use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
-use std::time::{Duration, Instant};
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 
 /// Data structure with all the GTFS objects
 ///

@@ -456,11 +456,8 @@ fn read_only_required_fields() {
 fn metra_gtfs() {
     let gtfs = Gtfs::from_path("fixtures/zips/metra.zip");
 
-    match &gtfs {
-        Err(err) => {
-            eprintln!("{:#?}", err);
-        }
-        _ => {}
+    if let Err(err) = &gtfs {
+        eprintln!("{:#?}", err);
     }
 
     assert!(gtfs.is_ok());

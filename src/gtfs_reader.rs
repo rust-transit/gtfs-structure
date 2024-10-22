@@ -1,4 +1,3 @@
-use chrono::Utc;
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 
@@ -8,7 +7,7 @@ use std::convert::TryFrom;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 /// Allows to parameterize how the parsing library behaves
 ///

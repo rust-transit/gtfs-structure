@@ -1,4 +1,3 @@
-use chrono::Utc;
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 
@@ -8,6 +7,7 @@ use std::convert::TryFrom;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
+use std::time::Instant;
 
 /// Allows to parameterize how the parsing library behaves
 ///
@@ -148,7 +148,7 @@ pub struct RawGtfsReader {
 
 impl RawGtfsReader {
     fn read_from_directory(&self, p: &std::path::Path) -> Result<RawGtfs, Error> {
-        let now = Utc::now();
+        let start_of_read_instant = Instant::now();
         // Thoses files are not mandatory
         // We use None if they don’t exist, not an Error
         let files = std::fs::read_dir(p)?
@@ -181,7 +181,7 @@ impl RawGtfsReader {
             transfers: self.read_objs_from_optional_path(p, "transfers.txt"),
             pathways: self.read_objs_from_optional_path(p, "pathways.txt"),
             feed_info: self.read_objs_from_optional_path(p, "feed_info.txt"),
-            read_duration: Utc::now().signed_duration_since(now).num_milliseconds(),
+            read_duration: start_of_read_instant.elapsed(),
             translations: self.read_objs_from_optional_path(p, "translations.txt"),
             files,
             source_format: crate::SourceFormat::Directory,
@@ -242,7 +242,7 @@ impl RawGtfsReader {
         &self,
         reader: T,
     ) -> Result<RawGtfs, Error> {
-        let now = Utc::now();
+        let start_of_read_instant = Instant::now();
         let mut hasher = Sha256::new();
         let mut buf_reader = std::io::BufReader::new(reader);
         let _n = std::io::copy(&mut buf_reader, &mut hasher)?;
@@ -311,7 +311,7 @@ impl RawGtfsReader {
                 Some(Ok(Vec::new()))
             },
             translations: self.read_optional_file(&file_mapping, &mut archive, "translations.txt"),
-            read_duration: Utc::now().signed_duration_since(now).num_milliseconds(),
+            read_duration: start_of_read_instant.elapsed(),
             files,
             source_format: crate::SourceFormat::Zip,
             sha256: Some(format!("{hash:x}")),

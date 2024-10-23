@@ -2,6 +2,7 @@ use crate::objects::*;
 use crate::Error;
 use crate::GtfsReader;
 use std::path::Path;
+use std::time::Duration;
 
 /// Data structure that map the GTFS csv with little intelligence
 ///
@@ -9,8 +10,8 @@ use std::path::Path;
 /// To manipulate the transit data, maybe [crate::Gtfs] will be more convienient
 #[derive(Debug)]
 pub struct RawGtfs {
-    /// Time needed to read and parse the archive in milliseconds
-    pub read_duration: i64,
+    /// Time needed to read and parse the archive
+    pub read_duration: Duration,
     /// All Calendar, None if the file was absent as it is not mandatory
     pub calendar: Option<Result<Vec<Calendar>, Error>>,
     /// All Calendar dates, None if the file was absent as it is not mandatory
@@ -53,7 +54,7 @@ impl RawGtfs {
     /// Prints on stdout some basic statistics about the GTFS file (numbers of elements for each object). Mostly to be sure that everything was read
     pub fn print_stats(&self) {
         println!("GTFS data:");
-        println!("  Read in {} ms", self.read_duration);
+        println!("  Read in {:?}", self.read_duration);
         println!("  Stops: {}", mandatory_file_summary(&self.stops));
         println!("  Routes: {}", mandatory_file_summary(&self.routes));
         println!("  Trips: {}", mandatory_file_summary(&self.trips));

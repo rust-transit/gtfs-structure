@@ -88,7 +88,7 @@ impl Gtfs {
     /// Prints on stdout some basic statistics about the GTFS file (numbers of elements for each object). Mostly to be sure that everything was read
     pub fn print_stats(&self) {
         println!("GTFS data:");
-        println!("  Read in {:?} ms", self.read_duration);
+        println!("  Read in {:?}", self.read_duration);
         println!("  Stops: {}", self.stops.len());
         println!("  Routes: {}", self.routes.len());
         println!("  Trips: {}", self.trips.len());

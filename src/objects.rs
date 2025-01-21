@@ -241,7 +241,7 @@ pub struct RawStopTime {
     /// Identifier of the [Stop] where the vehicle stops
     pub stop_id: String,
     /// Order of stops for a particular trip. The values must increase along the trip but do not need to be consecutive
-    pub stop_sequence: u16,
+    pub stop_sequence: u32,
     /// Text that appears on signage identifying the trip's destination to riders
     pub stop_headsign: Option<String>,
     /// Indicates pickup method
@@ -281,7 +281,7 @@ pub struct StopTime {
     /// Indicates drop off method
     pub drop_off_type: PickupDropOffType,
     /// Order of stops for a particular trip. The values must increase along the trip but do not need to be consecutive
-    pub stop_sequence: u16,
+    pub stop_sequence: u32,
     /// Text that appears on signage identifying the trip's destination to riders
     pub stop_headsign: Option<String>,
     /// Indicates whether a rider can board the transit vehicle anywhere along the vehicle’s travel path

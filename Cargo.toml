@@ -1,7 +1,7 @@
 [package]
 description = "Read GTFS (public transit timetables) files"
 name = "gtfs-structures"
-version = "0.42.0"
+version = "0.43.0"
 authors = [
     "Tristram Gräbener <tristramg@gmail.com>",
     "Antoine Desbordes <antoine.desbordes@gmail.com>",

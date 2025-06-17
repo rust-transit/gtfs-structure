@@ -524,3 +524,28 @@ fn fare_v1() {
     );
     assert_eq!(gtfs.fare_rules, expected_rules);
 }
+
+#[test]
+fn fares_v2() {
+    let gtfs = Gtfs::from_path("fixtures/fares_v2").expect("impossible to read gtfs");
+
+    let expected = vec![FareProduct {
+        id: "1_zone_fare".to_string(),
+        name: Some("1-Zone Fare".to_string()),
+        rider_category_id: None,
+        fare_media_id: Some("contactless".to_string()),
+        amount: "3.20".to_string(),
+        currency: "CAD".to_string(),
+    }];
+
+    assert_eq!(gtfs.fare_products.len(), 8);
+    assert_eq!(gtfs.fare_products["1_zone_fare"], expected);
+
+    let expected = FareMedia{
+        id: "contactless".to_string(),
+        name: Some("Contactless".to_string()),
+        media_type: FareMediaType::CEmv
+    };
+    assert_eq!(gtfs.fare_media.len(), 5);
+    assert_eq!(gtfs.fare_media["contactless"], expected);
+}

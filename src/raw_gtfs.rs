@@ -34,6 +34,8 @@ pub struct RawGtfs {
     pub fare_products: Option<Result<Vec<FareProduct>, Error>>,
     /// All FareMedias, None if the file was absent as it is not mandatory
     pub fare_media: Option<Result<Vec<FareMedia>, Error>>,
+    /// All RiderCategories, None if the file was absent as it is not mandatory
+    pub rider_categories: Option<Result<Vec<RiderCategory>, Error>>,
     /// All Frequencies, None if the file was absent as it is not mandatory
     pub frequencies: Option<Result<Vec<RawFrequency>, Error>>,
     /// All Transfers, None if the file was absent as it is not mandatory

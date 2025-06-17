@@ -541,11 +541,23 @@ fn fares_v2() {
     assert_eq!(gtfs.fare_products.len(), 8);
     assert_eq!(gtfs.fare_products["1_zone_fare"], expected);
 
-    let expected = FareMedia{
+    let expected = FareMedia {
         id: "contactless".to_string(),
         name: Some("Contactless".to_string()),
-        media_type: FareMediaType::CEmv
+        media_type: FareMediaType::CEmv,
     };
     assert_eq!(gtfs.fare_media.len(), 5);
     assert_eq!(gtfs.fare_media["contactless"], expected);
+
+    let expected = RiderCategory {
+        id: "concession".to_string(),
+        name: "Concession".to_string(),
+        is_default_fare_category: DefaultFareCategory::NotDefault,
+        eligibility_url: Some(
+            "https://www.translink.ca/transit-fares/pricing-and-fare-zones#fare-pricing"
+                .to_string(),
+        ),
+    };
+    assert_eq!(gtfs.rider_categories.len(), 2);
+    assert_eq!(gtfs.rider_categories["concession"], expected);
 }

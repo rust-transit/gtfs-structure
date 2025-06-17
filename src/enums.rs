@@ -630,3 +630,30 @@ pub enum FareMediaType {
     #[serde(rename = "4")]
     MobileApp,
 }
+
+/// Specifies if an entry in rider_categories.txt should be considered the default category
+#[derive(Debug, Serialize, Derivative, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum DefaultFareCategory {
+    /// Category is not considered the default.
+    NotDefault = 0,
+    /// Category is considered the default one.
+    Default = 1,
+}
+
+impl<'de> Deserialize<'de> for DefaultFareCategory {
+    fn deserialize<D>(deserializer: D) -> Result<DefaultFareCategory, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = <&str>::deserialize(deserializer)?;
+        Ok(match s {
+            "" | "0" => DefaultFareCategory::NotDefault,
+            "1" => DefaultFareCategory::Default,
+            &_ => {
+                return Err(serde::de::Error::custom(format!(
+                    "Invalid value `{s}`, expected 0 or 1"
+                )))
+            }
+        })
+    }
+}

@@ -45,6 +45,8 @@ pub struct Gtfs {
     pub fare_products: HashMap<String, Vec<FareProduct>>,
     /// All fare media by `fare_media_id`
     pub fare_media: HashMap<String, FareMedia>,
+    /// All rider categories by `rider_category_id`
+    pub rider_categories: HashMap<String, RiderCategory>,
     /// All feed information. There is no identifier
     pub feed_info: Vec<FeedInfo>,
 }
@@ -85,6 +87,7 @@ impl TryFrom<RawGtfs> for Gtfs {
             fare_rules,
             fare_products,
             fare_media: to_map(raw.fare_media.unwrap_or_else(|| Ok(Vec::new()))?),
+            rider_categories: to_map(raw.rider_categories.unwrap_or_else(|| Ok(Vec::new()))?),
             feed_info: raw.feed_info.unwrap_or_else(|| Ok(Vec::new()))?,
             calendar: to_map(raw.calendar.unwrap_or_else(|| Ok(Vec::new()))?),
             calendar_dates: to_calendar_dates(

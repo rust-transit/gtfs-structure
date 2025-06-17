@@ -1,0 +1,9 @@
+stop_id,area_id
+8039,ZN1
+8066,ZN2
+99901,ZN2
+99902,ZN2
+99903,ZN2
+99901,sea_island
+99902,sea_island
+99903,sea_island

@@ -610,3 +610,23 @@ pub enum PathwayDirectionType {
     #[serde(rename = "1")]
     Bidirectional,
 }
+
+/// Defines the type of a [FareMedia]
+#[derive(Debug, Deserialize, Serialize, Copy, Clone, PartialEq, Eq)]
+pub enum FareMediaType {
+    /// Used when there is no fare media involved in purchasing or validating a fare produc
+    #[serde(rename = "0")]
+    None,
+    /// Physical paper ticket
+    #[serde(rename = "1")]
+    PhysicalPaperTicket,
+    /// Physical transit card
+    #[serde(rename = "2")]
+    PhysicalTransitCard,
+    /// cEMV (contactless Europay, Mastercard and Visa)
+    #[serde(rename = "3")]
+    CEmv,
+    /// Mobile app
+    #[serde(rename = "4")]
+    MobileApp,
+}

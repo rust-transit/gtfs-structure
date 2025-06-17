@@ -621,6 +621,67 @@ impl Type for FareAttribute {
     }
 }
 
+/// Used to describe the range of fares available for purchase by riders or taken into account
+/// when computing the total fare for journeys with multiple legs, such as transfer costs.
+/// https://gtfs.org/documentation/schedule/reference/#fare_productstxt
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct FareProduct {
+    /// Identifies a fare product or set of fare products.
+    #[serde(rename = "fare_product_id")]
+    pub id: String,
+    /// The name of the fare product as displayed to riders.
+    #[serde(rename = "fare_product_name")]
+    pub name: Option<String>,
+    /// Identifies a rider category eligible for the fare product.
+    pub rider_category_id: Option<String>,
+    /// Identifies a fare media that can be employed to use the fare product during the trip.
+    pub fare_media_id: Option<String>,
+    /// The cost of the fare product. May be negative to represent transfer discounts. May be zero to represent a fare product that is free.
+    pub amount: String,
+    /// The currency of the cost of the fare product.
+    pub currency: String,
+}
+
+impl Id for FareProduct {
+    fn id(&self) -> &str {
+        &self.id
+    }
+}
+
+impl Type for FareProduct {
+    fn object_type(&self) -> ObjectType {
+        ObjectType::Fare
+    }
+}
+
+/// To describe the different fare media that can be employed to use fare products.
+/// Fare media are physical or virtual holders used for the representation and/or validation of a fare product.
+/// https://gtfs.org/documentation/schedule/reference/#fare_mediatxt
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct FareMedia {
+    /// Identifies a fare media.
+    #[serde(rename = "fare_media_id")]
+    pub id: String,
+    /// The name of the fare media.
+    #[serde(rename = "fare_media_name")]
+    pub name: Option<String>,
+    /// The type of fare media
+    #[serde(rename = "fare_media_type")]
+    pub media_type: FareMediaType,
+}
+
+impl Id for FareMedia {
+    fn id(&self) -> &str {
+        &self.id
+    }
+}
+
+impl Type for FareMedia {
+    fn object_type(&self) -> ObjectType {
+        ObjectType::Fare
+    }
+}
+
 /// Defines one possible fare. See <https://gtfs.org/schedule/reference/#fare_rulestxt>
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct FareRule {

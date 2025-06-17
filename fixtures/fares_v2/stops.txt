@@ -1,0 +1,4 @@
+stop_id,stop_name
+8039,Waterfront Station @ Platform 2
+8066,Edmonds Station @ Platform 1
+99901,YVR-Airport Station @ Canada Line

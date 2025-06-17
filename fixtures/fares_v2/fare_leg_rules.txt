@@ -1,0 +1,15 @@
+leg_group_id,network_id,fare_product_id,from_area_id,to_area_id,rule_priority
+flat_fare_leg,translink_bus,bus_flat_fare,,,
+sea_island_ZN1,skytrain_seabus,sea_island_2_zone_fare,sea_island,ZN1,1
+sea_island_ZN2,skytrain_seabus,sea_island_1_zone_fare,sea_island,ZN2,1
+sea_island_ZN3,skytrain_seabus,sea_island_2_zone_fare,sea_island,ZN3,1
+sea_island_sea_island,skytrain_seabus,sea_island_sea_island_fare,sea_island,sea_island,2
+ZN1_ZN1,skytrain_seabus,1_zone_fare,ZN1,	
+ZN2_ZN2,skytrain_seabus,1_zone_fare,ZN2,	
+ZN3_ZN3,skytrain_seabus,1_zone_fare,ZN3,	
+ZN1_ZN2,skytrain_seabus,2_zone_fare,ZN1,	
+ZN1_ZN2,skytrain_seabus,2_zone_fare,ZN2,	
+ZN2_ZN3,skytrain_seabus,2_zone_fare,ZN2,	
+ZN2_ZN3,skytrain_seabus,2_zone_fare,ZN3,	
+ZN1_ZN3,skytrain_seabus,3_zone_fare,ZN1,	
+ZN1_ZN3,skytrain_seabus,3_zone_fare,ZN3,

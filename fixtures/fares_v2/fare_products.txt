@@ -1,0 +1,12 @@
+fare_product_id,fare_product_name,amount,currency,fare_media_id
+bus_flat_fare,Bus Flat Fare,3.20,CAD,contactless
+bus_flat_fare,Bus Flat Fare,3.20,CAD,cash
+bus_flat_fare,Bus Flat Fare,2.60,CAD,compass_card
+bus_flat_fare_daily,Daily pass,11.50,CAD,compass_card
+bus_flat_fare_daily,Daily pass,11.50,CAD,compass_ticket
+1_zone_fare,1-Zone Fare,3.20,CAD,contactless
+2_zone_fare,2-Zone Fare,4.65,CAD,contactless
+3_zone_fare,3-Zone Fare,6.35,CAD,contactless
+sea_island_1_zone_fare,Sea Island travel + 1-zone Fare,8.20,CAD,contactless
+sea_island_2_zone_fare,Sea Island travel + 2-zone fare,9.65,CAD,contactless
+sea_island_sea_island_fare,Free fare inside Sea Island,0,CAD,contactless

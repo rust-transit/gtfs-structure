@@ -1,0 +1,5 @@
+area_id,area_name
+ZN1,Zone 1 - Vancouver
+ZN2,Zone 2 - Burnaby, Richmond and North Vancouver
+ZN3,Zone 3 - Surrey and Coquitlam
+sea_island,Sea Island (Vancouver Airport YVR Airport, Sea Island Centre, Templeton)

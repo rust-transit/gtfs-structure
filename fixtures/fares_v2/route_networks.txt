@@ -1,0 +1,5 @@
+route_id,network_id
+10232,translink_bus
+11201,translink_bus
+13686,skytrain_seabus
+30052,skytrain_seabus

@@ -682,6 +682,35 @@ impl Type for FareMedia {
     }
 }
 
+/// Defines categories of riders (e.g. elderly, student).
+/// https://gtfs.org/documentation/schedule/reference/#rider_categoriestxt
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct RiderCategory {
+    /// Identifies a rider category.
+    #[serde(rename = "rider_category_id")]
+    pub id: String,
+    /// Rider category name as displayed to the rider.
+    #[serde(rename = "rider_category_name")]
+    pub name: String,
+    /// is_default_fare_category
+    pub is_default_fare_category: DefaultFareCategory,
+    /// URL of a web page, usually from the operating agency, that provides
+    /// detailed information about a specific rider category and/or describes its eligibility criteria.
+    pub eligibility_url: Option<String>,
+}
+
+impl Id for RiderCategory {
+    fn id(&self) -> &str {
+        &self.id
+    }
+}
+
+impl Type for RiderCategory {
+    fn object_type(&self) -> ObjectType {
+        ObjectType::Fare
+    }
+}
+
 /// Defines one possible fare. See <https://gtfs.org/schedule/reference/#fare_rulestxt>
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct FareRule {

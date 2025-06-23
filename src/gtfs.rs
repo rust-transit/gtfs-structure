@@ -69,12 +69,12 @@ impl TryFrom<RawGtfs> for Gtfs {
 
         let mut fare_rules = HashMap::<String, Vec<FareRule>>::new();
         for f in raw.fare_rules.unwrap_or_else(|| Ok(Vec::new()))? {
-            (*fare_rules.entry(f.fare_id.clone()).or_default()).push(f);
+            fare_rules.entry(f.fare_id.clone()).or_default().push(f);
         }
 
         let mut fare_products = HashMap::<String, Vec<FareProduct>>::new();
         for f in raw.fare_products.unwrap_or_else(|| Ok(Vec::new()))? {
-            (*fare_products.entry(f.id.clone()).or_default()).push(f);
+            fare_products.entry(f.id.clone()).or_default().push(f);
         }
 
         Ok(Gtfs {

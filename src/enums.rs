@@ -614,7 +614,7 @@ pub enum PathwayDirectionType {
 /// Defines the type of a [FareMedia]
 #[derive(Debug, Deserialize, Serialize, Copy, Clone, PartialEq, Eq)]
 pub enum FareMediaType {
-    /// Used when there is no fare media involved in purchasing or validating a fare produc
+    /// Used when there is no fare media involved in purchasing or validating a fare product
     #[serde(rename = "0")]
     None,
     /// Physical paper ticket

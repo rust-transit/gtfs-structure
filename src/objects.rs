@@ -340,26 +340,40 @@ pub struct Route {
     pub order: Option<u32>,
     /// Route color designation that matches public facing material
     #[serde(
-        deserialize_with = "deserialize_route_color",
-        serialize_with = "serialize_color",
+        deserialize_with = "deserialize_optional_color",
+        serialize_with = "serialize_optional_color",
         rename = "route_color",
-        default = "default_route_color"
+        default
     )]
-    pub color: RGB8,
+    pub color: Option<RGB8>,
     /// Legible color to use for text drawn against a background of [Route::route_color]
     #[serde(
-        deserialize_with = "deserialize_route_text_color",
-        serialize_with = "serialize_color",
+        deserialize_with = "deserialize_optional_color",
+        serialize_with = "serialize_optional_color",
         rename = "route_text_color",
         default
     )]
-    pub text_color: RGB8,
+    pub text_color: Option<RGB8>,
     /// Indicates whether a rider can board the transit vehicle anywhere along the vehicle’s travel path
     #[serde(default)]
     pub continuous_pickup: ContinuousPickupDropOff,
     /// Indicates whether a rider can alight from the transit vehicle at any point along the vehicle’s travel path
     #[serde(default)]
     pub continuous_drop_off: ContinuousPickupDropOff,
+}
+
+impl Route {
+    /// Legible color to use for text drawn against a background of [Route::route_color]
+    /// Defaults to white (FFFFFF) when omitted or left empty.
+    pub fn text_color(&self) -> RGB8 {
+        self.text_color.unwrap_or_default()
+    }
+
+    /// Legible color to use for text drawn against a background of [Route::route_color]
+    /// Defaults to black (000000) when omitted or left empty.
+    pub fn color(&self) -> RGB8 {
+        self.color.unwrap_or_else(default_route_color)
+    }
 }
 
 impl Type for Route {

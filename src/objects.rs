@@ -391,9 +391,9 @@ impl Id for Route {
 impl fmt::Display for Route {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if let Some(long_name) = self.long_name.as_ref() {
-            write!(f, "{}", long_name)
+            write!(f, "{long_name}")
         } else if let Some(short_name) = self.short_name.as_ref() {
-            write!(f, "{}", short_name)
+            write!(f, "{short_name}")
         } else {
             write!(f, "{}", self.id)
         }

@@ -139,13 +139,7 @@ where
     }
 }
 
-pub fn parse_color(
-    s: &str,
-    default: impl std::ops::FnOnce() -> RGB8,
-) -> Result<RGB8, crate::Error> {
-    if s.is_empty() {
-        return Ok(default());
-    }
+pub fn parse_color(s: &str) -> Result<RGB8, crate::Error> {
     if s.len() != 6 {
         return Err(crate::Error::InvalidColor(s.to_owned()));
     }
@@ -158,26 +152,24 @@ pub fn parse_color(
     Ok(RGB8::new(r, g, b))
 }
 
-pub fn deserialize_route_color<'de, D>(de: D) -> Result<RGB8, D::Error>
+pub fn deserialize_optional_color<'de, D>(de: D) -> Result<Option<RGB8>, D::Error>
 where
     D: Deserializer<'de>,
 {
-    String::deserialize(de)
-        .and_then(|s| parse_color(&s, default_route_color).map_err(de::Error::custom))
+    Option::<&str>::deserialize(de)?
+        .map(|s| parse_color(s).map_err(de::Error::custom))
+        .transpose()
 }
 
-pub fn deserialize_route_text_color<'de, D>(de: D) -> Result<RGB8, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    String::deserialize(de).and_then(|s| parse_color(&s, RGB8::default).map_err(de::Error::custom))
-}
-
-pub fn serialize_color<S>(color: &RGB8, serializer: S) -> Result<S::Ok, S::Error>
+pub fn serialize_optional_color<S>(color: &Option<RGB8>, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
-    serializer.serialize_str(format!("{:02X}{:02X}{:02X}", color.r, color.g, color.b).as_str())
+    match color {
+        Some(color) => serializer
+            .serialize_str(format!("{:02X}{:02X}{:02X}", color.r, color.g, color.b).as_str()),
+        None => serializer.serialize_none(),
+    }
 }
 
 pub fn default_route_color() -> RGB8 {

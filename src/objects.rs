@@ -129,7 +129,7 @@ impl Calendar {
 }
 
 /// Defines a specific date that can be added or removed from a [Calendar]. See <https://gtfs.org/reference/static/#calendar_datestxt>
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, Eq, PartialEq)]
 pub struct CalendarDate {
     /// Identifier of the service that is modified at this date
     pub service_id: String,

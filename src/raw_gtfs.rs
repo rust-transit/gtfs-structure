@@ -99,8 +99,8 @@ impl RawGtfs {
 
     /// Reads the raw GTFS from a remote url
     ///
-    /// The library must be built with the read-url feature
-    #[cfg(feature = "read-url")]
+    /// The library must be built with the read-url feature. Not available on WASM targets.
+    #[cfg(all(feature = "read-url", not(target_arch = "wasm32")))]
     pub fn from_url<U: reqwest::IntoUrl>(url: U) -> Result<Self, Error> {
         GtfsReader::default().raw().read_from_url(url)
     }

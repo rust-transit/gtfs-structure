@@ -23,7 +23,7 @@ serde_derive = "1.0"
 chrono = "0.4.38"
 itertools = "0.13"
 sha2 = "0.10"
-zip = "2.2"
+zip = { version = "2.2", default-features = false, features = ["deflate"] }
 thiserror = "1"
 rgb = "0.8"
 

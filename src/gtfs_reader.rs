@@ -106,8 +106,8 @@ impl GtfsReader {
 
     /// Reads the GTFS from a remote url
     ///
-    /// The library must be built with the read-url feature
-    #[cfg(feature = "read-url")]
+    /// The library must be built with the read-url feature. Not available on WASM targets.
+    #[cfg(all(feature = "read-url", not(target_arch = "wasm32")))]
     pub fn read_from_url<U: reqwest::IntoUrl>(self, url: U) -> Result<Gtfs, Error> {
         self.raw().read_from_url(url).and_then(Gtfs::try_from)
     }
@@ -198,7 +198,8 @@ impl RawGtfsReader {
     }
 
     /// Reads from an url (if starts with `"http"`) if the feature `read-url` is activated,
-    /// or a local path (either a directory or zipped file)
+    /// or a local path (either a directory or zipped file). Not available on WASM targets.
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn read(self, gtfs: &str) -> Result<RawGtfs, Error> {
         #[cfg(feature = "read-url")]
         if gtfs.starts_with("http") {
@@ -207,8 +208,8 @@ impl RawGtfsReader {
         self.read_from_path(gtfs)
     }
 
-    /// Reads the GTFS from a remote url
-    #[cfg(feature = "read-url")]
+    /// Reads the GTFS from a remote url. Not available on WASM targets.
+    #[cfg(all(feature = "read-url", not(target_arch = "wasm32")))]
     pub fn read_from_url<U: reqwest::IntoUrl>(self, url: U) -> Result<RawGtfs, Error> {
         let mut res = reqwest::blocking::get(url)?;
         let mut body = Vec::new();

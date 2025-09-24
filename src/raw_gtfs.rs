@@ -85,6 +85,7 @@ impl RawGtfs {
     ///
     /// To read from an url, build with read-url feature
     /// See also [RawGtfs::from_url] and [RawGtfs::from_path] if you don’t want the library to guess
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn new(gtfs: &str) -> Result<Self, Error> {
         GtfsReader::default().raw().read(gtfs)
     }

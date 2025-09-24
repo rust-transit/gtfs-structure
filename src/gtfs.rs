@@ -116,6 +116,7 @@ impl Gtfs {
     ///
     /// To read from an url, build with read-url feature
     /// See also [Gtfs::from_url] and [Gtfs::from_path] if you don’t want the library to guess
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn new(gtfs: &str) -> Result<Gtfs, Error> {
         RawGtfs::new(gtfs).and_then(Gtfs::try_from)
     }

@@ -7,7 +7,7 @@ use std::convert::TryFrom;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
-use std::time::Instant;
+use web_time::Instant;
 
 /// Allows to parameterize how the parsing library behaves
 ///
@@ -92,6 +92,7 @@ impl GtfsReader {
     ///
     /// To read from an url, build with read-url feature
     /// See also [Gtfs::from_url] and [Gtfs::from_path] if you don’t want the library to guess
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn read(self, gtfs: &str) -> Result<Gtfs, Error> {
         self.raw().read(gtfs).and_then(Gtfs::try_from)
     }

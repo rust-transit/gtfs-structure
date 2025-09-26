@@ -2,7 +2,7 @@ use crate::objects::*;
 use crate::Error;
 use crate::GtfsReader;
 use std::path::Path;
-use std::time::Duration;
+use web_time::Duration;
 
 /// Data structure that map the GTFS csv with little intelligence
 ///

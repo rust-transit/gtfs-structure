@@ -2,7 +2,7 @@ use crate::objects::*;
 use crate::Error;
 use crate::GtfsReader;
 use std::path::Path;
-use std::time::Duration;
+use web_time::Duration;
 
 /// Data structure that map the GTFS csv with little intelligence
 ///
@@ -85,6 +85,7 @@ impl RawGtfs {
     ///
     /// To read from an url, build with read-url feature
     /// See also [RawGtfs::from_url] and [RawGtfs::from_path] if you don’t want the library to guess
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn new(gtfs: &str) -> Result<Self, Error> {
         GtfsReader::default().raw().read(gtfs)
     }
@@ -99,8 +100,8 @@ impl RawGtfs {
 
     /// Reads the raw GTFS from a remote url
     ///
-    /// The library must be built with the read-url feature
-    #[cfg(feature = "read-url")]
+    /// The library must be built with the read-url feature. Not available on WASM targets.
+    #[cfg(all(feature = "read-url", not(target_arch = "wasm32")))]
     pub fn from_url<U: reqwest::IntoUrl>(url: U) -> Result<Self, Error> {
         GtfsReader::default().raw().read_from_url(url)
     }

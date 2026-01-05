@@ -2,7 +2,7 @@ use serde::de::{Deserialize, Deserializer};
 use serde::ser::{Serialize, Serializer};
 
 /// All the objects type from the GTFS specification that this library reads
-#[derive(Debug, Serialize, Eq, PartialEq, Hash)]
+#[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Hash)]
 pub enum ObjectType {
     /// [Agency] <https://gtfs.org/reference/static/#agencytxt>
     Agency,

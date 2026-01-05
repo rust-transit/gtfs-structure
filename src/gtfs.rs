@@ -19,7 +19,7 @@ use web_time::{Duration, Instant};
 /// ```
 ///
 /// The [StopTime] are accessible from the [Trip]
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Gtfs {
     /// Time needed to read and parse the archive
     pub read_duration: Duration,

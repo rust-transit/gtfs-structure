@@ -824,7 +824,7 @@ impl From<RawTransfer> for StopTransfer {
 }
 
 /// Meta-data about the feed. See <https://gtfs.org/reference/static/#feed_infotxt>
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct FeedInfo {
     /// Full name of the organization that publishes the dataset.
     #[serde(rename = "feed_publisher_name")]

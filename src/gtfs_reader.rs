@@ -352,7 +352,7 @@ impl RawGtfsReader {
             .read_exact(&mut bom)
             .map_err(|e| Error::NamedFileIO {
                 file_name: file_name.to_owned(),
-                source: Box::new(e),
+                source: std::sync::Arc::new(e),
             })?;
 
         let chained = if bom != [0xefu8, 0xbbu8, 0xbfu8] {
@@ -374,7 +374,7 @@ impl RawGtfsReader {
             .headers()
             .map_err(|e| Error::CSVError {
                 file_name: file_name.to_owned(),
-                source: e,
+                source: std::sync::Arc::new(e),
                 line_in_error: None,
             })?
             .clone()
@@ -389,14 +389,14 @@ impl RawGtfsReader {
         // Read each record into the pre-allocated StringRecord one at a time
         while reader.read_record(&mut rec).map_err(|e| Error::CSVError {
             file_name: file_name.to_owned(),
-            source: e,
+            source: std::sync::Arc::new(e),
             line_in_error: None,
         })? {
             let obj = rec
                 .deserialize(Some(&headers))
                 .map_err(|e| Error::CSVError {
                     file_name: file_name.to_owned(),
-                    source: e,
+                    source: std::sync::Arc::new(e),
                     line_in_error: Some(crate::error::LineError {
                         headers: headers.into_iter().map(String::from).collect(),
                         values: rec.into_iter().map(String::from).collect(),
@@ -420,7 +420,7 @@ impl RawGtfsReader {
             File::open(path)
                 .map_err(|e| Error::NamedFileIO {
                     file_name: file_name.to_owned(),
-                    source: Box::new(e),
+                    source: std::sync::Arc::new(e),
                 })
                 .and_then(|r| self.read_objs(r, &file_name))
         } else {
@@ -469,7 +469,7 @@ impl RawGtfsReader {
             self.read_objs(
                 archive.by_index(*i).map_err(|e| Error::NamedFileIO {
                     file_name: file_name.to_owned(),
-                    source: Box::new(e),
+                    source: std::sync::Arc::new(e),
                 })?,
                 file_name,
             )

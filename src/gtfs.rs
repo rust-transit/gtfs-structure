@@ -340,6 +340,7 @@ fn create_trips(
         wheelchair_accessible: rt.wheelchair_accessible,
         bikes_allowed: rt.bikes_allowed,
         frequencies: vec![],
+        extensions: HashMap::new()
     }));
 
     let mut st_idx = 0;

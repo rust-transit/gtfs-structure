@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
+use crate::objects::*;
 use crate::Gtfs;
 use crate::RawGtfs;
-use crate::objects::*;
 use chrono::NaiveDate;
 use rgb::RGB8;
 
@@ -498,6 +498,7 @@ fn fare_v1() {
             transfer_duration: Some(7200),
             agency_id: None,
             transfers: Transfers::Unlimited,
+            extensions: HashMap::new(),
         },
     );
     assert_eq!(gtfs.fare_attributes, expected_attributes);
@@ -512,6 +513,7 @@ fn fare_v1() {
                 origin_id: Some("ttc_subway_stations".to_string()),
                 destination_id: Some("ttc_subway_stations".to_string()),
                 contains_id: None,
+                ..Default::default()
             },
             FareRule {
                 fare_id: "presto_fare".to_string(),
@@ -519,6 +521,7 @@ fn fare_v1() {
                 origin_id: Some("ttc_subway_stations".to_string()),
                 destination_id: Some("ttc_subway_stations".to_string()),
                 contains_id: None,
+                ..Default::default()
             },
         ],
     );
@@ -536,6 +539,7 @@ fn fares_v2() {
         fare_media_id: Some("contactless".to_string()),
         amount: "3.20".to_string(),
         currency: "CAD".to_string(),
+        ..Default::default()
     }];
 
     assert_eq!(gtfs.fare_products.len(), 8);
@@ -545,6 +549,7 @@ fn fares_v2() {
         id: "contactless".to_string(),
         name: Some("Contactless".to_string()),
         media_type: FareMediaType::CEmv,
+        extensions: HashMap::new(),
     };
     assert_eq!(gtfs.fare_media.len(), 5);
     assert_eq!(gtfs.fare_media["contactless"], expected);
@@ -557,6 +562,7 @@ fn fares_v2() {
             "https://www.translink.ca/transit-fares/pricing-and-fare-zones#fare-pricing"
                 .to_string(),
         ),
+        extensions: HashMap::new(),
     };
     assert_eq!(gtfs.rider_categories.len(), 2);
     assert_eq!(gtfs.rider_categories["concession"], expected);

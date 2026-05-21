@@ -2,7 +2,9 @@ pub use crate::enums::*;
 use crate::serde_helpers::*;
 use chrono::{Datelike, NaiveDate, Weekday};
 use rgb::RGB8;
+use serde_json::Value;
 
+use std::collections::HashMap;
 use std::fmt;
 use std::hash::Hash;
 use std::sync::Arc;
@@ -197,6 +199,9 @@ pub struct Stop {
     /// Text to speech readable version of the stop_name
     #[serde(rename = "tts_stop_name")]
     pub tts_name: Option<String>,
+    /// Fields of GTFS extensions
+    #[serde(flatten)]
+    pub extensions: HashMap<String, Value>,
 }
 
 impl Type for Stop {
@@ -261,6 +266,9 @@ pub struct RawStopTime {
     /// Indicates if arrival and departure times for a stop are strictly adhered to by the vehicle or if they are instead approximate and/or interpolated times
     #[serde(default)]
     pub timepoint: TimepointType,
+    /// Fields of GTFS extensions
+    #[serde(flatten)]
+    pub extensions: HashMap<String, Value>,
 }
 
 /// The moment where a vehicle, running on [Trip] stops at a [Stop]. See <https://gtfs.org/reference/static/#stopstxt>
@@ -360,6 +368,9 @@ pub struct Route {
     /// Indicates whether a rider can alight from the transit vehicle at any point along the vehicle’s travel path
     #[serde(default)]
     pub continuous_drop_off: ContinuousPickupDropOff,
+    /// Fields of GTFS extensions
+    #[serde(flatten)]
+    pub extensions: HashMap<String, Value>,
 }
 
 impl Route {
@@ -417,6 +428,9 @@ pub struct RawTranslation {
     pub record_sub_id: Option<String>,
     /// Translate all values that match exactly, instead of specifying individual records
     pub field_value: Option<String>,
+    /// Fields of GTFS extensions
+    #[serde(flatten)]
+    pub extensions: HashMap<String, Value>,
 }
 
 /// A [Trip] where the relationships with other objects have not been checked
@@ -445,6 +459,9 @@ pub struct RawTrip {
     /// Indicates whether bikes are allowed
     #[serde(default)]
     pub bikes_allowed: BikesAllowedType,
+    /// Fields of GTFS extensions
+    #[serde(flatten)]
+    pub extensions: HashMap<String, Value>,
 }
 
 impl Type for RawTrip {
@@ -496,6 +513,9 @@ pub struct Trip {
     pub bikes_allowed: BikesAllowedType,
     /// During which periods the trip runs by frequency and not by fixed timetable
     pub frequencies: Vec<Frequency>,
+    /// Fields of GTFS extensions
+    #[serde(flatten)]
+    pub extensions: HashMap<String, Value>,
 }
 
 impl Type for Trip {
@@ -547,6 +567,9 @@ pub struct Agency {
     /// Email address actively monitored by the agency’s customer service department
     #[serde(rename = "agency_email")]
     pub email: Option<String>,
+    /// Fields of GTFS extensions
+    #[serde(flatten)]
+    pub extensions: HashMap<String, Value>,
 }
 
 impl Type for Agency {
@@ -588,6 +611,9 @@ pub struct Shape {
     /// Actual distance traveled along the shape from the first shape point to the point specified in this record. Used by trip planners to show the correct portion of the shape on a map
     #[serde(rename = "shape_dist_traveled")]
     pub dist_traveled: Option<f32>,
+    /// Fields of GTFS extensions
+    #[serde(flatten)]
+    pub extensions: HashMap<String, Value>,
 }
 
 impl Type for Shape {
@@ -621,6 +647,9 @@ pub struct FareAttribute {
     pub agency_id: Option<String>,
     /// Length of time in seconds before a transfer expires
     pub transfer_duration: Option<usize>,
+    /// Fields of GTFS extensions
+    #[serde(flatten)]
+    pub extensions: HashMap<String, Value>,
 }
 
 impl Id for FareAttribute {
@@ -638,7 +667,7 @@ impl Type for FareAttribute {
 /// Used to describe the range of fares available for purchase by riders or taken into account
 /// when computing the total fare for journeys with multiple legs, such as transfer costs.
 /// https://gtfs.org/documentation/schedule/reference/#fare_productstxt
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default, PartialEq, Eq)]
 pub struct FareProduct {
     /// Identifies a fare product or set of fare products.
     #[serde(rename = "fare_product_id")]
@@ -654,6 +683,9 @@ pub struct FareProduct {
     pub amount: String,
     /// The currency of the cost of the fare product.
     pub currency: String,
+    /// Fields of GTFS extensions
+    #[serde(flatten)]
+    pub extensions: HashMap<String, Value>,
 }
 
 impl Id for FareProduct {
@@ -682,6 +714,9 @@ pub struct FareMedia {
     /// The type of fare media
     #[serde(rename = "fare_media_type")]
     pub media_type: FareMediaType,
+    /// Fields of GTFS extensions
+    #[serde(flatten)]
+    pub extensions: HashMap<String, Value>,
 }
 
 impl Id for FareMedia {
@@ -711,6 +746,9 @@ pub struct RiderCategory {
     /// URL of a web page, usually from the operating agency, that provides
     /// detailed information about a specific rider category and/or describes its eligibility criteria.
     pub eligibility_url: Option<String>,
+    /// Fields of GTFS extensions
+    #[serde(flatten)]
+    pub extensions: HashMap<String, Value>,
 }
 
 impl Id for RiderCategory {
@@ -726,7 +764,7 @@ impl Type for RiderCategory {
 }
 
 /// Defines one possible fare. See <https://gtfs.org/schedule/reference/#fare_rulestxt>
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default, PartialEq, Eq)]
 pub struct FareRule {
     /// ID of the referenced FareAttribute.
     pub fare_id: String,
@@ -738,6 +776,9 @@ pub struct FareRule {
     pub destination_id: Option<String>,
     /// Identifies the zones that a rider will enter while using a given fare class. References a [Stop].zone_id
     pub contains_id: Option<String>,
+    /// Fields of GTFS extensions
+    #[serde(flatten)]
+    pub extensions: HashMap<String, Value>,
 }
 
 /// A [Frequency] before being merged into the corresponding [Trip]
@@ -761,6 +802,9 @@ pub struct RawFrequency {
     pub headway_secs: u32,
     /// Indicates the type of service for a trip
     pub exact_times: Option<ExactTimes>,
+    /// Fields of GTFS extensions
+    #[serde(flatten)]
+    pub extensions: HashMap<String, Value>,
 }
 
 /// Timetables can be defined by the frequency of their vehicles. See <<https://gtfs.org/reference/static/#frequenciestxt>>
@@ -799,6 +843,9 @@ pub struct RawTransfer {
     pub transfer_type: TransferType,
     /// Minimum time needed to make the transfer in seconds
     pub min_transfer_time: Option<u32>,
+    /// Fields of GTFS extensions
+    #[serde(flatten)]
+    pub extensions: HashMap<String, Value>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
@@ -862,6 +909,9 @@ pub struct FeedInfo {
     /// URL for contact information, a web-form, support desk, or other tools for communication regarding the GTFS dataset and data publishing practices
     #[serde(rename = "feed_contact_url")]
     pub contact_url: Option<String>,
+    /// Fields of GTFS extensions
+    #[serde(flatten)]
+    pub extensions: HashMap<String, Value>,
 }
 
 impl fmt::Display for FeedInfo {
@@ -899,6 +949,9 @@ pub struct RawPathway {
     pub signposted_as: Option<String>,
     /// Same than the signposted_as field, but when the pathways is used backward
     pub reversed_signposted_as: Option<String>,
+    /// Fields of GTFS extensions
+    #[serde(flatten)]
+    pub extensions: HashMap<String, Value>,
 }
 
 impl Id for RawPathway {

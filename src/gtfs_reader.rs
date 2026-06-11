@@ -288,6 +288,9 @@ impl RawGtfsReader {
                 "pathways.txt",
                 "feed_info.txt",
                 "shapes.txt",
+                "translations.txt",
+                "ticketing_deep_links.txt",
+                "ticketing_identifiers.txt",
             ] {
                 let path = std::path::Path::new(archive_file.name());
                 if path.file_name() == Some(std::ffi::OsStr::new(gtfs_file)) {

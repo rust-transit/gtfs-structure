@@ -350,7 +350,7 @@ pub struct Route {
         default
     )]
     pub color: Option<RGB8>,
-    /// Legible color to use for text drawn against a background of [Route::route_color]
+    /// Legible color to use for text drawn against a background of [Route::color]
     #[serde(
         deserialize_with = "deserialize_optional_color",
         serialize_with = "serialize_optional_color",
@@ -370,13 +370,13 @@ pub struct Route {
 }
 
 impl Route {
-    /// Legible color to use for text drawn against a background of [Route::route_color]
+    /// Legible color to use for text drawn against a background of [Route::color]
     /// Defaults to white (FFFFFF) when omitted or left empty.
     pub fn text_color(&self) -> RGB8 {
         self.text_color.unwrap_or_default()
     }
 
-    /// Legible color to use for text drawn against a background of [Route::route_color]
+    /// Background of [Route::text_color]
     /// Defaults to black (000000) when omitted or left empty.
     pub fn color(&self) -> RGB8 {
         self.color.unwrap_or_else(default_route_color)
@@ -655,7 +655,7 @@ impl Type for FareAttribute {
 
 /// Used to describe the range of fares available for purchase by riders or taken into account
 /// when computing the total fare for journeys with multiple legs, such as transfer costs.
-/// https://gtfs.org/documentation/schedule/reference/#fare_productstxt
+/// <https://gtfs.org/documentation/schedule/reference/#fare_productstxt>
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct FareProduct {
     /// Identifies a fare product or set of fare products.
@@ -688,7 +688,7 @@ impl Type for FareProduct {
 
 /// To describe the different fare media that can be employed to use fare products.
 /// Fare media are physical or virtual holders used for the representation and/or validation of a fare product.
-/// https://gtfs.org/documentation/schedule/reference/#fare_mediatxt
+/// <https://gtfs.org/documentation/schedule/reference/#fare_mediatxt>
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct FareMedia {
     /// Identifies a fare media.
@@ -715,7 +715,7 @@ impl Type for FareMedia {
 }
 
 /// Defines categories of riders (e.g. elderly, student).
-/// https://gtfs.org/documentation/schedule/reference/#rider_categoriestxt
+/// <https://gtfs.org/documentation/schedule/reference/#rider_categoriestxt>
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct RiderCategory {
     /// Identifies a rider category.

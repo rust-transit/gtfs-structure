@@ -263,6 +263,18 @@ fn read_feed_info() {
 }
 
 #[test]
+fn read_attributions() {
+    let gtfs = RawGtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
+    let feed = &gtfs.attributions.unwrap().unwrap();
+    assert_eq!(1, feed.len());
+    assert_eq!("OpenStreetMap contributors", feed[0].organization_name);
+    assert_eq!(
+        Some("https://www.openstreetmap.org/copyright"),
+        feed[0].attribution_url.as_deref()
+    );
+}
+
+#[test]
 fn trip_days() {
     let gtfs = Gtfs::from_path("fixtures/basic/").unwrap();
     let days = gtfs.trip_days("service1", NaiveDate::from_ymd_opt(2017, 1, 1).unwrap());
@@ -355,7 +367,7 @@ fn display() {
 #[test]
 fn path_files() {
     let gtfs = RawGtfs::from_path("fixtures/basic").expect("impossible to read gtfs");
-    assert_eq!(gtfs.files.len(), 14);
+    assert_eq!(gtfs.files.len(), 15);
     assert_eq!(gtfs.source_format, SourceFormat::Directory);
     assert!(gtfs.files.contains(&"agency.txt".to_owned()));
 }

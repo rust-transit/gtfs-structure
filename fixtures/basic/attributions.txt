@@ -1,0 +1,2 @@
+organization_name,is_producer,attribution_url
+OpenStreetMap contributors,1,https://www.openstreetmap.org/copyright

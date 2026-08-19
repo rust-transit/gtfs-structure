@@ -951,6 +951,48 @@ pub struct TicketingDeepLink {
     pub ios_universal_link_url: Option<String>,
 }
 
+/// Attribution for a dataset
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct Attribution {
+    /// Identifies an attribution for the dataset or a subset of it. This is mostly useful for translations.
+    pub attribution_id: Option<String>,
+    /// Agency to which the attribution applies.
+    pub agency_id: Option<String>,
+    /// Route to which the attribution applies.
+    pub route_id: Option<String>,
+    /// Trip to which the attribution applies.
+    pub trip_id: Option<String>,
+    /// Name of the organization that the dataset is attributed to.
+    pub organization_name: String,
+    #[serde(
+        deserialize_with = "deserialize_bool",
+        serialize_with = "serialize_bool"
+    )]
+    #[serde(default)]
+    /// Whether the organization is the producer
+    pub is_producer: bool,
+    #[serde(
+        deserialize_with = "deserialize_bool",
+        serialize_with = "serialize_bool"
+    )]
+    #[serde(default)]
+    /// Whether the organization is the operator
+    pub is_operator: bool,
+    #[serde(
+        deserialize_with = "deserialize_bool",
+        serialize_with = "serialize_bool"
+    )]
+    #[serde(default)]
+    /// Whether the organization is a transport authority
+    pub is_authority: bool,
+    /// URL of the organization.
+    pub attribution_url: Option<String>,
+    /// Email of the organization.
+    pub attribution_email: Option<String>,
+    /// Phone number of the organization.
+    pub attribution_phone: Option<String>,
+}
+
 impl Type for RawPathway {
     fn object_type(&self) -> ObjectType {
         ObjectType::Pathway

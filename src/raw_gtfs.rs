@@ -58,6 +58,8 @@ pub struct RawGtfs {
     pub ticketing_deep_links: Option<Result<Vec<TicketingDeepLink>, Error>>,
     /// Identifiers to pass to ticket shops
     pub ticketing_identifiers: Option<Result<Vec<TicketingIdentifier>, Error>>,
+    /// Attribution for the dataset
+    pub attributions: Option<Result<Vec<Attribution>, Error>>,
 }
 
 impl RawGtfs {
@@ -90,6 +92,10 @@ impl RawGtfs {
         println!(
             "  Ticketing identifiers: {}",
             optional_file_summary(&self.ticketing_identifiers)
+        );
+        println!(
+            "  Attributions: {}",
+            optional_file_summary(&self.attributions)
         );
     }
 

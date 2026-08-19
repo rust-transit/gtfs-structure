@@ -195,6 +195,7 @@ impl RawGtfsReader {
             ticketing_deep_links: self.read_objs_from_optional_path(p, "ticketing_deep_links.txt"),
             ticketing_identifiers: self
                 .read_objs_from_optional_path(p, "ticketing_identifiers.txt"),
+            attributions: self.read_objs_from_optional_path(p, "attributions.txt"),
             files,
             source_format: crate::SourceFormat::Directory,
             sha256: None,
@@ -291,6 +292,7 @@ impl RawGtfsReader {
                 "translations.txt",
                 "ticketing_deep_links.txt",
                 "ticketing_identifiers.txt",
+                "attributions.txt",
             ] {
                 let path = std::path::Path::new(archive_file.name());
                 if path.file_name() == Some(std::ffi::OsStr::new(gtfs_file)) {
@@ -353,6 +355,7 @@ impl RawGtfsReader {
                 &mut archive,
                 "ticketing_identifiers.txt",
             ),
+            attributions: self.read_optional_file(&file_mapping, &mut archive, "attributions.txt"),
             read_duration: start_of_read_instant.elapsed(),
             files,
             source_format: crate::SourceFormat::Zip,

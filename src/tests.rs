@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::Gtfs;
 use crate::RawGtfs;
 use crate::objects::*;
-use chrono::NaiveDate;
+use jiff::civil::date;
 use rgb::RGB8;
 
 #[test]
@@ -257,8 +257,8 @@ fn read_feed_info() {
     assert_eq!("SNCF", feed[0].name);
     assert_eq!("http://www.sncf.com", feed[0].url);
     assert_eq!("fr", feed[0].lang);
-    assert_eq!(NaiveDate::from_ymd_opt(2018, 7, 9), feed[0].start_date);
-    assert_eq!(NaiveDate::from_ymd_opt(2018, 9, 27), feed[0].end_date);
+    assert_eq!(Some(date(2018, 7, 9)), feed[0].start_date);
+    assert_eq!(Some(date(2018, 9, 27)), feed[0].end_date);
     assert_eq!(Some("0.3".to_string()), feed[0].version);
 }
 
@@ -277,10 +277,10 @@ fn read_attributions() {
 #[test]
 fn trip_days() {
     let gtfs = Gtfs::from_path("fixtures/basic/").unwrap();
-    let days = gtfs.trip_days("service1", NaiveDate::from_ymd_opt(2017, 1, 1).unwrap());
+    let days = gtfs.trip_days("service1", date(2017, 1, 1));
     assert_eq!(vec![6, 7, 13, 14], days);
 
-    let days2 = gtfs.trip_days("service2", NaiveDate::from_ymd_opt(2017, 1, 1).unwrap());
+    let days2 = gtfs.trip_days("service2", date(2017, 1, 1));
     assert_eq!(vec![0], days2);
 }
 

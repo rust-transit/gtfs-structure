@@ -1,5 +1,5 @@
 use crate::{Error, RawGtfs, objects::*};
-use chrono::prelude::NaiveDate;
+use jiff::civil::Date;
 use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
 use std::sync::Arc;
@@ -157,7 +157,7 @@ impl Gtfs {
     /// For instance if the `start_date` is 2021-12-20, `[0, 4]` means that the vehicle will run the 20th and 24th
     ///
     /// It will consider use both [Calendar] and [CalendarDate] (both added and removed)
-    pub fn trip_days(&self, service_id: &str, start_date: NaiveDate) -> Vec<u16> {
+    pub fn trip_days(&self, service_id: &str, start_date: Date) -> Vec<u16> {
         let mut result = Vec::new();
 
         // Handle services given by specific days and exceptions
@@ -168,32 +168,30 @@ impl Gtfs {
             .iter()
             .flat_map(|e| e.iter())
         {
-            let offset = extra_day.date.signed_duration_since(start_date).num_days();
-            if offset >= 0 {
-                if extra_day.exception_type == Exception::Added {
-                    result.push(offset as u16);
+            if extra_day.date >= start_date {
+                if extra_day.exception_type == Exception::Added
+                    && let Ok(offset) = start_date.until(extra_day.date)
+                {
+                    result.push(offset.get_days() as u16);
                 } else if extra_day.exception_type == Exception::Deleted {
-                    removed_days.insert(offset);
+                    removed_days.insert(extra_day.date);
                 }
             }
         }
 
         if let Some(calendar) = self.calendar.get(service_id) {
-            let total_days = calendar
-                .end_date
-                .signed_duration_since(start_date)
-                .num_days();
-            for days_offset in 0..=total_days {
-                if let Some(days_offset_timedelta) = chrono::TimeDelta::try_days(days_offset) {
-                    let current_date = start_date + days_offset_timedelta;
+            for current_date in start_date.series(jiff::Span::new().days(1)) {
+                if current_date > calendar.end_date {
+                    break;
+                }
 
-                    if calendar.start_date <= current_date
-                        && calendar.end_date >= current_date
-                        && calendar.valid_weekday(current_date)
-                        && !removed_days.contains(&days_offset)
-                    {
-                        result.push(days_offset as u16);
-                    }
+                if let Ok(days_offset) = start_date.until(current_date)
+                    && calendar.start_date <= current_date
+                    && calendar.end_date >= current_date
+                    && calendar.valid_weekday(current_date)
+                    && !removed_days.contains(&current_date)
+                {
+                    result.push(days_offset.get_days() as u16);
                 }
             }
         }

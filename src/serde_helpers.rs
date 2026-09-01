@@ -1,29 +1,29 @@
-use chrono::NaiveDate;
+use jiff::civil::Date;
 use rgb::RGB8;
 use serde::de::{self, Deserialize, Deserializer};
 use serde::ser::Serializer;
 
-pub fn deserialize_date<'de, D>(deserializer: D) -> Result<NaiveDate, D::Error>
+pub fn deserialize_date<'de, D>(deserializer: D) -> Result<Date, D::Error>
 where
     D: Deserializer<'de>,
 {
     let s: &str = Deserialize::deserialize(deserializer)?;
-    NaiveDate::parse_from_str(s, "%Y%m%d").map_err(serde::de::Error::custom)
+    Date::strptime("%Y%m%d", s).map_err(serde::de::Error::custom)
 }
 
-pub fn serialize_date<S>(date: &NaiveDate, serializer: S) -> Result<S::Ok, S::Error>
+pub fn serialize_date<S>(date: &Date, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
-    serializer.serialize_str(&date.format("%Y%m%d").to_string())
+    serializer.serialize_str(&date.strftime("%Y%m%d").to_string())
 }
 
-pub fn deserialize_option_date<'de, D>(deserializer: D) -> Result<Option<NaiveDate>, D::Error>
+pub fn deserialize_option_date<'de, D>(deserializer: D) -> Result<Option<Date>, D::Error>
 where
     D: Deserializer<'de>,
 {
     let s = Option::<&str>::deserialize(deserializer)?
-        .map(|s| NaiveDate::parse_from_str(s, "%Y%m%d").map_err(serde::de::Error::custom));
+        .map(|s| Date::strptime("%Y%m%d", s).map_err(serde::de::Error::custom));
     match s {
         Some(Ok(s)) => Ok(Some(s)),
         Some(Err(e)) => Err(e),
@@ -31,7 +31,7 @@ where
     }
 }
 
-pub fn serialize_option_date<S>(date: &Option<NaiveDate>, serializer: S) -> Result<S::Ok, S::Error>
+pub fn serialize_option_date<S>(date: &Option<Date>, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {

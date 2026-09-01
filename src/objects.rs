@@ -1,6 +1,6 @@
 pub use crate::enums::*;
 use crate::serde_helpers::*;
-use chrono::{Datelike, NaiveDate, Weekday};
+use jiff::civil::{Date, Weekday};
 use rgb::RGB8;
 
 use std::fmt;
@@ -86,13 +86,13 @@ pub struct Calendar {
         deserialize_with = "deserialize_date",
         serialize_with = "serialize_date"
     )]
-    pub start_date: NaiveDate,
+    pub start_date: Date,
     /// End service day for the service interval. This service day is included in the interval
     #[serde(
         deserialize_with = "deserialize_date",
         serialize_with = "serialize_date"
     )]
-    pub end_date: NaiveDate,
+    pub end_date: Date,
 }
 
 impl Type for Calendar {
@@ -115,15 +115,15 @@ impl fmt::Display for Calendar {
 
 impl Calendar {
     /// Returns true if there is a service running on that day
-    pub fn valid_weekday(&self, date: NaiveDate) -> bool {
+    pub fn valid_weekday(&self, date: Date) -> bool {
         match date.weekday() {
-            Weekday::Mon => self.monday,
-            Weekday::Tue => self.tuesday,
-            Weekday::Wed => self.wednesday,
-            Weekday::Thu => self.thursday,
-            Weekday::Fri => self.friday,
-            Weekday::Sat => self.saturday,
-            Weekday::Sun => self.sunday,
+            Weekday::Monday => self.monday,
+            Weekday::Tuesday => self.tuesday,
+            Weekday::Wednesday => self.wednesday,
+            Weekday::Thursday => self.thursday,
+            Weekday::Friday => self.friday,
+            Weekday::Saturday => self.saturday,
+            Weekday::Sunday => self.sunday,
         }
     }
 }
@@ -138,7 +138,7 @@ pub struct CalendarDate {
         serialize_with = "serialize_date"
     )]
     /// Date where the service will be added or deleted
-    pub date: NaiveDate,
+    pub date: Date,
     /// Is the service added or deleted
     pub exception_type: Exception,
 }
@@ -862,7 +862,7 @@ pub struct FeedInfo {
         rename = "feed_start_date",
         default
     )]
-    pub start_date: Option<NaiveDate>,
+    pub start_date: Option<Date>,
     ///The dataset provides complete and reliable schedule information for service in the period until this date
     #[serde(
         deserialize_with = "deserialize_option_date",
@@ -870,7 +870,7 @@ pub struct FeedInfo {
         rename = "feed_end_date",
         default
     )]
-    pub end_date: Option<NaiveDate>,
+    pub end_date: Option<Date>,
     /// String that indicates the current version of their GTFS dataset
     #[serde(rename = "feed_version")]
     pub version: Option<String>,

@@ -2,7 +2,7 @@
 use thiserror::Error;
 
 /// Specific line from a CSV file that could not be read
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct LineError {
     /// Headers of the CSV file
     pub headers: Vec<String>,
@@ -11,7 +11,7 @@ pub struct LineError {
 }
 
 /// An error that can occur when processing GTFS data.
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Clone)]
 pub enum Error {
     /// A mandatory file is not present in the archive
     #[error("Cound not find file {0}")]
@@ -30,7 +30,7 @@ pub enum Error {
     InvalidColor(String),
     /// Generic Input/Output error while reading a file
     #[error("impossible to read file")]
-    IO(#[from] std::io::Error),
+    IO(std::sync::Arc<std::io::Error>),
     /// Impossible to read a file
     #[error("impossible to read '{file_name}'")]
     NamedFileIO {
@@ -38,12 +38,12 @@ pub enum Error {
         file_name: String,
         /// The inital error that caused the unability to read the file
         #[source]
-        source: Box<dyn std::error::Error + Send + Sync>,
+        source: std::sync::Arc<dyn std::error::Error + Send + Sync>,
     },
     /// Impossible to fetch the remote archive by the URL
     #[cfg(feature = "read-url")]
     #[error("impossible to remotely access file")]
-    Fetch(#[from] reqwest::Error),
+    Fetch(std::sync::Arc<reqwest::Error>),
     /// Impossible to read a CSV file
     #[error("impossible to read csv file '{file_name}'")]
     CSVError {
@@ -51,11 +51,30 @@ pub enum Error {
         file_name: String,
         /// The initial error by the csv library
         #[source]
-        source: csv::Error,
+        source: std::sync::Arc<csv::Error>,
         /// The line that could not be parsed by the csv library
         line_in_error: Option<LineError>,
     },
     /// Error when trying to unzip the GTFS archive
     #[error(transparent)]
-    Zip(#[from] zip::result::ZipError),
+    Zip(std::sync::Arc<zip::result::ZipError>),
+}
+
+impl From<std::io::Error> for Error {
+    fn from(err: std::io::Error) -> Self {
+        Error::IO(std::sync::Arc::new(err))
+    }
+}
+
+#[cfg(feature = "read-url")]
+impl From<reqwest::Error> for Error {
+    fn from(err: reqwest::Error) -> Self {
+        Error::Fetch(std::sync::Arc::new(err))
+    }
+}
+
+impl From<zip::result::ZipError> for Error {
+    fn from(err: zip::result::ZipError) -> Self {
+        Error::Zip(std::sync::Arc::new(err))
+    }
 }

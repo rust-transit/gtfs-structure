@@ -276,13 +276,20 @@ fn to_stop_map(
     }
 
     for pathway in raw_pathways {
+        
         stop_map.get(&pathway.to_stop_id).ok_or_else(|| {
             let stop_id = &pathway.to_stop_id;
             Error::ReferenceError(format!("'{stop_id}' in pathways.txt"))
         })?;
+        
+        let from_stop_id = pathway.from_stop_id.clone();
         stop_map
             .entry(pathway.from_stop_id.clone())
-            .and_modify(|stop| stop.pathways.push(Pathway::from(pathway)));
+            .and_modify(|stop| {
+                let mut pathway = Pathway::from(pathway);
+                pathway.from_stop_id = from_stop_id;
+                stop.pathways.push(pathway);
+            });
     }
 
     let res = stop_map

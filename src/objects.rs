@@ -1004,6 +1004,8 @@ impl Type for RawPathway {
 pub struct Pathway {
     /// Uniquely identifies the pathway
     pub id: String,
+    /// the stop_id of the origin of the pathway
+    pub from_stop_id: String,
     /// Location at which the pathway ends
     pub to_stop_id: String,
     /// Type of pathway between the specified (from_stop_id, to_stop_id) pair
@@ -1024,8 +1026,7 @@ pub struct Pathway {
     pub signposted_as: Option<String>,
     /// Same than the signposted_as field, but when the pathways is used backward
     pub reversed_signposted_as: Option<String>,
-    /// the stop_id of the origin of the pathway
-    pub from_stop_id: String
+
 }
 
 impl Id for Pathway {

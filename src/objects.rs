@@ -1045,8 +1045,8 @@ impl From<RawPathway> for Pathway {
     fn from(raw: RawPathway) -> Self {
         Self {
             id: raw.id,
-            to_stop_id: raw.to_stop_id,
             from_stop_id: raw.from_stop_id,
+            to_stop_id: raw.to_stop_id,
             mode: raw.mode,
             is_bidirectional: raw.is_bidirectional,
             length: raw.length,

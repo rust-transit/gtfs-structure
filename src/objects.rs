@@ -1046,6 +1046,7 @@ impl From<RawPathway> for Pathway {
         Self {
             id: raw.id,
             to_stop_id: raw.to_stop_id,
+            from_stop_id: raw.from_stop_id,
             mode: raw.mode,
             is_bidirectional: raw.is_bidirectional,
             length: raw.length,
@@ -1055,7 +1056,7 @@ impl From<RawPathway> for Pathway {
             signposted_as: raw.signposted_as,
             stair_count: raw.stair_count,
             traversal_time: raw.traversal_time,
-            from_stop_id: raw.from_stop_id,
+
         }
     }
 }

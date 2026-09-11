@@ -1026,7 +1026,6 @@ pub struct Pathway {
     pub signposted_as: Option<String>,
     /// Same than the signposted_as field, but when the pathways is used backward
     pub reversed_signposted_as: Option<String>,
-
 }
 
 impl Id for Pathway {
@@ -1057,7 +1056,6 @@ impl From<RawPathway> for Pathway {
             signposted_as: raw.signposted_as,
             stair_count: raw.stair_count,
             traversal_time: raw.traversal_time,
-
         }
     }
 }

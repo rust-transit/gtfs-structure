@@ -1004,6 +1004,8 @@ impl Type for RawPathway {
 pub struct Pathway {
     /// Uniquely identifies the pathway
     pub id: String,
+    /// the stop_id of the origin of the pathway
+    pub from_stop_id: String,
     /// Location at which the pathway ends
     pub to_stop_id: String,
     /// Type of pathway between the specified (from_stop_id, to_stop_id) pair
@@ -1043,6 +1045,7 @@ impl From<RawPathway> for Pathway {
     fn from(raw: RawPathway) -> Self {
         Self {
             id: raw.id,
+            from_stop_id: raw.from_stop_id,
             to_stop_id: raw.to_stop_id,
             mode: raw.mode,
             is_bidirectional: raw.is_bidirectional,

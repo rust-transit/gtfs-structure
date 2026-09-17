@@ -337,6 +337,7 @@ fn create_trips(
         block_id: rt.block_id,
         wheelchair_accessible: rt.wheelchair_accessible,
         bikes_allowed: rt.bikes_allowed,
+        cars_allowed: rt.cars_allowed,
         frequencies: vec![],
     }));
 

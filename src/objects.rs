@@ -452,6 +452,9 @@ pub struct RawTrip {
     /// Indicates whether bikes are allowed
     #[serde(default)]
     pub bikes_allowed: BikesAllowedType,
+    /// Indicates whether cars can be transported
+    #[serde(default)]
+    pub cars_allowed: CarsAllowedType,
     /// This field is not part of the main GTFS specification, it is part of the Google Transit Ticketing extension
     /// Trip ID to pass to a ticket shop
     #[serde(default)]
@@ -509,6 +512,8 @@ pub struct Trip {
     pub wheelchair_accessible: Availability,
     /// Indicates whether bikes are allowed
     pub bikes_allowed: BikesAllowedType,
+    /// Indicates whether cars can be transported
+    pub cars_allowed: CarsAllowedType,
     /// During which periods the trip runs by frequency and not by fixed timetable
     pub frequencies: Vec<Frequency>,
 }

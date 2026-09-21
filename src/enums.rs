@@ -619,6 +619,56 @@ impl Serialize for BikesAllowedType {
     }
 }
 
+/// Is the [crate::Trip] accessible with a car. See <https://gtfs.org/reference/static/#tripstxt> `bikes_allowed`
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum CarsAllowedType {
+    /// No car transport information for the trip
+    #[default]
+    NoCarInfo,
+    /// Vehicle being used on this particular trip can accommodate at least one car
+    AtLeastOneCar,
+    /// No cars are allowed on this trip
+    NoCarsAllowed,
+    /// An unknown value not in the specification
+    Unknown(i16),
+}
+
+impl<'de> Deserialize<'de> for CarsAllowedType {
+    fn deserialize<D>(deserializer: D) -> Result<CarsAllowedType, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = <&str>::deserialize(deserializer)?;
+        Ok(match s {
+            "" | "0" => CarsAllowedType::NoCarInfo,
+            "1" => CarsAllowedType::AtLeastOneCar,
+            "2" => CarsAllowedType::NoCarsAllowed,
+            s => CarsAllowedType::Unknown(s.parse().map_err(|_| {
+                serde::de::Error::custom(format!(
+                    "invalid value for CarsAllowedType, must be an integer: {s}"
+                ))
+            })?),
+        })
+    }
+}
+
+impl Serialize for CarsAllowedType {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        // Note: for extended route type, we might loose the initial precise route type
+        serialize_i16_as_str(
+            serializer,
+            match self {
+                CarsAllowedType::NoCarInfo => 0,
+                CarsAllowedType::AtLeastOneCar => 1,
+                CarsAllowedType::NoCarsAllowed => 2,
+                CarsAllowedType::Unknown(i) => *i,
+            },
+        )
+    }
+}
 /// Defines where a [crate::FareAttribute] can be paid
 #[derive(Debug, Deserialize, Serialize, Copy, Clone, PartialEq, Eq)]
 pub enum PaymentMethod {

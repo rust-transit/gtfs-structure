@@ -42,6 +42,8 @@ pub struct RawGtfs {
     pub transfers: Option<Result<Vec<RawTransfer>, Error>>,
     /// All Pathways, None if the file was absent as it is not mandatory
     pub pathways: Option<Result<Vec<RawPathway>, Error>>,
+    /// All Levels, None if the file was absent as it is not mandatory
+    pub levels: Option<Result<Vec<Level>, Error>>,
     /// All FeedInfo, None if the file was absent as it is not mandatory
     pub feed_info: Option<Result<Vec<FeedInfo>, Error>>,
     /// All StopTimes
@@ -80,6 +82,7 @@ impl RawGtfs {
         );
         println!("  Transfers: {}", optional_file_summary(&self.transfers));
         println!("  Pathways: {}", optional_file_summary(&self.pathways));
+        println!("  Levels: {}", optional_file_summary(&self.levels));
         println!("  Feed info: {}", optional_file_summary(&self.feed_info));
         println!(
             "  Translations: {}",

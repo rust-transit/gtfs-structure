@@ -610,3 +610,35 @@ fn ticketing_extension() {
             .is_some()
     );
 }
+
+#[test]
+fn read_levels() {
+    let gtfs = RawGtfs::from_path("fixtures/with_levels").expect("impossible to read gtfs");
+    let levels = gtfs
+        .levels
+        .expect("levels.txt should be present")
+        .expect("levels.txt should be valid");
+    assert_eq!(levels.len(), 4);
+    assert_eq!(levels[0].id, "level_street");
+    assert_eq!(levels[0].level_index, 0.0);
+    assert_eq!(levels[0].level_name.as_deref(), Some("Street Level"));
+    assert_eq!(levels[1].id, "level_platform");
+    assert_eq!(levels[1].level_index, -1.0);
+    assert_eq!(
+        levels[1].level_name.as_deref(),
+        Some("Platform Level (Hauptbahnhof)")
+    );
+
+    // Verify full integration via Gtfs
+    let gtfs = Gtfs::from_path("fixtures/with_levels").expect("impossible to read gtfs");
+    assert_eq!(gtfs.levels.len(), 4);
+    let street = gtfs
+        .get_level("level_street")
+        .expect("level_street should exist");
+    assert_eq!(street.level_index, 0.0);
+    assert_eq!(street.level_name.as_deref(), Some("Street Level"));
+    let platform = gtfs
+        .get_level("level_platform")
+        .expect("level_platform should exist");
+    assert_eq!(platform.level_index, -1.0);
+}

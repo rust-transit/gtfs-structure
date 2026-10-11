@@ -1,0 +1,19 @@
+pathway_id,from_stop_id,to_stop_id,pathway_mode,is_bidirectional,length,traversal_time,stair_count,max_slope,min_width,signposted_as,reversed_signposted_as,wheelchair_traversal_time
+pw_A_entrance1_concourse,station_A_entrance_1,station_A_concourse,1,1,45,60,,0.02,2.0,Concourse,Ausgang Nord,,
+pw_A_entrance2_concourse,station_A_entrance_2,station_A_concourse,1,1,50,65,,0.02,2.0,Concourse,Ausgang Süd,,
+pw_A_concourse_elevator_top,station_A_concourse,station_A_elevator_top,1,1,12,15,,0.00,1.8,Aufzug / Lift,Concourse,,
+pw_A_elevator,station_A_elevator_top,station_A_elevator_bottom,5,1,,,,,1.1,Gleis / Platform,Straße / Street,45
+pw_A_concourse_stairs_top,station_A_concourse,station_A_stairs_top,1,1,10,12,,0.00,2.5,Treppen / Stairs,Concourse,,
+pw_A_stairs,station_A_stairs_top,station_A_stairs_bottom,2,1,,,18,,1.4,Gleis / Platform,Concourse,,
+pw_A_elevator_bottom_platform1,station_A_elevator_bottom,platform_A1,1,1,20,25,,0.00,2.0,Gleis 1,Aufzug / Lift,,
+pw_A_elevator_bottom_platform2,station_A_elevator_bottom,platform_A2,1,1,25,30,,0.00,2.0,Gleis 2,Aufzug / Lift,,
+pw_A_stairs_bottom_platform1,station_A_stairs_bottom,platform_A1,1,1,20,25,,0.00,2.0,Gleis 1,Treppe,,
+pw_A_entrance1_cafe,station_A_entrance_1,station_A_cafe,2,1,,,18,,1.4,cafe,,
+pw_A_stairs_bottom_platform2,station_A_stairs_bottom,platform_A2,1,1,25,30,,0.00,2.0,Gleis 2,Treppe,,
+pw_B_entrance1_concourse,station_B_entrance_1,station_B_concourse,1,1,30,40,,0.02,2.0,Concourse,Ausgang West,,
+pw_B_concourse_elevator_top,station_B_concourse,station_B_elevator_top,1,1,8,10,,0.00,1.8,Aufzug / Lift,Concourse,,
+pw_B_elevator,station_B_elevator_top,station_B_elevator_bottom,5,1,,,,,1.1,Bahnsteig / Platform,Straße / Street,40
+pw_B_elevator_bottom_platform,station_B_elevator_bottom,platform_B1,1,1,15,18,,0.00,2.0,Bahnsteig U1,Aufzug / Lift,,
+pw_broken,station_A_entrance_1,station_B_concourse,1,1,45,60,,0.02,2.0,Concourse,Ausgang Nord,,
+pw_broken_mode,station_A_entrance_1,station_A_entrance_2,5,1,45,60,,0.02,2.0,Concourse,Ausgang Nord,,
+

@@ -189,6 +189,7 @@ impl RawGtfsReader {
             frequencies: self.read_objs_from_optional_path(p, "frequencies.txt"),
             transfers: self.read_objs_from_optional_path(p, "transfers.txt"),
             pathways: self.read_objs_from_optional_path(p, "pathways.txt"),
+            levels: self.read_objs_from_optional_path(p, "levels.txt"),
             feed_info: self.read_objs_from_optional_path(p, "feed_info.txt"),
             read_duration: start_of_read_instant.elapsed(),
             translations: self.read_objs_from_optional_path(p, "translations.txt"),
@@ -287,6 +288,7 @@ impl RawGtfsReader {
                 "frequencies.txt",
                 "transfers.txt",
                 "pathways.txt",
+                "levels.txt",
                 "feed_info.txt",
                 "shapes.txt",
                 "translations.txt",
@@ -338,6 +340,7 @@ impl RawGtfsReader {
             frequencies: self.read_optional_file(&file_mapping, &mut archive, "frequencies.txt"),
             transfers: self.read_optional_file(&file_mapping, &mut archive, "transfers.txt"),
             pathways: self.read_optional_file(&file_mapping, &mut archive, "pathways.txt"),
+            levels: self.read_optional_file(&file_mapping, &mut archive, "levels.txt"),
             feed_info: self.read_optional_file(&file_mapping, &mut archive, "feed_info.txt"),
             shapes: if self.reader.read_shapes {
                 self.read_optional_file(&file_mapping, &mut archive, "shapes.txt")

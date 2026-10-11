@@ -999,6 +999,32 @@ impl Type for RawPathway {
     }
 }
 
+/// Describes a level in a station. See <https://gtfs.org/reference/static/#levelstxt>
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct Level {
+    /// Uniquely identifies the level when a station has multiple levels
+    #[serde(rename = "level_id")]
+    pub id: String,
+    /// Numeric index of the level that indicates its relative position
+    #[serde(rename = "level_index")]
+    pub level_index: f32,
+    /// Optional name of the level
+    #[serde(rename = "level_name")]
+    pub level_name: Option<String>,
+}
+
+impl Id for Level {
+    fn id(&self) -> &str {
+        &self.id
+    }
+}
+
+impl Type for Level {
+    fn object_type(&self) -> ObjectType {
+        ObjectType::Level
+    }
+}
+
 /// Pathway going from a stop to another.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Pathway {

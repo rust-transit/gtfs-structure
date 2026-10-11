@@ -1,0 +1,5 @@
+level_id,level_index,level_name
+level_street,0,Street Level
+level_platform,-1,Platform Level (Hauptbahnhof)
+level_street_b,0,Street Level (Neumarkt)
+level_platform_b,-1,Platform Level (Neumarkt)

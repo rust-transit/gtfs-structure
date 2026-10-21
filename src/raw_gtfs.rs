@@ -60,6 +60,8 @@ pub struct RawGtfs {
     pub ticketing_identifiers: Option<Result<Vec<TicketingIdentifier>, Error>>,
     /// Attribution for the dataset
     pub attributions: Option<Result<Vec<Attribution>, Error>>,
+    /// Licenses of the dataset
+    pub licenses: Option<Result<Vec<License>, Error>>,
 }
 
 impl RawGtfs {

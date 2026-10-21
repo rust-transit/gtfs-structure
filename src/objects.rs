@@ -1073,3 +1073,15 @@ pub enum SourceFormat {
     /// `Zip` means the data were read from a zip
     Zip,
 }
+
+/// Licenses that apply to the feed or to specific files
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+pub struct License {
+    /// Defines the table which the license applies to
+    pub licensed_table_name: Option<String>,
+    /// The SPDX identifier of the license
+    #[serde(rename = "license_spdx_id")]
+    pub spdx_id: Option<String>,
+    /// The URL that contains the terms of the custom license
+    pub custom_license_url: Option<String>,
+}

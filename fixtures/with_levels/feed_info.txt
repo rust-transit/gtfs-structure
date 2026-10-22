@@ -1,0 +1,2 @@
+feed_publisher_name,feed_publisher_url,feed_lang,feed_start_date,feed_end_date,feed_version
+Example Transit GTFS Team,https://example-transit.org,de,20260101,20261231,1.0.0

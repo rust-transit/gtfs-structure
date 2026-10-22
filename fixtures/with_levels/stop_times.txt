@@ -1,0 +1,4 @@
+trip_id,arrival_time,departure_time,stop_id,stop_sequence,pickup_type,drop_off_type,shape_dist_traveled,timepoint
+trip_S1_001,08:00:00,08:00:30,platform_A1,1,0,0,0.0,1
+trip_S1_001,08:05:00,08:05:30,platform_A2,2,0,0,0.3,1
+trip_U1_001,09:00:00,09:00:30,platform_B1,1,0,0,0.0,1

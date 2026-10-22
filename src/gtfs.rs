@@ -49,6 +49,8 @@ pub struct Gtfs {
     pub rider_categories: HashMap<String, RiderCategory>,
     /// All feed information. There is no identifier
     pub feed_info: Vec<FeedInfo>,
+    /// All levels by `level_id`
+    pub levels: HashMap<String, Level>,
 }
 
 impl TryFrom<RawGtfs> for Gtfs {
@@ -89,6 +91,7 @@ impl TryFrom<RawGtfs> for Gtfs {
             fare_media: to_map(raw.fare_media.unwrap_or_else(|| Ok(Vec::new()))?),
             rider_categories: to_map(raw.rider_categories.unwrap_or_else(|| Ok(Vec::new()))?),
             feed_info: raw.feed_info.unwrap_or_else(|| Ok(Vec::new()))?,
+            levels: to_map(raw.levels.unwrap_or_else(|| Ok(Vec::new()))?),
             calendar: to_map(raw.calendar.unwrap_or_else(|| Ok(Vec::new()))?),
             calendar_dates: to_calendar_dates(
                 raw.calendar_dates.unwrap_or_else(|| Ok(Vec::new()))?,
@@ -110,6 +113,7 @@ impl Gtfs {
         println!("  Shapes: {}", self.shapes.len());
         println!("  Fare attributes: {}", self.fare_attributes.len());
         println!("  Feed info: {}", self.feed_info.len());
+        println!("  Levels: {}", self.levels.len());
     }
 
     /// Reads from an url (if starts with `"http"`), or a local path (either a directory or zipped file)
@@ -245,6 +249,13 @@ impl Gtfs {
     /// Gets a [FareAttribute] by its `fare_id`
     pub fn get_fare_attributes<'a>(&'a self, id: &str) -> Result<&'a FareAttribute, Error> {
         self.fare_attributes
+            .get(id)
+            .ok_or_else(|| Error::ReferenceError(id.to_owned()))
+    }
+
+    /// Gets a [Level] by its `level_id`
+    pub fn get_level<'a>(&'a self, id: &str) -> Result<&'a Level, Error> {
+        self.levels
             .get(id)
             .ok_or_else(|| Error::ReferenceError(id.to_owned()))
     }

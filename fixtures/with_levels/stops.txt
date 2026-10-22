@@ -1,0 +1,20 @@
+stop_id,stop_name,stop_lat,stop_lon,location_type,parent_station,level_id,platform_code,wheelchair_boarding,stop_desc
+station_A,Hauptbahnhof,50.943040,6.958270,1,,,, ,Main railway station with full accessibility
+station_A_entrance_1,Hauptbahnhof — Haupteingang (North),50.943400,6.958100,2,station_A,level_street,,1,Street-level north entrance with automatic doors
+station_A_entrance_2,Hauptbahnhof — Südeingang (South),50.942700,6.958400,2,station_A,level_street,,1,Street-level south entrance with ramp access
+station_A_concourse,Hauptbahnhof — Concourse,50.943040,6.958270,3,station_A,level_street,,1,Main concourse node — ticket machines and information desk
+station_A_elevator_top,Hauptbahnhof — Elevator (street level),50.943060,6.958230,3,station_A,level_street,,1,Elevator landing at street level
+station_A_elevator_bottom,Hauptbahnhof — Elevator (platform level),50.943060,6.958230,3,station_A,level_platform,,1,Elevator landing at platform level
+station_A_stairs_top,Hauptbahnhof — Stairs top,50.943050,6.958250,3,station_A,level_street,,2,Top of stairs — no step-free access
+station_A_stairs_bottom,Hauptbahnhof — Stairs bottom,50.943050,6.958250,3,station_A,level_platform,,2,Bottom of stairs
+station_A_cafe,Hauptbahnhof — cafe,50.943050,6.958250,3,station_A,level_street,,1,cafe
+platform_A1,Hauptbahnhof — Gleis 1,50.943040,6.958150,0,station_A,level_platform,1,1,Platform 1 — tactile guiding strips present
+platform_A2,Hauptbahnhof — Gleis 2,50.943040,6.958390,0,station_A,level_platform,2,2,Platform 2 — tactile guiding strips present
+platform_A3,Hauptbahnhof — Gleis 3,50.943040,6.958390,0,station_A,level_platform,2,2,Platform 3 — tactile guiding strips present
+station_B,Neumarkt,50.938050,6.956330,1,,,, ,City centre underground station
+station_B_entrance_1,Neumarkt — Eingang West,50.938200,6.956000,2,station_B,level_street_b,,1,Street-level west entrance with lift
+station_B_concourse,Neumarkt — Concourse,40.938050,6.956330,3,station_B,level_street_b,,1,Underground concourse
+station_B_elevator_top,Neumarkt — Elevator (street level),50.938080,6.956310,3,station_B,level_street_b,,1,Elevator top landing
+station_B_elevator_bottom,Neumarkt — Elevator (platform level),50.938080,6.956310,3,station_B,level_platform_b,,1,Elevator bottom landing
+platform_B1,Neumarkt — Bahnsteig U1,50.938050,6.956330,0,station_B,level_platform_b,U1,1,U1 platform — gap fillers available on request
+platform_B1_boarding,Neumarkt — Bahnsteig Zone A,50.938050,6.956330,4,platform_B1,level_platform_b,U1,1,U1 platform — gap fillers available on request

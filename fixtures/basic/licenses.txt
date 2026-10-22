@@ -1,0 +1,2 @@
+licensed_table_name,license_spdx_id,custom_license_url
+,MIT,

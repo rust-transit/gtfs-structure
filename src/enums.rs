@@ -4,27 +4,27 @@ use serde::ser::{Serialize, Serializer};
 /// All the objects type from the GTFS specification that this library reads
 #[derive(Debug, Serialize, Eq, PartialEq, Hash)]
 pub enum ObjectType {
-    /// [Agency] <https://gtfs.org/reference/static/#agencytxt>
+    /// [crate::Agency] <https://gtfs.org/reference/static/#agencytxt>
     Agency,
-    /// [Stop] <https://gtfs.org/reference/static/#stopstxt>
+    /// [crate::Stop] <https://gtfs.org/reference/static/#stopstxt>
     Stop,
-    /// [Route] <https://gtfs.org/reference/static/#routestxt>
+    /// [crate::Route] <https://gtfs.org/reference/static/#routestxt>
     Route,
-    /// [Trip] <https://gtfs.org/reference/static/#tripstxt>
+    /// [crate::Trip] <https://gtfs.org/reference/static/#tripstxt>
     Trip,
-    /// [Calendar] <https://gtfs.org/reference/static/#calendartxt>
+    /// [crate::Calendar] <https://gtfs.org/reference/static/#calendartxt>
     Calendar,
-    /// [Shape] <https://gtfs.org/reference/static/#shapestxt>
+    /// [crate::Shape] <https://gtfs.org/reference/static/#shapestxt>
     Shape,
-    /// [FareAttribute] <https://gtfs.org/reference/static/#fare_rulestxt>
+    /// [crate::FareAttribute] <https://gtfs.org/reference/static/#fare_rulestxt>
     Fare,
-    /// [Pathway] <https://gtfs.org/schedule/reference/#pathwaystxt>
+    /// [crate::Pathway] <https://gtfs.org/schedule/reference/#pathwaystxt>
     Pathway,
     /// [Level] <https://gtfs.org/reference/static/#levelstxt>
     Level,
 }
 
-/// Describes the kind of [Stop]. See <https://gtfs.org/reference/static/#stopstxt> `location_type`
+/// Describes the kind of [crate::Stop]. See <https://gtfs.org/reference/static/#stopstxt> `location_type`
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum LocationType {
     /// Stop (or Platform). A location where passengers board or disembark from a transit vehicle. Is called a platform when defined within a parent_station
@@ -34,7 +34,7 @@ pub enum LocationType {
     StopArea,
     /// A location where passengers can enter or exit a station from the street. If an entrance/exit belongs to multiple stations, it can be linked by pathways to both, but the data provider must pick one of them as parent
     StationEntrance,
-    /// A location within a station, not matching any other [Stop::location_type], which can be used to link together pathways define in pathways.txt.
+    /// A location within a station, not matching any other [crate::Stop::location_type], which can be used to link together pathways define in pathways.txt.
     GenericNode,
     /// A specific location on a platform, where passengers can board and/or alight vehicles
     BoardingArea,
@@ -266,7 +266,7 @@ pub enum ExtendedRouteType {
     HorseDrawnCarriage = 1702,
 }
 
-/// Describes the kind of [Route]. See <https://gtfs.org/reference/static/#routestxt> `route_type`
+/// Describes the kind of [crate::Route]. See <https://gtfs.org/reference/static/#routestxt> `route_type`
 ///
 /// Some route types are extended GTFS (<https://developers.google.com/transit/gtfs/reference/extended-route-types)>
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Hash)]
@@ -548,7 +548,7 @@ impl Serialize for Availability {
     }
 }
 
-/// Defines if a [CalendarDate] is added or deleted from a [Calendar]
+/// Defines if a [crate::CalendarDate] is added or deleted from a [crate::Calendar]
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum Exception {
     /// There will be a service on that day
@@ -559,7 +559,7 @@ pub enum Exception {
     Deleted,
 }
 
-/// Defines the direction of a [Trip], only for display, not for routing. See <https://gtfs.org/reference/static/#tripstxt> `direction_id`
+/// Defines the direction of a [crate::Trip], only for display, not for routing. See <https://gtfs.org/reference/static/#tripstxt> `direction_id`
 #[derive(Debug, Deserialize, Serialize, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum DirectionType {
     /// Travel in one direction (e.g. outbound travel).
@@ -570,7 +570,7 @@ pub enum DirectionType {
     Inbound,
 }
 
-/// Is the [Trip] accessible with a bike. See <https://gtfs.org/reference/static/#tripstxt> `bikes_allowed`
+/// Is the [crate::Trip] accessible with a bike. See <https://gtfs.org/reference/static/#tripstxt> `bikes_allowed`
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum BikesAllowedType {
     /// No bike information for the trip
@@ -621,7 +621,57 @@ impl Serialize for BikesAllowedType {
     }
 }
 
-/// Defines where a [FareAttribute] can be paid
+/// Is the [crate::Trip] accessible with a car. See <https://gtfs.org/reference/static/#tripstxt> `bikes_allowed`
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum CarsAllowedType {
+    /// No car transport information for the trip
+    #[default]
+    NoCarInfo,
+    /// Vehicle being used on this particular trip can accommodate at least one car
+    AtLeastOneCar,
+    /// No cars are allowed on this trip
+    NoCarsAllowed,
+    /// An unknown value not in the specification
+    Unknown(i16),
+}
+
+impl<'de> Deserialize<'de> for CarsAllowedType {
+    fn deserialize<D>(deserializer: D) -> Result<CarsAllowedType, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = <&str>::deserialize(deserializer)?;
+        Ok(match s {
+            "" | "0" => CarsAllowedType::NoCarInfo,
+            "1" => CarsAllowedType::AtLeastOneCar,
+            "2" => CarsAllowedType::NoCarsAllowed,
+            s => CarsAllowedType::Unknown(s.parse().map_err(|_| {
+                serde::de::Error::custom(format!(
+                    "invalid value for CarsAllowedType, must be an integer: {s}"
+                ))
+            })?),
+        })
+    }
+}
+
+impl Serialize for CarsAllowedType {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        // Note: for extended route type, we might loose the initial precise route type
+        serialize_i16_as_str(
+            serializer,
+            match self {
+                CarsAllowedType::NoCarInfo => 0,
+                CarsAllowedType::AtLeastOneCar => 1,
+                CarsAllowedType::NoCarsAllowed => 2,
+                CarsAllowedType::Unknown(i) => *i,
+            },
+        )
+    }
+}
+/// Defines where a [crate::FareAttribute] can be paid
 #[derive(Debug, Deserialize, Serialize, Copy, Clone, PartialEq, Eq)]
 pub enum PaymentMethod {
     /// Fare is paid on board
@@ -632,7 +682,7 @@ pub enum PaymentMethod {
     PreBoarding,
 }
 
-/// Defines if the [Frequency] is exact (the vehicle runs exactly every n minutes) or not
+/// Defines if the [crate::Frequency] is exact (the vehicle runs exactly every n minutes) or not
 #[derive(Debug, Serialize, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum ExactTimes {
     /// Frequency-based trips
@@ -659,7 +709,7 @@ impl<'de> Deserialize<'de> for ExactTimes {
     }
 }
 
-/// Defines how many transfers can be done with on [FareAttribute]
+/// Defines how many transfers can be done with on [crate::FareAttribute]
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum Transfers {
     /// Unlimited transfers are permitted
@@ -705,7 +755,7 @@ impl Serialize for Transfers {
         }
     }
 }
-/// Defines the type of a [StopTransfer]
+/// Defines the type of a [crate::StopTransfer]
 #[derive(Debug, Serialize, Default, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum TransferType {
     /// Recommended transfer point between routes
@@ -752,7 +802,7 @@ impl<'de> Deserialize<'de> for TransferType {
     }
 }
 
-/// Type of pathway between [from_stop] and [to_stop]
+/// Type of pathway between [crate::RawPathway::from_stop_id] and [crate::RawPathway::to_stop_id]
 #[derive(Debug, Serialize, Deserialize, Default, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum PathwayMode {
     /// A walkway
@@ -784,7 +834,7 @@ pub enum PathwayMode {
 /// Indicates in which direction the pathway can be used
 #[derive(Debug, Serialize, Deserialize, Default, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum PathwayDirectionType {
-    /// Unidirectional pathway, it can only be used from [from_stop_id] to [to_stop_id].
+    /// Unidirectional pathway, it can only be used from [crate::RawPathway::from_stop_id] to [crate::RawPathway::to_stop_id].
     #[serde(rename = "0")]
     #[default]
     Unidirectional,
@@ -793,7 +843,7 @@ pub enum PathwayDirectionType {
     Bidirectional,
 }
 
-/// Defines the type of a [FareMedia]
+/// Defines the type of a [crate::FareMedia]
 #[derive(Debug, Deserialize, Serialize, Copy, Clone, PartialEq, Eq)]
 pub enum FareMediaType {
     /// Used when there is no fare media involved in purchasing or validating a fare product

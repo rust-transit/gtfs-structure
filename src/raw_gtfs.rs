@@ -8,7 +8,7 @@ use web_time::Duration;
 ///
 /// This is used to analyze the GTFS and detect anomalies
 /// To manipulate the transit data, maybe [crate::Gtfs] will be more convienient
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct RawGtfs {
     /// Time needed to read and parse the archive
     pub read_duration: Duration,
